@@ -1,0 +1,24 @@
+name: poppylo
+description: A gamified German learning app.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.4.9
+  go_router: ^12.1.1
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.10
+  google_fonts: ^8.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
