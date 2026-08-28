@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:poppylo/screens/interests_screen.dart';
 
 class CreateProfileScreen extends StatefulWidget {
@@ -14,7 +15,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
   final TextEditingController _jobController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   
+  final FocusNode _firstNameFocus = FocusNode();
+  final FocusNode _ageFocus = FocusNode();
+  final FocusNode _jobFocus = FocusNode();
+  final FocusNode _bioFocus = FocusNode();
+  
   bool _canProceed = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -38,7 +45,38 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     _ageController.dispose();
     _jobController.dispose();
     _bioController.dispose();
+    
+    _firstNameFocus.dispose();
+    _ageFocus.dispose();
+    _jobFocus.dispose();
+    _bioFocus.dispose();
+    
     super.dispose();
+  }
+
+  void _handleContinue() async {
+    if (!_canProceed || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+    
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const InterestsScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+    
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -52,9 +90,16 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         title: Text(
           '2 OF 3',
@@ -98,17 +143,27 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                     
                     // Avatar Picker
                     Center(
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.08),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.camera_alt,
-                          color: colorScheme.primary,
-                          size: 32,
+                      child: Semantics(
+                        button: true,
+                        label: 'Upload profile picture',
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                          },
+                          borderRadius: BorderRadius.circular(50),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: colorScheme.primary.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: colorScheme.primary,
+                              size: 32,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -119,6 +174,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       label: 'FIRST NAME',
                       hint: 'Your given name',
                       controller: _firstNameController,
+                      focusNode: _firstNameFocus,
+                      nextFocusNode: _ageFocus,
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.givenName],
                     ),
@@ -128,6 +185,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       label: 'AGE',
                       hint: 'Years',
                       controller: _ageController,
+                      focusNode: _ageFocus,
+                      nextFocusNode: _jobFocus,
                       keyboardType: TextInputType.number,
                     ),
                     
@@ -136,6 +195,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       label: 'WHAT YOU DO',
                       hint: 'e.g. Barista, Designer, Student',
                       controller: _jobController,
+                      focusNode: _jobFocus,
+                      nextFocusNode: _bioFocus,
                       textCapitalization: TextCapitalization.words,
                     ),
                     
@@ -144,10 +205,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       label: 'SHORT BIO',
                       hint: 'A little about you...',
                       controller: _bioController,
+                      focusNode: _bioFocus,
                       textCapitalization: TextCapitalization.sentences,
                       keyboardType: TextInputType.multiline,
                       maxLines: 4,
                       showCounter: true,
+                      textInputAction: TextInputAction.done,
                     ),
                   ],
                 ),
@@ -158,20 +221,13 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: AnimatedOpacity(
-                opacity: _canProceed ? 1.0 : 0.5,
+                opacity: _canProceed || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _canProceed ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InterestsScreen(),
-                        ),
-                      );
-                    } : null,
+                    onPressed: (_canProceed && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -182,20 +238,29 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Continue',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Continue',
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.onPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward, size: 20),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, size: 20),
-                      ],
-                    ),
                   ),
                 ),
               ),
@@ -211,11 +276,14 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     required String label,
     required String hint,
     required TextEditingController controller,
+    required FocusNode focusNode,
+    FocusNode? nextFocusNode,
     TextInputType keyboardType = TextInputType.text,
     TextCapitalization textCapitalization = TextCapitalization.none,
     Iterable<String>? autofillHints,
     int maxLines = 1,
     bool showCounter = false,
+    TextInputAction? textInputAction,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -242,12 +310,24 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             ),
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
+              enabled: !_isLoading,
               keyboardType: keyboardType,
-              textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.next,
+              textInputAction: textInputAction ?? (nextFocusNode != null ? TextInputAction.next : TextInputAction.done),
               textCapitalization: textCapitalization,
               autofillHints: autofillHints,
               maxLines: maxLines,
               maxLength: showCounter ? 150 : null,
+              onSubmitted: (_) {
+                if (nextFocusNode != null) {
+                  FocusScope.of(context).requestFocus(nextFocusNode);
+                } else {
+                  focusNode.unfocus();
+                  if (_canProceed) {
+                    _handleContinue();
+                  }
+                }
+              },
               style: textTheme.bodyLarge?.copyWith(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.w500,

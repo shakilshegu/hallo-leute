@@ -12,8 +12,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
+  
   bool _canProceed = false;
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _emailError;
 
   @override
   void initState() {
@@ -22,6 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _canProceed = _emailController.text.trim().isNotEmpty && 
                       _passwordController.text.isNotEmpty;
+        // Clear error when user types
+        if (_emailError != null) _emailError = null;
       });
     }
     _emailController.addListener(updateState);
@@ -32,25 +39,44 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_canProceed) {
-      HapticFeedback.mediumImpact();
-      // Since it's a mock login, navigate straight to HomeScreen
-      Navigator.pushAndRemoveUntil(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 300),
-        ),
-        (route) => false,
-      );
+  void _handleLogin() async {
+    if (!_canProceed || _isLoading) return;
+
+    final email = _emailController.text.trim();
+    final emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
+    
+    if (!emailValid) {
+      setState(() {
+        _emailError = 'Please enter a valid email address';
+      });
+      HapticFeedback.heavyImpact(); // Error feedback
+      return;
     }
+
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+    
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    if (!mounted) return;
+    
+    Navigator.pushAndRemoveUntil(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -64,12 +90,16 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.of(context).pop();
-          },
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ),
       body: SafeArea(
@@ -98,34 +128,67 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 48),
               
               // Email Input Field
-              Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Center(
-                  child: TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.email],
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: _emailError != null 
+                          ? Colors.red.withOpacity(0.05) 
+                          : colorScheme.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: _emailError != null 
+                          ? Border.all(color: Colors.red.withOpacity(0.5))
+                          : null,
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Email address',
-                      hintStyle: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.primary.withOpacity(0.3),
-                        fontWeight: FontWeight.w500,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Center(
+                      child: TextField(
+                        controller: _emailController,
+                        focusNode: _emailFocus,
+                        enabled: !_isLoading,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        onSubmitted: (_) {
+                          FocusScope.of(context).requestFocus(_passwordFocus);
+                        },
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Email address',
+                          hintStyle: textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.primary.withOpacity(0.3),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          border: InputBorder.none,
+                          icon: Icon(
+                            Icons.email_outlined, 
+                            color: _emailError != null 
+                                ? Colors.red.withOpacity(0.5) 
+                                : colorScheme.primary.withOpacity(0.5)
+                          ),
+                        ),
                       ),
-                      border: InputBorder.none,
-                      icon: Icon(Icons.email_outlined, color: colorScheme.primary.withOpacity(0.5)),
                     ),
                   ),
-                ),
+                  if (_emailError != null) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4.0),
+                      child: Text(
+                        _emailError!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ]
+                ],
               ),
               
               const SizedBox(height: 16),
@@ -141,6 +204,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Center(
                   child: TextField(
                     controller: _passwordController,
+                    focusNode: _passwordFocus,
+                    enabled: !_isLoading,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
                     autofillHints: const [AutofillHints.password],
@@ -179,15 +244,19 @@ class _LoginScreenState extends State<LoginScreen> {
               // Forgot password link
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                  },
-                  child: Text(
-                    'Forgot password?',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                child: Semantics(
+                  button: true,
+                  label: 'Forgot password',
+                  child: TextButton(
+                    onPressed: _isLoading ? null : () {
+                      HapticFeedback.lightImpact();
+                    },
+                    child: Text(
+                      'Forgot password?',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -197,13 +266,13 @@ class _LoginScreenState extends State<LoginScreen> {
               
               // Continue Button
               AnimatedOpacity(
-                opacity: _canProceed ? 1.0 : 0.5,
+                opacity: _canProceed || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _canProceed ? _handleLogin : null,
+                    onPressed: (_canProceed && !_isLoading) ? _handleLogin : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -214,13 +283,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Text(
-                      'Log in',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Log in',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

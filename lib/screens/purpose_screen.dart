@@ -11,6 +11,7 @@ class PurposeScreen extends StatefulWidget {
 
 class _PurposeScreenState extends State<PurposeScreen> {
   String? _selectedPurpose;
+  bool _isLoading = false;
 
   final List<Map<String, dynamic>> _purposes = [
     {'title': 'Make new friends', 'icon': Icons.people_outline},
@@ -20,6 +21,29 @@ class _PurposeScreenState extends State<PurposeScreen> {
     {'title': 'Dating', 'icon': Icons.favorite_border},
     {'title': 'Just a good conversation', 'icon': Icons.chat_bubble_outline},
   ];
+
+  void _handleContinue() async {
+    if (_selectedPurpose == null || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+    
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +56,16 @@ class _PurposeScreenState extends State<PurposeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ),
       body: SafeArea(
@@ -70,46 +101,51 @@ class _PurposeScreenState extends State<PurposeScreen> {
                         final purpose = _purposes[index];
                         final isSelected = _selectedPurpose == purpose['title'];
                         
-                        return GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _selectedPurpose = purpose['title'];
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? colorScheme.primary.withOpacity(0.15) 
-                                  : colorScheme.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
+                        return Semantics(
+                          button: true,
+                          selected: isSelected,
+                          label: purpose['title'] as String,
+                          child: GestureDetector(
+                            onTap: _isLoading ? null : () {
+                              HapticFeedback.lightImpact();
+                              setState(() {
+                                _selectedPurpose = purpose['title'];
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
                                 color: isSelected 
-                                    ? colorScheme.primary 
-                                    : Colors.transparent,
-                                width: 2,
+                                    ? colorScheme.primary.withOpacity(0.15) 
+                                    : colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected 
+                                      ? colorScheme.primary 
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
                               ),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  purpose['icon'] as IconData,
-                                  color: colorScheme.primary,
-                                  size: 32,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  purpose['title'] as String,
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.bodyMedium?.copyWith(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    purpose['icon'] as IconData,
                                     color: colorScheme.primary,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    size: 32,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    purpose['title'] as String,
+                                    textAlign: TextAlign.center,
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         );
@@ -136,21 +172,13 @@ class _PurposeScreenState extends State<PurposeScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: AnimatedOpacity(
-                opacity: _selectedPurpose != null ? 1.0 : 0.5,
+                opacity: _selectedPurpose != null || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _selectedPurpose != null ? () {
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    } : null,
+                    onPressed: (_selectedPurpose != null && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -161,13 +189,22 @@ class _PurposeScreenState extends State<PurposeScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Text(
-                      'Continue',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Continue',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

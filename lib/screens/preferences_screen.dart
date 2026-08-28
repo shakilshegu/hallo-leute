@@ -15,8 +15,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   
   final List<String> _conversationStyles = ['Casual', 'Deep', 'Career', 'Hobbies', 'Anything'];
   final Set<String> _selectedStyles = {'Deep', 'Anything'};
+  
+  bool _isLoading = false;
 
   void _toggleStyle(String style) {
+    if (_isLoading) return;
     HapticFeedback.lightImpact();
     setState(() {
       if (_selectedStyles.contains(style)) {
@@ -25,6 +28,30 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         _selectedStyles.add(style);
       }
     });
+  }
+
+  void _handleSave() async {
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+    
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const PurposeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+    
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -38,9 +65,16 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
         title: Text(
           'Preferences',
@@ -80,58 +114,62 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     const SizedBox(height: 32),
                     
                     // Age Range
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'AGE RANGE',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.primary.withOpacity(0.5),
-                                  letterSpacing: 1.5,
-                                  fontWeight: FontWeight.bold,
+                    Semantics(
+                      label: 'Age Range from ${_ageRange.start.round()} to ${_ageRange.end.round()}',
+                      slider: true,
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'AGE RANGE',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.primary.withOpacity(0.5),
+                                    letterSpacing: 1.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${_ageRange.start.round()}-${_ageRange.end.round()}',
-                                style: textTheme.bodyLarge?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
+                                Text(
+                                  '${_ageRange.start.round()}-${_ageRange.end.round()}',
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SliderTheme(
+                              data: SliderThemeData(
+                                activeTrackColor: colorScheme.primary,
+                                inactiveTrackColor: colorScheme.primary.withOpacity(0.1),
+                                thumbColor: colorScheme.primary,
+                                overlayColor: colorScheme.primary.withOpacity(0.1),
+                                trackHeight: 6,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          SliderTheme(
-                            data: SliderThemeData(
-                              activeTrackColor: colorScheme.primary,
-                              inactiveTrackColor: colorScheme.primary.withOpacity(0.1),
-                              thumbColor: colorScheme.primary,
-                              overlayColor: colorScheme.primary.withOpacity(0.1),
-                              trackHeight: 6,
+                              child: RangeSlider(
+                                values: _ageRange,
+                                min: 18,
+                                max: 65,
+                                onChanged: _isLoading ? null : (values) {
+                                  setState(() {
+                                    _ageRange = values;
+                                  });
+                                },
+                                onChangeEnd: (_) {
+                                  HapticFeedback.lightImpact();
+                                },
+                              ),
                             ),
-                            child: RangeSlider(
-                              values: _ageRange,
-                              min: 18,
-                              max: 65,
-                              onChanged: (values) {
-                                setState(() {
-                                  _ageRange = values;
-                                });
-                              },
-                              onChangeEnd: (_) {
-                                HapticFeedback.lightImpact();
-                              },
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -154,29 +192,34 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                             padding: EdgeInsets.only(
                               right: km != 10 ? 12.0 : 0,
                             ),
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                setState(() {
-                                  _selectedDistance = km;
-                                });
-                              },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.04),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.1),
+                            child: Semantics(
+                              button: true,
+                              selected: isSelected,
+                              label: '$km kilometers',
+                              child: GestureDetector(
+                                onTap: _isLoading ? null : () {
+                                  HapticFeedback.lightImpact();
+                                  setState(() {
+                                    _selectedDistance = km;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.04),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.1),
+                                    ),
                                   ),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '$km km',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$km km',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -202,21 +245,26 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       runSpacing: 16.0,
                       children: _conversationStyles.map((style) {
                         final isSelected = _selectedStyles.contains(style);
-                        return GestureDetector(
-                          onTap: () => _toggleStyle(style),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              style,
-                              style: textTheme.labelSmall?.copyWith(
-                                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
+                        return Semantics(
+                          button: true,
+                          selected: isSelected,
+                          label: style,
+                          child: GestureDetector(
+                            onTap: () => _toggleStyle(style),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Text(
+                                style,
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
                             ),
                           ),
@@ -232,32 +280,38 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             // Save Button
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PurposeScreen(),
+              child: AnimatedOpacity(
+                opacity: _isLoading ? 0.7 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Save preferences',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Save preferences',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:poppylo/screens/verify_code_screen.dart';
 
 class GetStartedScreen extends StatefulWidget {
@@ -11,6 +12,7 @@ class GetStartedScreen extends StatefulWidget {
 class _GetStartedScreenState extends State<GetStartedScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _canProceed = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -28,6 +30,33 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
     super.dispose();
   }
 
+  void _handleContinue() async {
+    if (!_canProceed || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    // Simulate network delay for sending OTP
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => VerifyCodeScreen(
+          phoneNumber: _phoneController.text.trim(),
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+    
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -39,9 +68,16 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ),
       body: SafeArea(
@@ -71,24 +107,33 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                 child: Row(
                   children: [
                     // Country Code
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        children: [
-                          Text(
-                            'US +1',
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                    Semantics(
+                      button: true,
+                      label: 'Change country code, currently US +1',
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                'US +1',
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.keyboard_arrow_down,
+                                color: colorScheme.primary,
+                                size: 20,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                     
@@ -103,21 +148,11 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                     Expanded(
                       child: TextField(
                         controller: _phoneController,
+                        enabled: !_isLoading,
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.done,
                         autofillHints: const [AutofillHints.telephoneNumber],
-                        onSubmitted: (_) {
-                          if (_canProceed) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VerifyCodeScreen(
-                                  phoneNumber: _phoneController.text.trim(),
-                                ),
-                              ),
-                            );
-                          }
-                        },
+                        onSubmitted: (_) => _handleContinue(),
                         style: textTheme.bodyLarge?.copyWith(
                           color: colorScheme.primary,
                           fontWeight: FontWeight.w500,
@@ -141,23 +176,13 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
               
               // Continue Button
               AnimatedOpacity(
-                opacity: _canProceed ? 1.0 : 0.5,
+                opacity: _canProceed || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                      onPressed: _canProceed ? () {
-                        // Navigate to Verification Code screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VerifyCodeScreen(
-                              phoneNumber: _phoneController.text.trim(),
-                            ),
-                          ),
-                        );
-                      } : null,
+                    onPressed: (_canProceed && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -168,13 +193,22 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Text(
-                      'Continue',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Continue',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

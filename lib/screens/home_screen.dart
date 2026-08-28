@@ -1,9 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:poppylo/screens/searching_screen.dart';
 import 'package:poppylo/widgets/app_bottom_nav.dart';
-import 'package:poppylo/screens/waiting_screen.dart';
 import 'package:poppylo/widgets/status_sheets.dart';
 import 'package:poppylo/screens/match_expired_screen.dart';
 
@@ -14,70 +12,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
-  late AnimationController _animationController;
-  
-  // Animation variables
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation1;
-  late Animation<Offset> _slideAnimation2;
-  late Animation<Offset> _slideAnimation3;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _slideAnimation1 = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic)),
-    );
-    
-    _slideAnimation2 = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic)),
-    );
-    
-    _slideAnimation3 = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: const Interval(0.4, 1.0, curve: Curves.easeOutCubic)),
-    );
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    } else if (hour < 17) {
-      return 'Good afternoon';
-    } else {
-      return 'Good evening';
-    }
-  }
+class _HomeScreenState extends State<HomeScreen> {
+  // Pill selection state for the Find someone card
+  String _selectedPill = 'Today 5 PM';
+  final List<String> _timePills = ['Today 5 PM', 'Tomorrow 11 AM', 'Pick a time'];
 
   void _showCreateMeetSheet() {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFFF3F1EB),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => const CreateCoffeeMeetSheet(),
+    // In the new design, tapping "Find my match" might just start searching 
+    // or open the sheet. We'll stick to the existing behavior: open search if pills are selected.
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchingScreen()),
     );
   }
 
@@ -88,236 +34,444 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F8),
+      backgroundColor: const Color(0xFFF3F1EB), // Base app color
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Coffee Meet',
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications_none, color: colorScheme.primary),
+            onPressed: () {},
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage('https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop'),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 16),
-              
-              // Header
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation1,
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: colorScheme.primary.withOpacity(0.1),
-                        child: Icon(Icons.person, color: colorScheme.primary),
+              // Header Section
+              Text(
+                'Good morning, Aisha',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Ready for a good conversation?',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary.withOpacity(0.8),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Stats Row
+              Row(
+                children: [
+                  _buildStat('12 COFFEE MEETS', textTheme, colorScheme),
+                  _buildStatDot(colorScheme),
+                  _buildStat('5 CONNECTIONS', textTheme, colorScheme),
+                  _buildStatDot(colorScheme),
+                  _buildStat('4.8 AVG', textTheme, colorScheme),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Main Action Card (Find someone for coffee)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B3B2B), // Dark green
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CONNECTION AWAITS',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: Colors.white.withOpacity(0.6),
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${_getGreeting()}, Aisha',
-                              style: textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                            Text(
-                              'Ready for a good conversation?',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.primary.withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Find someone for\ncoffee',
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.2,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.bug_report, color: Colors.grey),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            builder: (context) => ListView(
-                              children: [
-                                ListTile(
-                                  title: const Text('Show No Match Sheet'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => const NoMatchSheet(),
-                                    );
-                                  },
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Time Pills
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _timePills.map((time) {
+                          final isSelected = time == _selectedPill;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                setState(() => _selectedPill = time);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isSelected 
+                                      ? Colors.white.withOpacity(0.2) 
+                                      : Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected ? Colors.white.withOpacity(0.5) : Colors.transparent,
+                                  ),
                                 ),
-                                ListTile(
-                                  title: const Text('Show Match Declined Sheet'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => const MatchDeclinedSheet(),
-                                    );
-                                  },
+                                child: Text(
+                                  time,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
                                 ),
-                                ListTile(
-                                  title: const Text('Show Network Error Sheet'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => const NetworkErrorSheet(),
-                                    );
-                                  },
-                                ),
-                                ListTile(
-                                  title: const Text('Show Match Expired Screen'),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const MatchExpiredScreen()),
-                                    );
-                                  },
-                                ),
-                              ],
+                              ),
                             ),
                           );
-                        },
+                        }).toList(),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Find Match Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _showCreateMeetSheet,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE89A00), // Yellow/Orange
+                          foregroundColor: colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(26),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Find my match',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary, // Dark text
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
-              
-              // Main Action Card
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation2,
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
+
+              // Upcoming Coffee
+              _buildSectionHeader('UPCOMING COFFEE', 'See all', textTheme, colorScheme),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'CONNECTION AWAITS',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onPrimary.withOpacity(0.7),
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        const CircleAvatar(
+                          radius: 28,
+                          backgroundImage: NetworkImage('https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop'),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Find\nsomeone for\ncoffee',
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onPrimary,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Choose a time and we'll find someone who's a great fit for a meaningful chat.",
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onPrimary.withOpacity(0.9),
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        // Custom animated button
-                        _BouncingButton(
-                          onPressed: _showCreateMeetSheet,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF6B100),
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              'Find my match',
-                              style: textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              
-              // Upcoming Coffee
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'UPCOMING COFFEE',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary.withOpacity(0.5),
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      CustomPaint(
-                        painter: _DashedBorderPainter(color: colorScheme.primary.withOpacity(0.3)),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(32),
+                        const SizedBox(width: 16),
+                        Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'No coffee planned yet',
-                                style: textTheme.bodyLarge?.copyWith(
-                                  color: colorScheme.primary.withOpacity(0.7),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              GestureDetector(
-                                onTap: _showCreateMeetSheet,
-                                child: Text(
-                                  'Create a Coffee Meet',
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    decoration: TextDecoration.underline,
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Sarah, 27',
+                                    style: textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.primary,
+                                    ),
                                   ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF0D4),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'CONFIRMED',
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: const Color(0xFFD97706),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 9,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'SAT 5:00 PM • BREW LAB • 1.2 KM',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary.withOpacity(0.6),
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  fontSize: 10,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F1EB),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
-                  ),
+                      child: Text(
+                        'STARTS IN 2H 30M',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {},
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: colorScheme.primary.withOpacity(0.2)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: Text(
+                              'Get directions',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE2E8DF),
+                              foregroundColor: colorScheme.primary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: Text(
+                              'Message',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 32),
+
+              // Who's Free This Week
+              _buildSectionHeader('WHO\'S FREE THIS WEEK', null, textTheme, colorScheme),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildFreeCard('SAT 5 PM', '12 PEOPLE FREE', colorScheme, textTheme),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildFreeCard('SUN 11 AM', '8 PEOPLE FREE', colorScheme, textTheme),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Cafés Near You
+              _buildSectionHeader('CAFÉS NEAR YOU', 'See all', textTheme, colorScheme),
+              const SizedBox(height: 16),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                child: Row(
+                  children: [
+                    _buildCafeCard(
+                      'Brew Lab', 
+                      '4.6 • 1.2 KM • QUIET', 
+                      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400&auto=format&fit=crop',
+                      colorScheme, 
+                      textTheme,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildCafeCard(
+                      'The Daily Grind', 
+                      '4.4 • 2.5 KM • LIVELY', 
+                      'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=400&auto=format&fit=crop',
+                      colorScheme, 
+                      textTheme,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Today's Starter
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5ECE4), // Light greenish-grey
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TODAY\'S STARTER',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary.withOpacity(0.5),
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '"What\'s something you\'ve been really into lately?"',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colorScheme.primary.withOpacity(0.2)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      ),
+                      child: Text(
+                        'Another one',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // People You've Met
+              _buildSectionHeader('PEOPLE YOU\'VE MET', null, textTheme, colorScheme),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 120, // Enough for 4 overlapping avatars
+                      height: 40,
+                      child: Stack(
+                        children: [
+                          _buildOverlappingAvatar(0, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'),
+                          _buildOverlappingAvatar(1, 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop'),
+                          _buildOverlappingAvatar(2, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'),
+                          _buildOverlappingAvatar(3, 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop'),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'See all connections',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 48),
+
+              // Bottom Trust Badges
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildTrustBadge(Icons.verified_outlined, 'Photo verified', colorScheme, textTheme),
+                  _buildTrustBadge(Icons.storefront_outlined, 'Partner cafes', colorScheme, textTheme),
+                  _buildTrustBadge(Icons.access_time, 'You choose', colorScheme, textTheme),
+                ],
+              ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -325,433 +479,161 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       bottomNavigationBar: const AppBottomNav(currentIndex: 0),
     );
   }
-}
 
-// Custom bouncing button for a more tactile feel
-class _BouncingButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onPressed;
-
-  const _BouncingButton({required this.child, required this.onPressed});
-
-  @override
-  State<_BouncingButton> createState() => _BouncingButtonState();
-}
-
-class _BouncingButtonState extends State<_BouncingButton> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onPressed();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
+  Widget _buildStat(String text, TextTheme textTheme, ColorScheme colorScheme) {
+    return Text(
+      text,
+      style: textTheme.labelSmall?.copyWith(
+        color: colorScheme.primary.withOpacity(0.6),
+        fontWeight: FontWeight.bold,
+        fontSize: 9,
+        letterSpacing: 0.5,
       ),
     );
   }
-}
 
-// Custom painter for dashed borders
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  _DashedBorderPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(16),
-      ));
-
-    final dashWidth = 8.0;
-    final dashSpace = 6.0;
-    
-    // Quick approximation of dashed path
-    double distance = 0.0;
-    final metrics = path.computeMetrics().toList()[0];
-    final length = metrics.length;
-    
-    final dashedPath = Path();
-    while (distance < length) {
-      dashedPath.addPath(
-        metrics.extractPath(distance, distance + dashWidth),
-        Offset.zero,
-      );
-      distance += dashWidth + dashSpace;
-    }
-
-    canvas.drawPath(dashedPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ---------------------------------------------------------
-// Bottom Sheet for Creating a Coffee Meet
-// ---------------------------------------------------------
-class CreateCoffeeMeetSheet extends StatefulWidget {
-  const CreateCoffeeMeetSheet({super.key});
-
-  @override
-  State<CreateCoffeeMeetSheet> createState() => _CreateCoffeeMeetSheetState();
-}
-
-class _CreateCoffeeMeetSheetState extends State<CreateCoffeeMeetSheet> {
-  String _when = 'Today';
-  String _time = '5:00 PM';
-  String _duration = '45 min';
-  String _distance = '10 km';
-  
-  final Set<String> _why = {'Make friends'};
-  final Set<String> _conversation = {'Deep'};
-
-  void _toggleSet(Set<String> set, String value) {
-    HapticFeedback.lightImpact();
-    setState(() {
-      if (set.contains(value)) {
-        set.remove(value);
-      } else {
-        set.add(value);
-      }
-    });
-  }
-
-  Widget _buildSectionTitle(String title, TextTheme textTheme, Color color) {
+  Widget _buildStatDot(ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(
-        title,
-        style: textTheme.labelSmall?.copyWith(
-          color: color.withOpacity(0.5),
-          letterSpacing: 1.5,
-          fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.symmetric(horizontal: 6.0),
+      child: Container(
+        width: 3,
+        height: 3,
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withOpacity(0.3),
+          shape: BoxShape.circle,
         ),
       ),
     );
   }
 
-  Widget _buildPillToggle({
-    required String value,
-    required String selectedValue,
-    required Function(String) onSelect,
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    IconData? icon,
-  }) {
-    final isSelected = value == selectedValue;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onSelect(value);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              value,
-              style: textTheme.bodyMedium?.copyWith(
-                color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMultiSelectChip({
-    required String value,
-    required Set<String> selectedSet,
-    required Function(String) onToggle,
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-  }) {
-    final isSelected = selectedSet.contains(value);
-    return GestureDetector(
-      onTap: () => onToggle(value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          value,
+  Widget _buildSectionHeader(String title, String? action, TextTheme textTheme, ColorScheme colorScheme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
           style: textTheme.labelSmall?.copyWith(
-            color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+            color: colorScheme.primary.withOpacity(0.6),
+            letterSpacing: 1.5,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
+            fontSize: 10,
           ),
         ),
+        if (action != null)
+          GestureDetector(
+            onTap: () {},
+            child: Text(
+              action,
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildFreeCard(String time, String count, ColorScheme colorScheme, TextTheme textTheme) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            time,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            count,
+            style: textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary.withOpacity(0.6),
+              letterSpacing: 0.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+  Widget _buildCafeCard(String name, String details, String imageUrl, ColorScheme colorScheme, TextTheme textTheme) {
+    return SizedBox(
+      width: 240,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 140,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              image: DecorationImage(
+                image: NetworkImage(imageUrl),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            name,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            details,
+            style: textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary.withOpacity(0.6),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close, color: colorScheme.primary),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Find someone for coffee',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // WHEN
-                    _buildSectionTitle('WHEN', textTheme, colorScheme.primary),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildPillToggle(
-                            value: 'Today',
-                            selectedValue: _when,
-                            onSelect: (v) => setState(() => _when = v),
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildPillToggle(
-                            value: 'Tomorrow',
-                            selectedValue: _when,
-                            onSelect: (v) => setState(() => _when = v),
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                          ),
-                          const SizedBox(width: 8),
-                          _buildPillToggle(
-                            value: 'Pick Date',
-                            selectedValue: _when,
-                            onSelect: (v) => setState(() => _when = v),
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                            icon: Icons.calendar_today_outlined,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // TIME
-                    _buildSectionTitle('TIME', textTheme, colorScheme.primary),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: ['3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM']
-                            .map((t) => Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: _buildPillToggle(
-                                    value: t,
-                                    selectedValue: _time,
-                                    onSelect: (v) => setState(() => _time = v),
-                                    colorScheme: colorScheme,
-                                    textTheme: textTheme,
-                                  ),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // HOW LONG
-                    _buildSectionTitle('HOW LONG', textTheme, colorScheme.primary),
-                    Row(
-                      children: ['30 min', '45 min', '60 min']
-                          .map((t) => Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(right: t != '60 min' ? 8.0 : 0),
-                                  child: _buildPillToggle(
-                                    value: t,
-                                    selectedValue: _duration,
-                                    onSelect: (v) => setState(() => _duration = v),
-                                    colorScheme: colorScheme,
-                                    textTheme: textTheme,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // HOW FAR
-                    _buildSectionTitle('HOW FAR', textTheme, colorScheme.primary),
-                    Row(
-                      children: ['2 km', '5 km', '10 km']
-                          .map((d) => Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(right: d != '10 km' ? 8.0 : 0),
-                                  child: _buildPillToggle(
-                                    value: d,
-                                    selectedValue: _distance,
-                                    onSelect: (v) => setState(() => _distance = v),
-                                    colorScheme: colorScheme,
-                                    textTheme: textTheme,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // WHY
-                    _buildSectionTitle('WHY', textTheme, colorScheme.primary),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 12.0,
-                      children: [
-                        'Make friends', 'Networking', 'Shared interests', 'Dating', 'Conversation'
-                      ].map((w) => _buildMultiSelectChip(
-                            value: w,
-                            selectedSet: _why,
-                            onToggle: (v) => _toggleSet(_why, v),
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                          )).toList(),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // CONVERSATION
-                    _buildSectionTitle('CONVERSATION', textTheme, colorScheme.primary),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 12.0,
-                      children: [
-                        'Casual', 'Deep', 'Career', 'Hobbies', 'Anything'
-                      ].map((c) => _buildMultiSelectChip(
-                            value: c,
-                            selectedSet: _conversation,
-                            onToggle: (v) => _toggleSet(_conversation, v),
-                            colorScheme: colorScheme,
-                            textTheme: textTheme,
-                          )).toList(),
-                    ),
-                    
-                    const SizedBox(height: 48),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Bottom Action
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    Navigator.of(context).pop();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SearchingScreen(),
-                      ),
-                    );
-                  },
-                  icon: Icon(Icons.search, color: colorScheme.onPrimary),
-                  label: Text(
-                    'Find my match',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+  Widget _buildOverlappingAvatar(int index, String imageUrl) {
+    return Positioned(
+      left: index * 24.0,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+        ),
+        child: CircleAvatar(
+          radius: 18,
+          backgroundImage: NetworkImage(imageUrl),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrustBadge(IconData icon, String label, ColorScheme colorScheme, TextTheme textTheme) {
+    return Column(
+      children: [
+        Icon(icon, color: colorScheme.primary.withOpacity(0.5), size: 20),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: textTheme.labelSmall?.copyWith(
+            color: colorScheme.primary.withOpacity(0.5),
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -18,16 +18,47 @@ class _InterestsScreenState extends State<InterestsScreen> {
   ];
   
   final Set<String> _selectedInterests = {};
+  bool _isLoading = false;
 
   void _toggleInterest(String interest) {
+    if (_isLoading) return;
     HapticFeedback.lightImpact();
     setState(() {
       if (_selectedInterests.contains(interest)) {
         _selectedInterests.remove(interest);
       } else {
-        _selectedInterests.add(interest);
+        if (_selectedInterests.length < 7) {
+          _selectedInterests.add(interest);
+        } else {
+          // Could show a snackbar here that max 7 is allowed
+          HapticFeedback.heavyImpact();
+        }
       }
     });
+  }
+
+  void _handleContinue() async {
+    if (_selectedInterests.isEmpty || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+    
+    await Future.delayed(const Duration(milliseconds: 600));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const PreferencesScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+    
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -41,9 +72,16 @@ class _InterestsScreenState extends State<InterestsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ),
       body: SafeArea(
@@ -66,7 +104,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "Pick a few things you'd love to talk about.",
+                      "Pick a few things you'd love to talk about. (Max 7)",
                       style: textTheme.bodyLarge?.copyWith(
                         color: colorScheme.primary.withOpacity(0.8),
                       ),
@@ -78,35 +116,40 @@ class _InterestsScreenState extends State<InterestsScreen> {
                       runSpacing: 16.0,
                       children: _allInterests.map((interest) {
                         final isSelected = _selectedInterests.contains(interest);
-                        return GestureDetector(
-                          onTap: () => _toggleInterest(interest),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  interest,
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.2,
+                        return Semantics(
+                          button: true,
+                          selected: isSelected,
+                          label: interest,
+                          child: GestureDetector(
+                            onTap: () => _toggleInterest(interest),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    interest,
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.2,
+                                    ),
                                   ),
-                                ),
-                                if (isSelected) ...[
-                                  const SizedBox(width: 6),
-                                  Icon(
-                                    Icons.check,
-                                    size: 14,
-                                    color: colorScheme.onPrimary,
-                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 6),
+                                    Icon(
+                                      Icons.check,
+                                      size: 14,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         );
@@ -119,7 +162,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
                       child: Text(
                         '${_selectedInterests.length} OF 7',
                         style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary.withOpacity(0.5),
+                          color: _selectedInterests.length == 7 ? colorScheme.primary : colorScheme.primary.withOpacity(0.5),
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,
                         ),
@@ -135,20 +178,13 @@ class _InterestsScreenState extends State<InterestsScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: AnimatedOpacity(
-                opacity: _selectedInterests.isNotEmpty ? 1.0 : 0.5,
+                opacity: _selectedInterests.isNotEmpty || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _selectedInterests.isNotEmpty ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PreferencesScreen(),
-                        ),
-                      );
-                    } : null,
+                    onPressed: (_selectedInterests.isNotEmpty && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -159,13 +195,22 @@ class _InterestsScreenState extends State<InterestsScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Text(
-                      'Continue',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Continue',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

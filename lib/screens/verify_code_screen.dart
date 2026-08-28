@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:poppylo/screens/create_profile_screen.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   final TextEditingController _codeController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _canProceed = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -23,18 +25,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         _canProceed = _codeController.text.length == 6;
       });
       // Auto-submit when 6 digits are entered
-      if (_codeController.text.length == 6) {
-        // Small delay so the user sees the last digit fill in before transitioning
-        Future.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CreateProfileScreen(),
-              ),
-            );
-          }
-        });
+      if (_codeController.text.length == 6 && !_isLoading) {
+        _handleVerify();
       }
     });
     // Auto focus the hidden text field
@@ -50,6 +42,31 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     super.dispose();
   }
 
+  void _handleVerify() async {
+    if (!_canProceed || _isLoading) return;
+    
+    setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
+
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const CreateProfileScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+    
+    setState(() => _isLoading = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,9 +78,16 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
-          onPressed: () => Navigator.of(context).pop(),
+        leading: Semantics(
+          label: 'Back',
+          button: true,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).pop();
+            },
+          ),
         ),
       ),
       body: SafeArea(
@@ -96,7 +120,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               
               // 6-digit Code Input
               GestureDetector(
-                onTap: () => _focusNode.requestFocus(),
+                onTap: () {
+                  if (!_isLoading) _focusNode.requestFocus();
+                },
                 child: AbsorbPointer(
                   child: Stack(
                     alignment: Alignment.center,
@@ -107,6 +133,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                         child: TextField(
                           controller: _codeController,
                           focusNode: _focusNode,
+                          enabled: !_isLoading,
                           keyboardType: TextInputType.number,
                           maxLength: 6,
                           autofocus: true,
@@ -119,7 +146,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                         children: List.generate(6, (index) {
                           final text = _codeController.text;
                           final char = index < text.length ? text[index] : '';
-                          return Container(
+                          final isActive = text.length == index;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             width: 44,
                             height: 56,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -127,7 +156,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               color: colorScheme.primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: text.length == index 
+                                color: isActive && !_isLoading 
                                     ? colorScheme.primary 
                                     : Colors.transparent,
                                 width: 2,
@@ -152,14 +181,20 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               const SizedBox(height: 32),
               
               Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Resend Code',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.primary,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold,
+                child: Semantics(
+                  button: true,
+                  label: 'Resend code',
+                  child: TextButton(
+                    onPressed: _isLoading ? null : () {
+                      HapticFeedback.lightImpact();
+                    },
+                    child: Text(
+                      'Resend Code',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -169,20 +204,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               
               // Verify Button
               AnimatedOpacity(
-                opacity: _canProceed ? 1.0 : 0.5,
+                opacity: _canProceed || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _canProceed ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateProfileScreen(),
-                        ),
-                      );
-                    } : null,
+                    onPressed: (_canProceed && !_isLoading) ? _handleVerify : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -193,13 +221,22 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
                       disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: Text(
-                      'Verify',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading 
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
+                          )
+                        : Text(
+                            'Verify',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),
