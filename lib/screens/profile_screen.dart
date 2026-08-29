@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
-import 'package:poppylo/screens/edit_profile_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -18,7 +18,8 @@ class ProfileScreen extends StatelessWidget {
         preferredSize: const Size.fromHeight(64),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
                 IconButton(
@@ -39,7 +40,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const CircleAvatar(
                   radius: 16,
-                  backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
+                  backgroundImage: NetworkImage(
+                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
                 ),
               ],
             ),
@@ -60,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Name and Details
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -93,7 +95,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Bio
           Text(
             'Obsessed with typography, specialty light roasts, and building tools that connect people. Always down to chat about design systems or your latest side project over a pour-over.',
@@ -103,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Interests
           Wrap(
             spacing: 8,
@@ -116,37 +118,42 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 32),
-          
+
           // Stats Row
           Row(
             children: [
-              Expanded(child: _buildStatCard('12', 'COFFEE MEETS', colorScheme, textTheme)),
+              Expanded(
+                  child: _buildStatCard(
+                      '12', 'COFFEE MEETS', colorScheme, textTheme)),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('5', 'CONNECTIONS', colorScheme, textTheme)),
+              Expanded(
+                  child: _buildStatCard(
+                      '5', 'CONNECTIONS', colorScheme, textTheme)),
             ],
           ),
           const SizedBox(height: 32),
-          
+
           // Settings Menu
-          _buildMenuRow(context, Icons.edit_outlined, 'Edit profile', onTap: () {
+          _buildMenuRow(context, Icons.edit_outlined, 'Edit profile',
+              onTap: () {
             HapticFeedback.lightImpact();
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const EditProfileScreen()), // Modal route
-            );
+            context.push(AppRoutes.editProfilePath);
           }),
-          _buildMenuRow(context, Icons.tune, 'Preferences'),
+          _buildMenuRow(context, Icons.tune, 'Preferences', onTap: () {
+            HapticFeedback.lightImpact();
+            context.push(AppRoutes.editPreferencesPath);
+          }),
           _buildMenuRow(context, Icons.shield_outlined, 'Safety'),
           _buildMenuRow(context, Icons.notifications_none, 'Notifications'),
           _buildMenuRow(context, Icons.help_outline, 'Help'),
           const SizedBox(height: 24), // padding for bottom nav
         ],
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3), // Profile tab is index 3
     );
   }
 
-  Widget _buildTag(String label, bool isSelected, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildTag(String label, bool isSelected, ColorScheme colorScheme,
+      TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -156,7 +163,8 @@ class ProfileScreen extends StatelessWidget {
       child: Text(
         label,
         style: textTheme.labelSmall?.copyWith(
-          color: isSelected ? Colors.white : colorScheme.primary.withOpacity(0.7),
+          color:
+              isSelected ? Colors.white : colorScheme.primary.withOpacity(0.7),
           fontWeight: FontWeight.bold,
           letterSpacing: 1.0,
         ),
@@ -164,7 +172,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String number, String label, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildStatCard(String number, String label, ColorScheme colorScheme,
+      TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
@@ -201,12 +210,16 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuRow(BuildContext context, IconData icon, String label, {VoidCallback? onTap}) {
+  Widget _buildMenuRow(BuildContext context, IconData icon, String label,
+      {VoidCallback? onTap}) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return InkWell(
-      onTap: onTap ?? () { HapticFeedback.selectionClick(); },
+      onTap: onTap ??
+          () {
+            HapticFeedback.selectionClick();
+          },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Row(
@@ -222,7 +235,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.chevron_right, color: colorScheme.primary.withOpacity(0.3), size: 24),
+            Icon(Icons.chevron_right,
+                color: colorScheme.primary.withOpacity(0.3), size: 24),
           ],
         ),
       ),

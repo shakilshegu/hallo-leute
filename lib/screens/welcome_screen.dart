@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/get_started_screen.dart';
-import 'package:poppylo/screens/login_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -67,12 +67,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 if (details.primaryVelocity! < 0) {
                   // Swipe Left
                   setState(() {
-                    _currentPage = (_currentPage + 1) % _backgroundImages.length;
+                    _currentPage =
+                        (_currentPage + 1) % _backgroundImages.length;
                   });
                 } else if (details.primaryVelocity! > 0) {
                   // Swipe Right
                   setState(() {
-                    _currentPage = (_currentPage - 1 + _backgroundImages.length) % _backgroundImages.length;
+                    _currentPage =
+                        (_currentPage - 1 + _backgroundImages.length) %
+                            _backgroundImages.length;
                   });
                 }
               },
@@ -87,7 +90,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
-                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  frameBuilder:
+                      (context, child, frame, wasSynchronouslyLoaded) {
                     if (wasSynchronouslyLoaded) return child;
                     return AnimatedOpacity(
                       opacity: frame == null ? 0 : 1,
@@ -112,7 +116,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
             ),
           ),
-          
+
           // Gradient Overlay
           Positioned.fill(
             child: DecoratedBox(
@@ -149,14 +153,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           (index) => Padding(
                             padding: const EdgeInsets.only(right: 4.0),
                             child: _buildDot(
-                              colorScheme.primary, 
+                              colorScheme.primary,
                               isActive: _currentPage == index,
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Title
                       Text(
                         'Meet someone new over coffee',
@@ -167,7 +171,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Subtitle
                       Text(
                         'Real conversations. New connections.\nOne coffee at a time.',
@@ -176,7 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      
+
                       // Get Started Button
                       Semantics(
                         button: true,
@@ -187,19 +191,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) => const GetStartedScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    );
-                                  },
-                                  transitionDuration: const Duration(milliseconds: 300),
-                                ),
-                              );
+                              context.push(AppRoutes.login);
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
@@ -220,7 +212,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Log In Button
                       Semantics(
                         button: true,
@@ -231,19 +223,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           child: TextButton(
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    );
-                                  },
-                                  transitionDuration: const Duration(milliseconds: 300),
-                                ),
-                              );
+                              context.push(AppRoutes.emailLoginPath);
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: colorScheme.primary,

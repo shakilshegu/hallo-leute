@@ -1,31 +1,40 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/meeting_confirmed_screen.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
-class CafeSuggestedScreen extends StatefulWidget {
-  const CafeSuggestedScreen({super.key});
+import 'package:poppylo/state/match_controller.dart';
+import 'package:poppylo/state/meeting_controller.dart';
+
+class CafeSuggestedScreen extends ConsumerStatefulWidget {
+  final String matchId;
+  const CafeSuggestedScreen({super.key, required this.matchId});
 
   @override
-  State<CafeSuggestedScreen> createState() => _CafeSuggestedScreenState();
+  ConsumerState<CafeSuggestedScreen> createState() =>
+      _CafeSuggestedScreenState();
 }
 
-class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
+class _CafeSuggestedScreenState extends ConsumerState<CafeSuggestedScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate Sarah accepting the match after 3 seconds
+    // Simulate Sarah accepting the café suggestion after 3 seconds.
     Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        HapticFeedback.heavyImpact();
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            transitionDuration: Duration.zero,
-            pageBuilder: (context, animation, secondaryAnimation) => const MeetingConfirmedScreen(),
-          ),
-        );
-      }
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      final match = ref.read(matchProvider(widget.matchId));
+      final meetingId = 'meeting-${widget.matchId}';
+      ref.read(meetingRepositoryProvider.notifier).confirm(
+            meetingId,
+            widget.matchId,
+            cafeName: match.cafeName ?? 'Brew Lab',
+            partnerName: match.partnerName,
+            startTime: DateTime.now().add(const Duration(hours: 2)),
+          );
+      context.pushReplacement(AppRoutes.meetingConfirmedPath(meetingId));
     });
   }
 
@@ -36,7 +45,8 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1E201F), // Dark charcoal background from mockup (or it's an overlay? The mockup looks like it's a modal over a dark background)
+      backgroundColor: const Color(
+          0xFF1E201F), // Dark charcoal background from mockup (or it's an overlay? The mockup looks like it's a modal over a dark background)
       body: SafeArea(
         child: Center(
           child: Container(
@@ -63,7 +73,7 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Title
                 Text(
                   'Café suggestion sent',
@@ -74,10 +84,11 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Waiting Tag
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEBE6D8), // Beige
                     borderRadius: BorderRadius.circular(20),
@@ -106,7 +117,7 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Cafe Summary Card
                 Container(
                   decoration: BoxDecoration(
@@ -142,7 +153,8 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                             Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(20),
@@ -209,7 +221,8 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                                     color: Color(0xFFE2E8DF),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(Icons.calendar_today, size: 14, color: colorScheme.primary),
+                                  child: Icon(Icons.calendar_today,
+                                      size: 14, color: colorScheme.primary),
                                 ),
                                 const SizedBox(width: 12),
                                 Column(
@@ -225,7 +238,8 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                                     Text(
                                       'Confirmed on your end',
                                       style: textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.primary.withOpacity(0.6),
+                                        color: colorScheme.primary
+                                            .withOpacity(0.6),
                                       ),
                                     ),
                                   ],
@@ -239,12 +253,12 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
                   ),
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Change link
                 InkWell(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    Navigator.of(context).pop(); // Go back to cafe selection
+                    context.pop(); // Go back to cafe selection
                   },
                   child: Text(
                     'Change café or time',
@@ -259,7 +273,6 @@ class _CafeSuggestedScreenState extends State<CafeSuggestedScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 }

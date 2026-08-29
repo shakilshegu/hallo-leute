@@ -37,7 +37,8 @@ class AppTheme {
         labelMedium: GoogleFonts.spaceMono(),
         labelSmall: GoogleFonts.spaceMono(),
       ),
-      scaffoldBackgroundColor: const Color(0xFFF8F9F8), // A slightly off-white for background
+      scaffoldBackgroundColor:
+          const Color(0xFFF8F9F8), // A slightly off-white for background
       appBarTheme: const AppBarTheme(
         backgroundColor: primary,
         foregroundColor: Colors.white,
@@ -50,6 +51,12 @@ class AppTheme {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+        },
       ),
     );
   }

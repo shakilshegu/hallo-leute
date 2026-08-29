@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
-import 'package:poppylo/screens/chat_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class MeetingConfirmedScreen extends StatelessWidget {
-  const MeetingConfirmedScreen({super.key});
+  final String meetingId;
+  const MeetingConfirmedScreen({super.key, required this.meetingId});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +18,8 @@ class MeetingConfirmedScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -39,7 +41,7 @@ class MeetingConfirmedScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Main Ticket Card
                 Container(
                   decoration: BoxDecoration(
@@ -92,16 +94,18 @@ class MeetingConfirmedScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: colorScheme.primary, width: 2),
+                                  border: Border.all(
+                                      color: colorScheme.primary, width: 2),
                                 ),
-                                child: Icon(Icons.check, color: colorScheme.primary, size: 24),
+                                child: Icon(Icons.check,
+                                    color: colorScheme.primary, size: 24),
                               ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // Details section
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -118,7 +122,8 @@ class MeetingConfirmedScreen extends StatelessWidget {
                             const SizedBox(height: 24),
                             _buildDetailRow(context, 'PARTNER', 'SARAH, 27'),
                             const SizedBox(height: 16),
-                            _buildDetailRow(context, 'TIME', 'SATURDAY 5:00 PM – 5:45 PM'),
+                            _buildDetailRow(
+                                context, 'TIME', 'SATURDAY 5:00 PM – 5:45 PM'),
                             const SizedBox(height: 16),
                             _buildDetailRow(context, 'LOCATION', 'BREW LAB'),
                             const SizedBox(height: 16),
@@ -127,7 +132,7 @@ class MeetingConfirmedScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      
+
                       // Dashed Divider
                       Row(
                         children: [
@@ -144,7 +149,8 @@ class MeetingConfirmedScreen extends StatelessWidget {
                           ),
                           Expanded(
                             child: CustomPaint(
-                              painter: DashedLinePainter(color: colorScheme.primary.withOpacity(0.2)),
+                              painter: DashedLinePainter(
+                                  color: colorScheme.primary.withOpacity(0.2)),
                             ),
                           ),
                           Container(
@@ -160,7 +166,7 @@ class MeetingConfirmedScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      
+
                       // Map & Directions
                       Padding(
                         padding: const EdgeInsets.all(24.0),
@@ -186,7 +192,8 @@ class MeetingConfirmedScreen extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2B4739),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -200,19 +207,12 @@ class MeetingConfirmedScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Bottom Actions
                 ElevatedButton(
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const ChatScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
+                    context.push(AppRoutes.chatPath(meetingId));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B3B2B),
@@ -222,7 +222,8 @@ class MeetingConfirmedScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: const Text('Message Sarah', style: TextStyle(color: Colors.white)),
+                  child: const Text('Message Sarah',
+                      style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
@@ -233,14 +234,15 @@ class MeetingConfirmedScreen extends StatelessWidget {
                   child: const Text('View meeting'),
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Safety Tip
                 Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.shield_outlined, color: Colors.white54, size: 16),
+                        const Icon(Icons.shield_outlined,
+                            color: Colors.white54, size: 16),
                         const SizedBox(width: 6),
                         Text(
                           'SAFETY TIP',
@@ -268,14 +270,13 @@ class MeetingConfirmedScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 
   Widget _buildDetailRow(BuildContext context, String label, String value) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -316,7 +317,8 @@ class DashedLinePainter extends CustomPainter {
     double startX = 0;
 
     while (startX < max) {
-      canvas.drawLine(Offset(startX, size.height / 2), Offset(startX + dashWidth, size.height / 2), paint);
+      canvas.drawLine(Offset(startX, size.height / 2),
+          Offset(startX + dashWidth, size.height / 2), paint);
       startX += dashWidth + dashSpace;
     }
   }

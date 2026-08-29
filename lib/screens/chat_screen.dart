@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/widgets/safety_center_sheet.dart';
+
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+  final String meetingId;
+  const ChatScreen({super.key, required this.meetingId});
 
-  void _showSafetyCenter(BuildContext context) {
+  void _openSafetyCenter(BuildContext context) {
     HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const SafetyCenterSheet(),
-    );
+    context.push(AppRoutes.safetyPath(meetingId));
   }
 
   @override
@@ -27,7 +25,8 @@ class ChatScreen extends StatelessWidget {
         preferredSize: const Size.fromHeight(64),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
                 IconButton(
@@ -35,7 +34,7 @@ class ChatScreen extends StatelessWidget {
                   color: colorScheme.primary,
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    Navigator.pop(context);
+                    context.pop();
                   },
                 ),
                 Expanded(
@@ -52,7 +51,7 @@ class ChatScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.shield_outlined),
                   color: colorScheme.primary,
-                  onPressed: () => _showSafetyCenter(context),
+                  onPressed: () => _openSafetyCenter(context),
                 ),
               ],
             ),
@@ -99,26 +98,32 @@ class ChatScreen extends StatelessWidget {
               children: [
                 _buildIncomingMessage(
                   context: context,
-                  text: 'Hi! So excited for Saturday. Do you have a favorite spot in mind, or should we just meet near the park?',
-                  imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
+                  text:
+                      'Hi! So excited for Saturday. Do you have a favorite spot in mind, or should we just meet near the park?',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
                 ),
                 const SizedBox(height: 24),
                 _buildOutgoingMessage(
                   context: context,
-                  text: "Hey Sarah! I was thinking that new place, 'Origin Roasters' on 5th. It's usually pretty quiet around 5.",
+                  text:
+                      "Hey Sarah! I was thinking that new place, 'Origin Roasters' on 5th. It's usually pretty quiet around 5.",
                 ),
                 const SizedBox(height: 24),
                 _buildIncomingMessage(
                   context: context,
-                  text: "Oh perfect! I've been wanting to try their pour-over. See you there! ☕️",
-                  imageUrl: null, // Don't repeat avatar for consecutive messages if preferred, but mockup has it isolated anyway
+                  text:
+                      "Oh perfect! I've been wanting to try their pour-over. See you there! ☕️",
+                  imageUrl:
+                      null, // Don't repeat avatar for consecutive messages if preferred, but mockup has it isolated anyway
                 ),
                 const SizedBox(height: 16),
                 // Typing indicator
                 Align(
                   alignment: Alignment.centerRight,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE6EBE6).withOpacity(0.5),
                       borderRadius: BorderRadius.circular(16),
@@ -148,14 +153,16 @@ class ChatScreen extends StatelessWidget {
             child: SafeArea(
               top: false,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF8F9F8),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.lightbulb_outline, color: colorScheme.primary.withOpacity(0.5)),
+                    Icon(Icons.lightbulb_outline,
+                        color: colorScheme.primary.withOpacity(0.5)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
@@ -166,7 +173,8 @@ class ChatScreen extends StatelessWidget {
                           ),
                           border: InputBorder.none,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
                         style: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.primary,
@@ -181,7 +189,8 @@ class ChatScreen extends StatelessWidget {
                         color: colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.arrow_upward, color: colorScheme.onPrimary, size: 20),
+                      child: Icon(Icons.arrow_upward,
+                          color: colorScheme.onPrimary, size: 20),
                     ),
                   ],
                 ),

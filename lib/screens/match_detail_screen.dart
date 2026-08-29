@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/waiting_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class MatchDetailScreen extends StatelessWidget {
-  const MatchDetailScreen({super.key});
+  final String matchId;
+  const MatchDetailScreen({super.key, required this.matchId});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class MatchDetailScreen extends StatelessWidget {
           icon: Icon(Icons.arrow_back, color: colorScheme.primary),
           onPressed: () {
             HapticFeedback.lightImpact();
-            Navigator.pop(context);
+            context.pop();
           },
         ),
         title: Text(
@@ -49,7 +51,7 @@ class MatchDetailScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              
+
               // Main Profile Card
               Container(
                 decoration: BoxDecoration(
@@ -75,7 +77,8 @@ class MatchDetailScreen extends StatelessWidget {
                           left: 0,
                           right: 0,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
                             color: const Color(0xFFEBEBEB),
                             child: Text(
                               '32 YRS · DESIGNER · 2 MILES AWAY',
@@ -90,7 +93,7 @@ class MatchDetailScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
+
                     Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
@@ -112,7 +115,6 @@ class MatchDetailScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
                           Text(
                             'INTERESTS',
                             style: textTheme.labelSmall?.copyWith(
@@ -125,11 +127,17 @@ class MatchDetailScreen extends StatelessWidget {
                           Wrap(
                             spacing: 8.0,
                             runSpacing: 8.0,
-                            children: ['Typography', 'Film Photography', 'Architecture'].map((interest) {
+                            children: [
+                              'Typography',
+                              'Film Photography',
+                              'Architecture'
+                            ].map((interest) {
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDDE5DE), // Light green tint
+                                  color: const Color(
+                                      0xFFDDE5DE), // Light green tint
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
@@ -143,7 +151,6 @@ class MatchDetailScreen extends StatelessWidget {
                             }).toList(),
                           ),
                           const SizedBox(height: 24),
-                          
                           Text(
                             'PURPOSE',
                             style: textTheme.labelSmall?.copyWith(
@@ -166,7 +173,7 @@ class MatchDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Why you matched Card
               Container(
                 padding: const EdgeInsets.all(24),
@@ -193,7 +200,7 @@ class MatchDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Proposed Time Ticket
               Container(
                 decoration: BoxDecoration(
@@ -225,7 +232,7 @@ class MatchDetailScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     // Dashed line divider
                     Row(
                       children: [
@@ -245,7 +252,8 @@ class MatchDetailScreen extends StatelessWidget {
                             builder: (context, constraints) {
                               return Flex(
                                 direction: Axis.horizontal,
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 mainAxisSize: MainAxisSize.max,
                                 children: List.generate(
                                   (constraints.constrainWidth() / 8).floor(),
@@ -253,7 +261,9 @@ class MatchDetailScreen extends StatelessWidget {
                                     width: 4,
                                     height: 1,
                                     child: DecoratedBox(
-                                      decoration: BoxDecoration(color: colorScheme.primary.withOpacity(0.2)),
+                                      decoration: BoxDecoration(
+                                          color: colorScheme.primary
+                                              .withOpacity(0.2)),
                                     ),
                                   ),
                                 ),
@@ -274,7 +284,7 @@ class MatchDetailScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    
+
                     Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
@@ -301,7 +311,7 @@ class MatchDetailScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Action Buttons
               Row(
                 children: [
@@ -309,11 +319,12 @@ class MatchDetailScreen extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        Navigator.pop(context);
+                        context.pop();
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: colorScheme.primary.withOpacity(0.3)),
+                        side: BorderSide(
+                            color: colorScheme.primary.withOpacity(0.3)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
@@ -332,16 +343,8 @@ class MatchDetailScreen extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         HapticFeedback.mediumImpact();
-                        Navigator.pushReplacement(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) => const MatchStatusScreen(),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return FadeTransition(opacity: animation, child: child);
-                            },
-                            transitionDuration: const Duration(milliseconds: 300),
-                          ),
-                        );
+                        context.pushReplacement(
+                            AppRoutes.matchWaitingPath(matchId));
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -364,7 +367,7 @@ class MatchDetailScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               Text(
                 "You'll both need to accept before you can\nmessage.",
                 textAlign: TextAlign.center,
@@ -387,13 +390,14 @@ class MatchDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         children: [
-          Icon(Icons.check_circle_outline, color: Theme.of(context).colorScheme.primary, size: 20),
+          Icon(Icons.check_circle_outline,
+              color: Theme.of(context).colorScheme.primary, size: 20),
           const SizedBox(width: 12),
           Text(
             text,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
         ],
       ),

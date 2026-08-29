@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:poppylo/router/routes.dart';
 
 class MeetingsScreen extends StatefulWidget {
   const MeetingsScreen({super.key});
@@ -196,6 +198,8 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                                             ElevatedButton(
                                               onPressed: () {
                                                 HapticFeedback.lightImpact();
+                                                context.push(AppRoutes
+                                                    .meetingPath('demo-meeting'));
                                               },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: const Color(0xFF1B3B2B), // Dark green
@@ -274,7 +278,6 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2), // Meetings tab is index 2
     );
   }
 

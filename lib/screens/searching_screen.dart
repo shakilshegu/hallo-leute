@@ -2,7 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/match_found_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:poppylo/state/search_controller.dart';
 
 enum SearchState {
   initial,
@@ -10,14 +14,14 @@ enum SearchState {
   matchesFound,
 }
 
-class SearchingScreen extends StatefulWidget {
+class SearchingScreen extends ConsumerStatefulWidget {
   const SearchingScreen({super.key});
 
   @override
-  State<SearchingScreen> createState() => _SearchingScreenState();
+  ConsumerState<SearchingScreen> createState() => _SearchingScreenState();
 }
 
-class _SearchingScreenState extends State<SearchingScreen>
+class _SearchingScreenState extends ConsumerState<SearchingScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _rotationController;
@@ -67,10 +71,11 @@ class _SearchingScreenState extends State<SearchingScreen>
             angle: math.Random().nextDouble() * 2 * math.pi,
             distance: 0.3 + math.Random().nextDouble() * 0.5,
             createdAt: DateTime.now(),
-            imageUrl: 'https://i.pravatar.cc/100?img=${math.Random().nextInt(70)}',
+            imageUrl:
+                'https://i.pravatar.cc/100?img=${math.Random().nextInt(70)}',
           ));
-          _blips.removeWhere(
-              (blip) => DateTime.now().difference(blip.createdAt).inSeconds > 3);
+          _blips.removeWhere((blip) =>
+              DateTime.now().difference(blip.createdAt).inSeconds > 3);
         });
       }
     });
@@ -96,7 +101,7 @@ class _SearchingScreenState extends State<SearchingScreen>
         _currentState = SearchState.initial;
         // Reset timer for expanded search? Let's keep it running to show total time
       });
-      
+
       // 2. Simulate finding a match shortly after expanding
       _stateTimer?.cancel();
       _stateTimer = Timer(const Duration(seconds: 5), () {
@@ -104,23 +109,13 @@ class _SearchingScreenState extends State<SearchingScreen>
           setState(() {
             _currentState = SearchState.matchesFound;
           });
-          
+
           // 3. Auto-transition to Match Found details after showing Matches Found state for a few seconds
           _stateTimer = Timer(const Duration(seconds: 4), () {
             if (mounted) {
               HapticFeedback.heavyImpact();
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const MatchFoundScreen(),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                  transitionDuration: const Duration(milliseconds: 600),
-                ),
-              );
+              // Searching can't be popped back into from Match found.
+              context.go(AppRoutes.matchPath('test_match'));
             }
           });
         }
@@ -137,7 +132,7 @@ class _SearchingScreenState extends State<SearchingScreen>
     _clockTimer?.cancel();
     super.dispose();
   }
-  
+
   String get _timeFormatted {
     int minutes = _secondsElapsed ~/ 60;
     int seconds = _secondsElapsed % 60;
@@ -149,25 +144,33 @@ class _SearchingScreenState extends State<SearchingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1F3C2C), // Dark green background matching design
+      backgroundColor:
+          const Color(0xFF1F3C2C), // Dark green background matching design
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'SEARCHING · $_timeFormatted',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 12,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Builder(builder: (context) {
+                    final request = ref.watch(searchControllerProvider);
+                    final suffix = request == null
+                        ? ''
+                        : ' · ${request.timeLabel.toUpperCase()} · ${request.radiusKm.round()} KM';
+                    return Text(
+                      'SEARCHING · $_timeFormatted$suffix',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }),
                   if (_currentState == SearchState.initial)
                     Icon(
                       Icons.radar,
@@ -177,7 +180,7 @@ class _SearchingScreenState extends State<SearchingScreen>
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -198,9 +201,9 @@ class _SearchingScreenState extends State<SearchingScreen>
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Main Content based on state
                     if (_currentState == SearchState.initial)
                       _buildInitialContent()
@@ -208,7 +211,7 @@ class _SearchingScreenState extends State<SearchingScreen>
                       _buildStillLookingContent()
                     else if (_currentState == SearchState.matchesFound)
                       _buildMatchesFoundContent(),
-                      
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -219,7 +222,7 @@ class _SearchingScreenState extends State<SearchingScreen>
       ),
     );
   }
-  
+
   Widget _buildGlowingCoffeeCup() {
     return AnimatedBuilder(
       animation: _pulseController,
@@ -266,7 +269,7 @@ class _SearchingScreenState extends State<SearchingScreen>
       },
     );
   }
-  
+
   Widget _buildRadarGraphics() {
     return Stack(
       alignment: Alignment.center,
@@ -291,7 +294,8 @@ class _SearchingScreenState extends State<SearchingScreen>
                     height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFFC107), width: 2),
+                      border:
+                          Border.all(color: const Color(0xFFFFC107), width: 2),
                       image: DecorationImage(
                         image: NetworkImage(blip.imageUrl),
                         fit: BoxFit.cover,
@@ -389,7 +393,7 @@ class _SearchingScreenState extends State<SearchingScreen>
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // Checklist Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -460,7 +464,6 @@ class _SearchingScreenState extends State<SearchingScreen>
             ),
           ),
           const SizedBox(height: 32),
-          
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -472,14 +475,16 @@ class _SearchingScreenState extends State<SearchingScreen>
               children: [
                 _buildChecklistItem("Time: 5:00 PM", true, isSmall: true),
                 const SizedBox(height: 12),
-                _buildChecklistItem("Distance: Within 5 km", true, isSmall: true),
+                _buildChecklistItem("Distance: Within 5 km", true,
+                    isSmall: true),
                 const SizedBox(height: 12),
                 _buildChecklistItem("Vibe: Casual chat", true, isSmall: true),
                 const SizedBox(height: 20),
                 LinearProgressIndicator(
                   value: 0.7,
                   backgroundColor: Colors.white.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.9)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.white.withOpacity(0.9)),
                   minHeight: 4,
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -487,7 +492,6 @@ class _SearchingScreenState extends State<SearchingScreen>
             ),
           ),
           const SizedBox(height: 24),
-          
           ElevatedButton(
             onPressed: _expandSearch,
             style: ElevatedButton.styleFrom(
@@ -512,7 +516,7 @@ class _SearchingScreenState extends State<SearchingScreen>
           const SizedBox(height: 16),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
             },
             child: Text(
               'Cancel',
@@ -548,13 +552,13 @@ class _SearchingScreenState extends State<SearchingScreen>
             child: LinearProgressIndicator(
               value: 0.3,
               backgroundColor: Colors.white.withOpacity(0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFFC8E6C9)),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(const Color(0xFFC8E6C9)),
               minHeight: 4,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 32),
-          
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -564,25 +568,29 @@ class _SearchingScreenState extends State<SearchingScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildIconChecklistItem(Icons.access_time, "Ready in 10 mins", true),
+                _buildIconChecklistItem(
+                    Icons.access_time, "Ready in 10 mins", true),
                 _buildDivider(),
-                _buildIconChecklistItem(Icons.location_on_outlined, "Within 500m", true),
+                _buildIconChecklistItem(
+                    Icons.location_on_outlined, "Within 500m", true),
                 _buildDivider(),
-                _buildIconChecklistItem(Icons.psychology_outlined, "Deep Work focus", true),
+                _buildIconChecklistItem(
+                    Icons.psychology_outlined, "Deep Work focus", true),
                 _buildDivider(),
-                _buildIconChecklistItem(Icons.chat_bubble_outline, "Quiet conversation", true),
+                _buildIconChecklistItem(
+                    Icons.chat_bubble_outline, "Quiet conversation", true),
               ],
             ),
           ),
           const SizedBox(height: 32),
-          
           _buildOutlinedButton('Cancel Search', width: 200),
         ],
       ),
     );
   }
 
-  Widget _buildChecklistItem(String title, bool isChecked, {bool isSmall = false}) {
+  Widget _buildChecklistItem(String title, bool isChecked,
+      {bool isSmall = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -596,7 +604,9 @@ class _SearchingScreenState extends State<SearchingScreen>
         ),
         Icon(
           isChecked ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isChecked ? const Color(0xFFFFC107) : Colors.white.withOpacity(0.2), // Yellow check
+          color: isChecked
+              ? const Color(0xFFFFC107)
+              : Colors.white.withOpacity(0.2), // Yellow check
           size: 20,
         ),
       ],
@@ -646,7 +656,7 @@ class _SearchingScreenState extends State<SearchingScreen>
       height: 56,
       child: OutlinedButton(
         onPressed: () {
-          Navigator.of(context).pop();
+          context.pop();
         },
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),

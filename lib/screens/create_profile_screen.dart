@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/interests_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class CreateProfileScreen extends StatefulWidget {
+import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
 
   @override
-  State<CreateProfileScreen> createState() => _CreateProfileScreenState();
+  ConsumerState<CreateProfileScreen> createState() =>
+      _CreateProfileScreenState();
 }
 
-class _CreateProfileScreenState extends State<CreateProfileScreen> {
+class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _jobController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
-  
+
   final FocusNode _firstNameFocus = FocusNode();
   final FocusNode _ageFocus = FocusNode();
   final FocusNode _jobFocus = FocusNode();
   final FocusNode _bioFocus = FocusNode();
-  
+
   bool _canProceed = false;
   bool _isLoading = false;
 
@@ -45,37 +51,31 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
     _ageController.dispose();
     _jobController.dispose();
     _bioController.dispose();
-    
+
     _firstNameFocus.dispose();
     _ageFocus.dispose();
     _jobFocus.dispose();
     _bioFocus.dispose();
-    
+
     super.dispose();
   }
 
   void _handleContinue() async {
     if (!_canProceed || _isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
+
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const InterestsScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-    
+    ref
+        .read(authControllerProvider.notifier)
+        .completeOnboardingStep(OnboardingStep.interests);
+    context.push(AppRoutes.onboardInterests);
+
     setState(() => _isLoading = false);
   }
 
@@ -97,7 +97,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -121,7 +121,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    
+
                     Text(
                       'Tell us a little about you',
                       style: textTheme.headlineMedium?.copyWith(
@@ -130,7 +130,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     Text(
                       'PROFILE SETUP · PUBLIC DETAILS',
                       style: textTheme.labelSmall?.copyWith(
@@ -140,7 +140,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Avatar Picker
                     Center(
                       child: Semantics(
@@ -168,7 +168,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     _buildInputField(
                       context,
                       label: 'FIRST NAME',
@@ -179,7 +179,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.givenName],
                     ),
-                    
+
                     _buildInputField(
                       context,
                       label: 'AGE',
@@ -189,7 +189,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       nextFocusNode: _jobFocus,
                       keyboardType: TextInputType.number,
                     ),
-                    
+
                     _buildInputField(
                       context,
                       label: 'WHAT YOU DO',
@@ -199,7 +199,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                       nextFocusNode: _bioFocus,
                       textCapitalization: TextCapitalization.words,
                     ),
-                    
+
                     _buildInputField(
                       context,
                       label: 'SHORT BIO',
@@ -216,7 +216,7 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 ),
               ),
             ),
-            
+
             // Continue Button
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -227,7 +227,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_canProceed && !_isLoading) ? _handleContinue : null,
+                    onPressed:
+                        (_canProceed && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -235,10 +236,12 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,
@@ -313,7 +316,10 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
               focusNode: focusNode,
               enabled: !_isLoading,
               keyboardType: keyboardType,
-              textInputAction: textInputAction ?? (nextFocusNode != null ? TextInputAction.next : TextInputAction.done),
+              textInputAction: textInputAction ??
+                  (nextFocusNode != null
+                      ? TextInputAction.next
+                      : TextInputAction.done),
               textCapitalization: textCapitalization,
               autofillHints: autofillHints,
               maxLines: maxLines,
@@ -340,7 +346,8 @@ class _CreateProfileScreenState extends State<CreateProfileScreen> {
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
-                counterText: '', // Hide default counter, we can build custom if needed, but for now simple
+                counterText:
+                    '', // Hide default counter, we can build custom if needed, but for now simple
               ),
               onChanged: (text) {
                 if (showCounter) setState(() {});

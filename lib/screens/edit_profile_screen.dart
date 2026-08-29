@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -9,10 +10,14 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final TextEditingController _nameController = TextEditingController(text: 'Jane Doe');
-  final TextEditingController _whatYouDoController = TextEditingController(text: 'Independent Designer');
-  final TextEditingController _bioController = TextEditingController(text: 'Crafting digital experiences by day, brewing specialty coffee by night. Always looking for meaningful conversations over a good pour-over.');
-  
+  final TextEditingController _nameController =
+      TextEditingController(text: 'Jane Doe');
+  final TextEditingController _whatYouDoController =
+      TextEditingController(text: 'Independent Designer');
+  final TextEditingController _bioController = TextEditingController(
+      text:
+          'Crafting digital experiences by day, brewing specialty coffee by night. Always looking for meaningful conversations over a good pour-over.');
+
   final List<String> _interests = ['Espresso', 'Design Systems', 'Quiet Cafes'];
   String _primaryPurpose = 'Networking'; // or 'Social'
 
@@ -37,7 +42,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -46,7 +52,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: colorScheme.primary,
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      Navigator.pop(context);
+                      context.pop();
                     },
                   ),
                   Text(
@@ -60,20 +66,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ],
               ),
             ),
-            
+
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 children: [
                   const SizedBox(height: 24),
-                  
+
                   // Avatar Section
                   Center(
                     child: Column(
                       children: [
                         const CircleAvatar(
                           radius: 40,
-                          backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'), // User avatar mock
+                          backgroundImage: NetworkImage(
+                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'), // User avatar mock
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -88,19 +95,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Name Field
                   _buildLabel('NAME', textTheme, colorScheme),
                   const SizedBox(height: 8),
                   _buildTextField(_nameController, colorScheme, textTheme),
                   const SizedBox(height: 24),
-                  
+
                   // What You Do Field
                   _buildLabel('WHAT YOU DO', textTheme, colorScheme),
                   const SizedBox(height: 8),
                   _buildTextField(_whatYouDoController, colorScheme, textTheme),
                   const SizedBox(height: 24),
-                  
+
                   // Bio Field
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,9 +123,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  _buildTextField(_bioController, colorScheme, textTheme, maxLines: 4),
+                  _buildTextField(_bioController, colorScheme, textTheme,
+                      maxLines: 4),
                   const SizedBox(height: 24),
-                  
+
                   // Interests
                   _buildLabel('INTERESTS', textTheme, colorScheme),
                   const SizedBox(height: 12),
@@ -126,12 +134,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      ..._interests.map((interest) => _buildInterestPill(interest, colorScheme, textTheme)),
+                      ..._interests.map((interest) =>
+                          _buildInterestPill(interest, colorScheme, textTheme)),
                       _buildAddInterestPill(colorScheme, textTheme),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Primary Purpose
                   _buildLabel('PRIMARY PURPOSE', textTheme, colorScheme),
                   const SizedBox(height: 12),
@@ -170,7 +179,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ],
               ),
             ),
-            
+
             // Save Changes Button
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -180,7 +189,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     HapticFeedback.mediumImpact();
-                    Navigator.pop(context); // Save and go back
+                    context.pop(); // Save and go back
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B3B2B), // Dark green
@@ -206,7 +215,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildLabel(String text, TextTheme textTheme, ColorScheme colorScheme) {
+  Widget _buildLabel(
+      String text, TextTheme textTheme, ColorScheme colorScheme) {
     return Text(
       text,
       style: textTheme.labelSmall?.copyWith(
@@ -217,7 +227,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, ColorScheme colorScheme, TextTheme textTheme, {int maxLines = 1}) {
+  Widget _buildTextField(TextEditingController controller,
+      ColorScheme colorScheme, TextTheme textTheme,
+      {int maxLines = 1}) {
     return TextField(
       controller: controller,
       maxLines: maxLines,
@@ -232,12 +244,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }
 
-  Widget _buildInterestPill(String label, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildInterestPill(
+      String label, ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -255,7 +269,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.close, size: 14, color: colorScheme.primary.withOpacity(0.5)),
+          Icon(Icons.close,
+              size: 14, color: colorScheme.primary.withOpacity(0.5)),
         ],
       ),
     );
@@ -269,12 +284,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         borderRadius: BorderRadius.circular(20),
         // Use a simple dashed border approach or just a solid one for simplicity if needed
         // For a dashed border, we'd need a custom painter or package, so we use a faint solid border here.
-        border: Border.all(color: colorScheme.primary.withOpacity(0.3), width: 1, style: BorderStyle.solid),
+        border: Border.all(
+            color: colorScheme.primary.withOpacity(0.3),
+            width: 1,
+            style: BorderStyle.solid),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.add, size: 14, color: colorScheme.primary.withOpacity(0.5)),
+          Icon(Icons.add,
+              size: 14, color: colorScheme.primary.withOpacity(0.5)),
           const SizedBox(width: 4),
           Text(
             'Add interest',
@@ -303,7 +322,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFE6EBE6) : Colors.transparent,
           border: Border.all(
-            color: isSelected ? const Color(0xFF1B3B2B) : colorScheme.primary.withOpacity(0.1),
+            color: isSelected
+                ? const Color(0xFF1B3B2B)
+                : colorScheme.primary.withOpacity(0.1),
             width: isSelected ? 1.5 : 1,
           ),
           borderRadius: BorderRadius.circular(16),
@@ -312,13 +333,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF1B3B2B) : colorScheme.primary.withOpacity(0.5),
+              color: isSelected
+                  ? const Color(0xFF1B3B2B)
+                  : colorScheme.primary.withOpacity(0.5),
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: textTheme.labelSmall?.copyWith(
-                color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.5),
+                color: isSelected
+                    ? colorScheme.primary
+                    : colorScheme.primary.withOpacity(0.5),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

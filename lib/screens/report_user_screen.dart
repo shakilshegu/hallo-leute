@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 class ReportUserScreen extends StatefulWidget {
-  const ReportUserScreen({super.key});
+  final String userId;
+  const ReportUserScreen({super.key, required this.userId});
 
   @override
   State<ReportUserScreen> createState() => _ReportUserScreenState();
@@ -40,7 +42,8 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -49,7 +52,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                     color: colorScheme.primary,
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      Navigator.pop(context);
+                      context.pop();
                     },
                   ),
                   Text(
@@ -63,7 +66,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                 ],
               ),
             ),
-            
+
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -86,7 +89,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Reasons List
                   Container(
                     decoration: BoxDecoration(
@@ -94,12 +97,15 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
-                      children: _reasons.map((reason) => _buildReasonItem(reason, colorScheme, textTheme)).toList(),
+                      children: _reasons
+                          .map((reason) =>
+                              _buildReasonItem(reason, colorScheme, textTheme))
+                          .toList(),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Details Text Area
                   Text(
                     'OPTIONAL DETAILS',
@@ -113,12 +119,14 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                   TextField(
                     controller: _detailsController,
                     maxLines: 4,
-                    style: textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: colorScheme.primary),
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: const Color(0xFFE6EBE6),
                       hintText: 'Please provide any additional context...',
-                      hintStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.primary.withOpacity(0.4)),
+                      hintStyle: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.primary.withOpacity(0.4)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -127,12 +135,14 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Privacy Note
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.lock_outline, size: 16, color: colorScheme.primary.withOpacity(0.5)),
+                      Icon(Icons.lock_outline,
+                          size: 16,
+                          color: colorScheme.primary.withOpacity(0.5)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -148,7 +158,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                 ],
               ),
             ),
-            
+
             // Submit Button
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -158,7 +168,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     HapticFeedback.mediumImpact();
-                    Navigator.pop(context); // Submit and close
+                    context.pop(); // Submit and close
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFA5392B), // Dark red
@@ -191,7 +201,8 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
     );
   }
 
-  Widget _buildReasonItem(String reason, ColorScheme colorScheme, TextTheme textTheme) {
+  Widget _buildReasonItem(
+      String reason, ColorScheme colorScheme, TextTheme textTheme) {
     final isSelected = _selectedReason == reason;
     final isLast = reason == _reasons.last;
 
@@ -202,12 +213,14 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          border: isLast ? null : Border(
-            bottom: BorderSide(
-              color: Colors.grey.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
+          border: isLast
+              ? null
+              : Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
@@ -228,7 +241,9 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF1B3B2B) : Colors.grey.withOpacity(0.3),
+                  color: isSelected
+                      ? const Color(0xFF1B3B2B)
+                      : Colors.grey.withOpacity(0.3),
                   width: 2,
                 ),
               ),

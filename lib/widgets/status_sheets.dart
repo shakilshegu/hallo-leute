@@ -21,10 +21,10 @@ class NoMatchSheet extends StatelessWidget {
           child: Text(
             '5:00 PM • 5 KM • TODAY',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
           ),
         ),
       ),
@@ -40,15 +40,16 @@ class NoMatchSheet extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1B3B2B),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28)),
               elevation: 0,
             ),
             child: Text(
               'CHANGE TIME',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
         ),
@@ -64,14 +65,15 @@ class NoMatchSheet extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF1B3B2B),
               side: const BorderSide(color: Color(0xFF1B3B2B), width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28)),
             ),
             child: Text(
               'EXPAND DISTANCE',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: const Color(0xFF1B3B2B),
-                fontWeight: FontWeight.bold,
-              ),
+                    color: const Color(0xFF1B3B2B),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
         ),
@@ -102,7 +104,8 @@ class MatchDeclinedSheet extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1B3B2B),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28)),
               elevation: 0,
             ),
             child: Row(
@@ -111,9 +114,9 @@ class MatchDeclinedSheet extends StatelessWidget {
                 Text(
                   'FIND ANOTHER MATCH',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(width: 8),
                 const Icon(Icons.arrow_forward, size: 20),
@@ -149,14 +152,15 @@ class NetworkErrorSheet extends StatelessWidget {
             label: Text(
               'Try again',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1B3B2B),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28)),
               elevation: 0,
             ),
           ),
@@ -170,10 +174,10 @@ class NetworkErrorSheet extends StatelessWidget {
           child: Text(
             'CANCEL',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
           ),
         ),
       ],
@@ -230,7 +234,7 @@ class _BaseStatusSheet extends StatelessWidget {
             child: Icon(icon, color: colorScheme.primary, size: 32),
           ),
           const SizedBox(height: 24),
-          
+
           if (breadcrumbs != null) ...[
             Text(
               breadcrumbs!,
@@ -242,7 +246,7 @@ class _BaseStatusSheet extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          
+
           Text(
             title,
             textAlign: TextAlign.center,
@@ -252,7 +256,7 @@ class _BaseStatusSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           Text(
             body,
             textAlign: TextAlign.center,
@@ -261,9 +265,9 @@ class _BaseStatusSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           if (extraWidget != null) extraWidget!,
-          
+
           ...actions,
         ],
       ),

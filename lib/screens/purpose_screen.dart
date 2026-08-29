@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class PurposeScreen extends StatefulWidget {
+import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+class PurposeScreen extends ConsumerStatefulWidget {
   const PurposeScreen({super.key});
 
   @override
-  State<PurposeScreen> createState() => _PurposeScreenState();
+  ConsumerState<PurposeScreen> createState() => _PurposeScreenState();
 }
 
-class _PurposeScreenState extends State<PurposeScreen> {
+class _PurposeScreenState extends ConsumerState<PurposeScreen> {
   String? _selectedPurpose;
   bool _isLoading = false;
 
@@ -24,25 +29,18 @@ class _PurposeScreenState extends State<PurposeScreen> {
 
   void _handleContinue() async {
     if (_selectedPurpose == null || _isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
-    Navigator.pushAndRemoveUntil(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-      (route) => false,
-    );
+    ref
+        .read(authControllerProvider.notifier)
+        .completeOnboardingStep(OnboardingStep.notifications);
+    context.push(AppRoutes.onboardNotifications);
   }
 
   @override
@@ -63,7 +61,7 @@ class _PurposeScreenState extends State<PurposeScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -86,11 +84,11 @@ class _PurposeScreenState extends State<PurposeScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
@@ -100,28 +98,30 @@ class _PurposeScreenState extends State<PurposeScreen> {
                       itemBuilder: (context, index) {
                         final purpose = _purposes[index];
                         final isSelected = _selectedPurpose == purpose['title'];
-                        
+
                         return Semantics(
                           button: true,
                           selected: isSelected,
                           label: purpose['title'] as String,
                           child: GestureDetector(
-                            onTap: _isLoading ? null : () {
-                              HapticFeedback.lightImpact();
-                              setState(() {
-                                _selectedPurpose = purpose['title'];
-                              });
-                            },
+                            onTap: _isLoading
+                                ? null
+                                : () {
+                                    HapticFeedback.lightImpact();
+                                    setState(() {
+                                      _selectedPurpose = purpose['title'];
+                                    });
+                                  },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               decoration: BoxDecoration(
-                                color: isSelected 
-                                    ? colorScheme.primary.withOpacity(0.15) 
+                                color: isSelected
+                                    ? colorScheme.primary.withOpacity(0.15)
                                     : colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected 
-                                      ? colorScheme.primary 
+                                  color: isSelected
+                                      ? colorScheme.primary
                                       : Colors.transparent,
                                   width: 2,
                                 ),
@@ -141,7 +141,9 @@ class _PurposeScreenState extends State<PurposeScreen> {
                                     textAlign: TextAlign.center,
                                     style: textTheme.bodyMedium?.copyWith(
                                       color: colorScheme.primary,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                     ),
                                   ),
                                 ],
@@ -151,7 +153,6 @@ class _PurposeScreenState extends State<PurposeScreen> {
                         );
                       },
                     ),
-                    
                     const SizedBox(height: 48),
                     Text(
                       'YOU CAN CHANGE THIS ANYTIME',
@@ -167,7 +168,7 @@ class _PurposeScreenState extends State<PurposeScreen> {
                 ),
               ),
             ),
-            
+
             // Continue Button
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -178,7 +179,9 @@ class _PurposeScreenState extends State<PurposeScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_selectedPurpose != null && !_isLoading) ? _handleContinue : null,
+                    onPressed: (_selectedPurpose != null && !_isLoading)
+                        ? _handleContinue
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -186,10 +189,12 @@ class _PurposeScreenState extends State<PurposeScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,

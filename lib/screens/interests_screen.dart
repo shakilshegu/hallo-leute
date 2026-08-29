@@ -1,22 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/preferences_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class InterestsScreen extends StatefulWidget {
+import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+class InterestsScreen extends ConsumerStatefulWidget {
   const InterestsScreen({super.key});
 
   @override
-  State<InterestsScreen> createState() => _InterestsScreenState();
+  ConsumerState<InterestsScreen> createState() => _InterestsScreenState();
 }
 
-class _InterestsScreenState extends State<InterestsScreen> {
+class _InterestsScreenState extends ConsumerState<InterestsScreen> {
   final List<String> _allInterests = [
-    'Travel', 'Fitness', 'Movies', 'Music',
-    'Books', 'Food', 'Startups', 'Technology',
-    'Design', 'Photography', 'Sports', 'Gaming',
-    'Art', 'Business'
+    'Travel',
+    'Fitness',
+    'Movies',
+    'Music',
+    'Books',
+    'Food',
+    'Startups',
+    'Technology',
+    'Design',
+    'Photography',
+    'Sports',
+    'Gaming',
+    'Art',
+    'Business'
   ];
-  
+
   final Set<String> _selectedInterests = {};
   bool _isLoading = false;
 
@@ -39,25 +54,19 @@ class _InterestsScreenState extends State<InterestsScreen> {
 
   void _handleContinue() async {
     if (_selectedInterests.isEmpty || _isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const PreferencesScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-    
+    ref
+        .read(authControllerProvider.notifier)
+        .completeOnboardingStep(OnboardingStep.preferences);
+    context.push(AppRoutes.onboardPreferences);
+
     setState(() => _isLoading = false);
   }
 
@@ -79,7 +88,7 @@ class _InterestsScreenState extends State<InterestsScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -110,12 +119,12 @@ class _InterestsScreenState extends State<InterestsScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
                     Wrap(
                       spacing: 12.0,
                       runSpacing: 16.0,
                       children: _allInterests.map((interest) {
-                        final isSelected = _selectedInterests.contains(interest);
+                        final isSelected =
+                            _selectedInterests.contains(interest);
                         return Semantics(
                           button: true,
                           selected: isSelected,
@@ -124,9 +133,12 @@ class _InterestsScreenState extends State<InterestsScreen> {
                             onTap: () => _toggleInterest(interest),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : colorScheme.primary.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -135,7 +147,9 @@ class _InterestsScreenState extends State<InterestsScreen> {
                                   Text(
                                     interest,
                                     style: textTheme.labelSmall?.copyWith(
-                                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                                      color: isSelected
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 1.2,
                                     ),
@@ -156,13 +170,14 @@ class _InterestsScreenState extends State<InterestsScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 32),
-                    
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
                         '${_selectedInterests.length} OF 7',
                         style: textTheme.labelSmall?.copyWith(
-                          color: _selectedInterests.length == 7 ? colorScheme.primary : colorScheme.primary.withOpacity(0.5),
+                          color: _selectedInterests.length == 7
+                              ? colorScheme.primary
+                              : colorScheme.primary.withOpacity(0.5),
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,
                         ),
@@ -173,18 +188,21 @@ class _InterestsScreenState extends State<InterestsScreen> {
                 ),
               ),
             ),
-            
+
             // Continue Button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: AnimatedOpacity(
-                opacity: _selectedInterests.isNotEmpty || _isLoading ? 1.0 : 0.5,
+                opacity:
+                    _selectedInterests.isNotEmpty || _isLoading ? 1.0 : 0.5,
                 duration: const Duration(milliseconds: 200),
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_selectedInterests.isNotEmpty && !_isLoading) ? _handleContinue : null,
+                    onPressed: (_selectedInterests.isNotEmpty && !_isLoading)
+                        ? _handleContinue
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -192,10 +210,12 @@ class _InterestsScreenState extends State<InterestsScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,

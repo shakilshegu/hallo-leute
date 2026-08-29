@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/verify_code_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class GetStartedScreen extends StatefulWidget {
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+class GetStartedScreen extends ConsumerStatefulWidget {
   const GetStartedScreen({super.key});
 
   @override
-  State<GetStartedScreen> createState() => _GetStartedScreenState();
+  ConsumerState<GetStartedScreen> createState() => _GetStartedScreenState();
 }
 
-class _GetStartedScreenState extends State<GetStartedScreen> {
+class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _canProceed = false;
   bool _isLoading = false;
@@ -32,7 +36,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
 
   void _handleContinue() async {
     if (!_canProceed || _isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
@@ -41,19 +45,11 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => VerifyCodeScreen(
-          phoneNumber: _phoneController.text.trim(),
-        ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-    
+    ref
+        .read(authControllerProvider.notifier)
+        .startPhoneVerification(_phoneController.text.trim());
+    context.push(AppRoutes.verify);
+
     setState(() => _isLoading = false);
   }
 
@@ -75,7 +71,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -87,7 +83,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              
+
               Text(
                 "Let's get you started",
                 style: textTheme.headlineMedium?.copyWith(
@@ -96,7 +92,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Phone Input Field
               Container(
                 height: 56,
@@ -136,14 +132,14 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                         ),
                       ),
                     ),
-                    
+
                     // Divider
                     Container(
                       width: 1,
                       height: 24,
                       color: colorScheme.primary.withOpacity(0.2),
                     ),
-                    
+
                     // Phone Number Input
                     Expanded(
                       child: TextField(
@@ -164,16 +160,17 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 16),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Continue Button
               AnimatedOpacity(
                 opacity: _canProceed || _isLoading ? 1.0 : 0.5,
@@ -182,7 +179,8 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_canProceed && !_isLoading) ? _handleContinue : null,
+                    onPressed:
+                        (_canProceed && !_isLoading) ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -190,10 +188,12 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,
@@ -212,9 +212,9 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Footer text
               Text(
                 "WE'LL TEXT YOU A CODE",
@@ -225,7 +225,7 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              
+
               const Spacer(flex: 3),
             ],
           ),

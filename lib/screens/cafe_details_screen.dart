@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/cafe_suggested_screen.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class CafeDetailsScreen extends StatelessWidget {
-  const CafeDetailsScreen({super.key});
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/match_controller.dart';
+
+class CafeDetailsScreen extends ConsumerWidget {
+  final String matchId;
+  final String cafeId;
+  const CafeDetailsScreen({
+    super.key,
+    required this.matchId,
+    required this.cafeId,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -33,7 +42,7 @@ class CafeDetailsScreen extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.black),
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    Navigator.of(context).pop();
+                    context.pop();
                   },
                 ),
               ),
@@ -47,7 +56,8 @@ class CafeDetailsScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.bookmark_border, color: Colors.black),
+                    icon:
+                        const Icon(Icons.bookmark_border, color: Colors.black),
                     onPressed: () {},
                   ),
                 ),
@@ -83,16 +93,24 @@ class CafeDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('4.6', style: textTheme.labelSmall?.copyWith(color: colorScheme.primary.withOpacity(0.7))),
-                      Icon(Icons.star, size: 12, color: colorScheme.primary.withOpacity(0.7)),
-                      Text('  ·  1.2 KM  ·  OPEN TILL 11 PM', style: textTheme.labelSmall?.copyWith(color: colorScheme.primary.withOpacity(0.7), letterSpacing: 1.0)),
+                      Text('4.6',
+                          style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.primary.withOpacity(0.7))),
+                      Icon(Icons.star,
+                          size: 12,
+                          color: colorScheme.primary.withOpacity(0.7)),
+                      Text('  ·  1.2 KM  ·  OPEN TILL 11 PM',
+                          style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.primary.withOpacity(0.7),
+                              letterSpacing: 1.0)),
                     ],
                   ),
                   const SizedBox(height: 24),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on_outlined, color: colorScheme.primary.withOpacity(0.6)),
+                      Icon(Icons.location_on_outlined,
+                          color: colorScheme.primary.withOpacity(0.6)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -162,12 +180,10 @@ class CafeDetailsScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 HapticFeedback.lightImpact();
-                Navigator.of(context).push(
-                  PageRouteBuilder(
-                    transitionDuration: Duration.zero,
-                    pageBuilder: (context, animation, secondaryAnimation) => const CafeSuggestedScreen(),
-                  ),
-                );
+                ref
+                    .read(matchRepositoryProvider.notifier)
+                    .proposeCafe(matchId, cafeId, 'The Local Roastery');
+                context.push(AppRoutes.cafeProposedPath(matchId));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2B4739), // Dark green
@@ -205,7 +221,6 @@ class CafeDetailsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 
@@ -219,8 +234,8 @@ class CafeDetailsScreen extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: const Color(0xFF2B4739), // Dark green text
-        ),
+              color: const Color(0xFF2B4739), // Dark green text
+            ),
       ),
     );
   }

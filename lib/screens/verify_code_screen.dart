@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/create_profile_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class VerifyCodeScreen extends StatefulWidget {
-  final String phoneNumber;
+import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
 
-  const VerifyCodeScreen({super.key, required this.phoneNumber});
+class VerifyCodeScreen extends ConsumerStatefulWidget {
+  const VerifyCodeScreen({super.key});
 
   @override
-  State<VerifyCodeScreen> createState() => _VerifyCodeScreenState();
+  ConsumerState<VerifyCodeScreen> createState() => _VerifyCodeScreenState();
 }
 
-class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
+class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   final TextEditingController _codeController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _canProceed = false;
@@ -44,7 +47,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
   void _handleVerify() async {
     if (!_canProceed || _isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
 
@@ -53,17 +56,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const CreateProfileScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-    
+    ref.read(authControllerProvider.notifier).verifyCode();
+    ref
+        .read(authControllerProvider.notifier)
+        .completeOnboardingStep(OnboardingStep.profile);
+    context.push(AppRoutes.onboardProfile);
+
     setState(() => _isLoading = false);
   }
 
@@ -85,7 +83,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -97,7 +95,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 1),
-              
+
               Text(
                 'Enter your code',
                 textAlign: TextAlign.center,
@@ -107,9 +105,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               Text(
-                'We sent a 6-digit code to\n+1 ${widget.phoneNumber}',
+                'We sent a 6-digit code to\n+1 ${ref.watch(authControllerProvider).pendingPhoneNumber ?? ''}',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge?.copyWith(
                   color: colorScheme.primary.withOpacity(0.7),
@@ -117,7 +115,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // 6-digit Code Input
               GestureDetector(
                 onTap: () {
@@ -156,8 +154,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                               color: colorScheme.primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: isActive && !_isLoading 
-                                    ? colorScheme.primary 
+                                color: isActive && !_isLoading
+                                    ? colorScheme.primary
                                     : Colors.transparent,
                                 width: 2,
                               ),
@@ -177,17 +175,19 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               Center(
                 child: Semantics(
                   button: true,
                   label: 'Resend code',
                   child: TextButton(
-                    onPressed: _isLoading ? null : () {
-                      HapticFeedback.lightImpact();
-                    },
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                          },
                     child: Text(
                       'Resend Code',
                       style: textTheme.labelSmall?.copyWith(
@@ -199,9 +199,9 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Verify Button
               AnimatedOpacity(
                 opacity: _canProceed || _isLoading ? 1.0 : 0.5,
@@ -210,7 +210,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: (_canProceed && !_isLoading) ? _handleVerify : null,
+                    onPressed:
+                        (_canProceed && !_isLoading) ? _handleVerify : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
                       foregroundColor: colorScheme.onPrimary,
@@ -218,10 +219,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,
@@ -240,7 +243,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   ),
                 ),
               ),
-              
+
               const Spacer(flex: 3),
             ],
           ),

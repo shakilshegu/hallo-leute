@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/widgets/app_bottom_nav.dart';
-import 'package:poppylo/screens/feedback_screen.dart'; // We will wire this up for testing
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -195,7 +193,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 1), // Matches tab is index 1
     );
   }
 
@@ -382,15 +379,6 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
-                      // We route to Feedback Screen here just for easy testing
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => const FeedbackScreen(),
-                          transitionDuration: Duration.zero,
-                          reverseTransitionDuration: Duration.zero,
-                        ),
-                      );
                     },
                     icon: const Icon(Icons.directions_walk, size: 20, color: Colors.white),
                     label: Text(

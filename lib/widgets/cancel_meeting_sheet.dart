@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/home_screen.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:poppylo/router/routes.dart';
 
 class CancelMeetingSheet extends StatefulWidget {
   const CancelMeetingSheet({super.key});
@@ -52,7 +54,7 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
               ),
             ),
           ),
-          
+
           Text(
             'Cancel this Coffee Meet?',
             textAlign: TextAlign.center,
@@ -117,16 +119,8 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
           TextButton(
             onPressed: () {
               HapticFeedback.lightImpact();
-              // Navigate back to home screen
-              Navigator.pushAndRemoveUntil(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-                (route) => false,
-              );
+              Navigator.pop(context); // close the sheet
+              context.go(AppRoutes.home);
             },
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFD32F2F),
@@ -169,7 +163,9 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF1B3B2B) : Colors.grey.withOpacity(0.5),
+                  color: isSelected
+                      ? const Color(0xFF1B3B2B)
+                      : Colors.grey.withOpacity(0.5),
                   width: 2,
                 ),
               ),

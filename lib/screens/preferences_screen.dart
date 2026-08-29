@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/purpose_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class PreferencesScreen extends StatefulWidget {
+import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+class PreferencesScreen extends ConsumerStatefulWidget {
   const PreferencesScreen({super.key});
 
   @override
-  State<PreferencesScreen> createState() => _PreferencesScreenState();
+  ConsumerState<PreferencesScreen> createState() => _PreferencesScreenState();
 }
 
-class _PreferencesScreenState extends State<PreferencesScreen> {
+class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   RangeValues _ageRange = const RangeValues(24, 34);
   int _selectedDistance = 5; // km
-  
-  final List<String> _conversationStyles = ['Casual', 'Deep', 'Career', 'Hobbies', 'Anything'];
+
+  final List<String> _conversationStyles = [
+    'Casual',
+    'Deep',
+    'Career',
+    'Hobbies',
+    'Anything'
+  ];
   final Set<String> _selectedStyles = {'Deep', 'Anything'};
-  
+
   bool _isLoading = false;
 
   void _toggleStyle(String style) {
@@ -32,25 +43,19 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
 
   void _handleSave() async {
     if (_isLoading) return;
-    
+
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 600));
 
     if (!mounted) return;
 
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const PurposeScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-    
+    ref
+        .read(authControllerProvider.notifier)
+        .completeOnboardingStep(OnboardingStep.purpose);
+    context.push(AppRoutes.onboardPurpose);
+
     setState(() => _isLoading = false);
   }
 
@@ -72,7 +77,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -112,10 +117,11 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Age Range
                     Semantics(
-                      label: 'Age Range from ${_ageRange.start.round()} to ${_ageRange.end.round()}',
+                      label:
+                          'Age Range from ${_ageRange.start.round()} to ${_ageRange.end.round()}',
                       slider: true,
                       child: Container(
                         padding: const EdgeInsets.all(20),
@@ -149,20 +155,24 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                             SliderTheme(
                               data: SliderThemeData(
                                 activeTrackColor: colorScheme.primary,
-                                inactiveTrackColor: colorScheme.primary.withOpacity(0.1),
+                                inactiveTrackColor:
+                                    colorScheme.primary.withOpacity(0.1),
                                 thumbColor: colorScheme.primary,
-                                overlayColor: colorScheme.primary.withOpacity(0.1),
+                                overlayColor:
+                                    colorScheme.primary.withOpacity(0.1),
                                 trackHeight: 6,
                               ),
                               child: RangeSlider(
                                 values: _ageRange,
                                 min: 18,
                                 max: 65,
-                                onChanged: _isLoading ? null : (values) {
-                                  setState(() {
-                                    _ageRange = values;
-                                  });
-                                },
+                                onChanged: _isLoading
+                                    ? null
+                                    : (values) {
+                                        setState(() {
+                                          _ageRange = values;
+                                        });
+                                      },
                                 onChangeEnd: (_) {
                                   HapticFeedback.lightImpact();
                                 },
@@ -173,7 +183,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Distance
                     Text(
                       'DISTANCE',
@@ -197,28 +207,39 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                               selected: isSelected,
                               label: '$km kilometers',
                               child: GestureDetector(
-                                onTap: _isLoading ? null : () {
-                                  HapticFeedback.lightImpact();
-                                  setState(() {
-                                    _selectedDistance = km;
-                                  });
-                                },
+                                onTap: _isLoading
+                                    ? null
+                                    : () {
+                                        HapticFeedback.lightImpact();
+                                        setState(() {
+                                          _selectedDistance = km;
+                                        });
+                                      },
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.04),
+                                    color: isSelected
+                                        ? colorScheme.primary
+                                        : colorScheme.primary.withOpacity(0.04),
                                     borderRadius: BorderRadius.circular(24),
                                     border: Border.all(
-                                      color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.1),
+                                      color: isSelected
+                                          ? colorScheme.primary
+                                          : colorScheme.primary
+                                              .withOpacity(0.1),
                                     ),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
                                     '$km km',
                                     style: textTheme.bodyMedium?.copyWith(
-                                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.primary,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
                                     ),
                                   ),
                                 ),
@@ -229,7 +250,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Conversation Style
                     Text(
                       'CONVERSATION STYLE',
@@ -253,15 +274,20 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                             onTap: () => _toggleStyle(style),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.08),
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : colorScheme.primary.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Text(
                                 style,
                                 style: textTheme.labelSmall?.copyWith(
-                                  color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                                  color: isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 1.0,
                                 ),
@@ -276,7 +302,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
               ),
             ),
-            
+
             // Save Button
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -296,7 +322,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,

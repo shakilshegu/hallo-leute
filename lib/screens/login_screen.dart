@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class LoginScreen extends StatefulWidget {
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
+
+/// Email/password login for a returning user. New users go through
+/// [GetStartedScreen]'s phone/OTP flow instead — see /login vs /login/email.
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _emailFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
-  
+
   bool _canProceed = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -25,12 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     void updateState() {
       setState(() {
-        _canProceed = _emailController.text.trim().isNotEmpty && 
-                      _passwordController.text.isNotEmpty;
+        _canProceed = _emailController.text.trim().isNotEmpty &&
+            _passwordController.text.isNotEmpty;
         // Clear error when user types
         if (_emailError != null) _emailError = null;
       });
     }
+
     _emailController.addListener(updateState);
     _passwordController.addListener(updateState);
   }
@@ -48,8 +55,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_canProceed || _isLoading) return;
 
     final email = _emailController.text.trim();
-    final emailValid = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
-    
+    final emailValid = RegExp(
+            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+        .hasMatch(email);
+
     if (!emailValid) {
       setState(() {
         _emailError = 'Please enter a valid email address';
@@ -60,23 +69,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     HapticFeedback.mediumImpact();
-    
+
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 1200));
 
     if (!mounted) return;
-    
-    Navigator.pushAndRemoveUntil(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-      (route) => false,
-    );
+
+    ref.read(authControllerProvider.notifier).signInExistingUser();
+    context.go(AppRoutes.home);
   }
 
   @override
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
             icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () {
               HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 1),
-              
+
               Text(
                 "Welcome back",
                 style: textTheme.headlineMedium?.copyWith(
@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               Text(
                 "Log in to continue your journey.",
                 style: textTheme.bodyLarge?.copyWith(
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 48),
-              
+
               // Email Input Field
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,11 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     height: 56,
                     decoration: BoxDecoration(
-                      color: _emailError != null 
-                          ? Colors.red.withOpacity(0.05) 
+                      color: _emailError != null
+                          ? Colors.red.withOpacity(0.05)
                           : colorScheme.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(8),
-                      border: _emailError != null 
+                      border: _emailError != null
                           ? Border.all(color: Colors.red.withOpacity(0.5))
                           : null,
                     ),
@@ -165,12 +165,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                           border: InputBorder.none,
-                          icon: Icon(
-                            Icons.email_outlined, 
-                            color: _emailError != null 
-                                ? Colors.red.withOpacity(0.5) 
-                                : colorScheme.primary.withOpacity(0.5)
-                          ),
+                          icon: Icon(Icons.email_outlined,
+                              color: _emailError != null
+                                  ? Colors.red.withOpacity(0.5)
+                                  : colorScheme.primary.withOpacity(0.5)),
                         ),
                       ),
                     ),
@@ -190,9 +188,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ]
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Password Input Field
               Container(
                 height: 56,
@@ -221,10 +219,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                       border: InputBorder.none,
-                      icon: Icon(Icons.lock_outline, color: colorScheme.primary.withOpacity(0.5)),
+                      icon: Icon(Icons.lock_outline,
+                          color: colorScheme.primary.withOpacity(0.5)),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
                           color: colorScheme.primary.withOpacity(0.5),
                         ),
                         onPressed: () {
@@ -238,9 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Forgot password link
               Align(
                 alignment: Alignment.centerRight,
@@ -248,9 +249,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   button: true,
                   label: 'Forgot password',
                   child: TextButton(
-                    onPressed: _isLoading ? null : () {
-                      HapticFeedback.lightImpact();
-                    },
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                          },
                     child: Text(
                       'Forgot password?',
                       style: textTheme.bodyMedium?.copyWith(
@@ -261,9 +264,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Continue Button
               AnimatedOpacity(
                 opacity: _canProceed || _isLoading ? 1.0 : 0.5,
@@ -280,10 +283,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
-                      disabledBackgroundColor: colorScheme.primary.withOpacity(0.5),
-                      disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.8),
+                      disabledBackgroundColor:
+                          colorScheme.primary.withOpacity(0.5),
+                      disabledForegroundColor:
+                          colorScheme.onPrimary.withOpacity(0.8),
                     ),
-                    child: _isLoading 
+                    child: _isLoading
                         ? SizedBox(
                             height: 24,
                             width: 24,
@@ -302,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              
+
               const Spacer(flex: 3),
             ],
           ),

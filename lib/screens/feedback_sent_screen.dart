@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/home_screen.dart';
-import 'package:poppylo/screens/mutual_connection_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class FeedbackSentScreen extends StatelessWidget {
-  const FeedbackSentScreen({super.key});
+  final String meetingId;
+  const FeedbackSentScreen({super.key, required this.meetingId});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +23,7 @@ class FeedbackSentScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              
+
               // Checkmark icon
               Center(
                 child: Container(
@@ -40,7 +41,7 @@ class FeedbackSentScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               Text(
                 'Thanks.',
                 textAlign: TextAlign.center,
@@ -50,7 +51,7 @@ class FeedbackSentScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
@@ -62,22 +63,14 @@ class FeedbackSentScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 64),
-              
+
               Center(
                 child: InkWell(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                      (route) => false,
-                    );
+                    context.go(AppRoutes.home);
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -93,21 +86,14 @@ class FeedbackSentScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const Spacer(),
-              
+
               // Hidden test button for Mutual Connection
               TextButton(
                 onPressed: () {
                   HapticFeedback.lightImpact();
-                  Navigator.pushReplacement(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => const MutualConnectionScreen(),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
+                  context.go(AppRoutes.mutualConnectionPath(meetingId));
                 },
                 child: Text(
                   'Test Mutual Connection Screen',

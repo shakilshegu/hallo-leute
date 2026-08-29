@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:poppylo/screens/chat_screen.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:go_router/go_router.dart';
 
 class MutualConnectionScreen extends StatelessWidget {
-  const MutualConnectionScreen({super.key});
+  final String meetingId;
+  const MutualConnectionScreen({super.key, required this.meetingId});
 
   @override
   Widget build(BuildContext context) {
@@ -18,14 +20,18 @@ class MutualConnectionScreen extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border.all(
             width: 4.0,
-            color: Colors.transparent, // Handled by gradient wrapper or we can use a custom painter/gradient border.
+            color: Colors
+                .transparent, // Handled by gradient wrapper or we can use a custom painter/gradient border.
           ),
         ),
         // A simple way to get gradient border is to wrap in a Container with padding
         child: Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF8A2BE2), Color(0xFF4169E1)], // Purple to Royal Blue
+              colors: [
+                Color(0xFF8A2BE2),
+                Color(0xFF4169E1)
+              ], // Purple to Royal Blue
               begin: Alignment.topRight,
               end: Alignment.bottomLeft,
             ),
@@ -43,7 +49,7 @@ class MutualConnectionScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(),
-                    
+
                     Text(
                       'You both enjoyed meeting.',
                       textAlign: TextAlign.center,
@@ -60,9 +66,9 @@ class MutualConnectionScreen extends StatelessWidget {
                         color: colorScheme.primary.withOpacity(0.8),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 48),
-                    
+
                     // Overlapping Avatars
                     SizedBox(
                       height: 120,
@@ -74,11 +80,13 @@ class MutualConnectionScreen extends StatelessWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFFF3F1EB), width: 4),
+                                border: Border.all(
+                                    color: const Color(0xFFF3F1EB), width: 4),
                               ),
                               child: const CircleAvatar(
                                 radius: 48,
-                                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop'), // User avatar mock
+                                backgroundImage: NetworkImage(
+                                    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop'), // User avatar mock
                               ),
                             ),
                           ),
@@ -87,20 +95,22 @@ class MutualConnectionScreen extends StatelessWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFFF3F1EB), width: 4),
+                                border: Border.all(
+                                    color: const Color(0xFFF3F1EB), width: 4),
                               ),
                               child: const CircleAvatar(
                                 radius: 48,
-                                backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'), // Sarah avatar mock
+                                backgroundImage: NetworkImage(
+                                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'), // Sarah avatar mock
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 48),
-                    
+
                     Text(
                       'MATCH SECURED • 08:42AM',
                       textAlign: TextAlign.center,
@@ -110,25 +120,19 @@ class MutualConnectionScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    
+
                     const Spacer(),
-                    
+
                     SizedBox(
                       height: 56,
                       child: ElevatedButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
-                          Navigator.pushReplacement(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => const ChatScreen(),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
+                          context.go(AppRoutes.chatPath(meetingId));
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B3B2B), // Dark green
+                          backgroundColor:
+                              const Color(0xFF1B3B2B), // Dark green
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(28),
@@ -145,7 +149,7 @@ class MutualConnectionScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     TextButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
