@@ -25,26 +25,12 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        title: GestureDetector(
-          onTap: () {
-            // Hidden dev toggle for testing empty state
-            setState(() => _isEmpty = !_isEmpty);
-          },
-          child: Text(
-            'Coffee Meet',
-            style: textTheme.titleMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
               radius: 16,
-              backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
+              backgroundImage: const NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
             ),
           ),
         ],
@@ -52,35 +38,22 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Text(
-              'Meetings',
-              style: textTheme.headlineMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          
-          // Tab row
+          // Tab row on left
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Row(
               children: [
-                _buildTab('Upcoming', 0, colorScheme, textTheme),
+                _buildTabHeader('UPCOMING', _selectedTabIndex == 0, colorScheme.primary, textTheme, () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedTabIndex = 0);
+                }),
                 const SizedBox(width: 24),
-                _buildTab('Past', 1, colorScheme, textTheme),
+                _buildTabHeader('PAST', _selectedTabIndex == 1, colorScheme.primary, textTheme, () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedTabIndex = 1);
+                }),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Divider below tabs
-          Container(
-            height: 1,
-            color: Colors.grey.withOpacity(0.2),
-            margin: const EdgeInsets.symmetric(horizontal: 24),
           ),
           const SizedBox(height: 24),
 
@@ -222,46 +195,48 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                         : [
                             // PAST MEETINGS
                             Text(
-                              'Past',
-                              style: textTheme.titleMedium?.copyWith(
-                                color: colorScheme.primary,
+                              'PEOPLE YOU\'VE MET',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.primary.withOpacity(0.5),
+                                letterSpacing: 1.5,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
                             ),
                             const SizedBox(height: 16),
                             
                             _buildPastMeetingRow(
                               context: context,
-                              name: 'James',
-                              status: 'COMPLETED',
-                              date: 'OCT 12 • 7 PM',
-                              location: 'GLASSHAUS',
+                              name: 'Sarah Jenkins',
+                              dateLocation: 'MET 12 AUG • BREW LAB',
                               stars: 5,
                               imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop',
                             ),
-                            const SizedBox(height: 16),
-                            Divider(color: Colors.grey.withOpacity(0.2)),
-                            const SizedBox(height: 16),
+                            _buildDivider(colorScheme.primary),
                             _buildPastMeetingRow(
                               context: context,
-                              name: 'Elena',
-                              status: 'COMPLETED',
-                              date: 'SEP 28 • 10 AM',
-                              location: 'ORIGIN ROASTERS',
+                              name: 'Marcus Chen',
+                              dateLocation: 'MET 05 AUG • ORIGIN COFFEE',
                               stars: 4,
                               imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
+                              hasBackground: true,
                             ),
-                            const SizedBox(height: 16),
-                            Divider(color: Colors.grey.withOpacity(0.2)),
-                            const SizedBox(height: 16),
+                            _buildDivider(colorScheme.primary),
                             _buildPastMeetingRow(
                               context: context,
-                              name: 'Marcus',
-                              status: 'COMPLETED',
-                              date: 'SEP 15 • 2 PM',
-                              location: 'BLUE BOTTLE',
-                              stars: 5,
+                              name: 'Elena Rodriguez',
+                              dateLocation: 'MET 28 JUL • THE ROASTERY',
+                              stars: 2,
                               imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
+                            ),
+                            _buildDivider(colorScheme.primary),
+                            _buildPastMeetingRow(
+                              context: context,
+                              name: 'Anonymous User',
+                              dateLocation: 'MET 15 JUL • ESPRESSO RO...',
+                              stars: 0,
+                              imageUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=150&auto=format&fit=crop', // generic
+                              isFaded: true,
                             ),
                             const SizedBox(height: 24), // padding for bottom nav
                           ],
@@ -323,30 +298,29 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     );
   }
 
-  Widget _buildTab(String label, int index, ColorScheme colorScheme, TextTheme textTheme) {
-    final isSelected = _selectedTabIndex == index;
+  Widget _buildTabHeader(String label, bool isSelected, Color primaryColor, TextTheme textTheme, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        setState(() => _selectedTabIndex = index);
-      },
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isSelected ? const Color(0xFF1B3B2B) : Colors.transparent,
-              width: 2,
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+              color: isSelected ? primaryColor : primaryColor.withOpacity(0.5),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
             ),
           ),
-        ),
-        child: Text(
-          label,
-          style: textTheme.titleMedium?.copyWith(
-            color: isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.5),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
+          const SizedBox(height: 4),
+          if (isSelected)
+            Container(
+              height: 2,
+              width: label.length * 7.0,
+              color: primaryColor,
+            )
+          else
+            const SizedBox(height: 2),
+        ],
       ),
     );
   }
@@ -354,27 +328,31 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
   Widget _buildPastMeetingRow({
     required BuildContext context,
     required String name,
-    required String status,
-    required String date,
-    required String location,
+    required String dateLocation,
     required int stars,
     required String imageUrl,
+    bool hasBackground = false,
+    bool isFaded = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundImage: NetworkImage(imageUrl),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Opacity(
+        opacity: isFaded ? 0.3 : 1.0,
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: isFaded ? Colors.grey.withOpacity(0.2) : Colors.transparent,
+              backgroundImage: isFaded ? null : NetworkImage(imageUrl),
+              child: isFaded ? Icon(Icons.person, color: colorScheme.primary.withOpacity(0.2)) : null,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
@@ -383,47 +361,46 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6EBE6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      status,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
+                  const SizedBox(height: 2),
+                  Text(
+                    dateLocation,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary.withOpacity(0.5),
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '$date\n$location',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.primary.withOpacity(0.5),
-                  height: 1.3,
-                  letterSpacing: 1.0,
-                ),
+            ),
+            Container(
+              padding: hasBackground ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4) : EdgeInsets.zero,
+              decoration: hasBackground ? BoxDecoration(
+                color: const Color(0xFFE0A008).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ) : null,
+              child: Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < stars ? Icons.star : Icons.star_border,
+                    color: isFaded ? Colors.grey.withOpacity(0.5) : const Color(0xFFE0A008),
+                    size: 14,
+                  );
+                }),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        Row(
-          children: List.generate(5, (index) {
-            return Icon(
-              index < stars ? Icons.star : Icons.star_border,
-              color: const Color(0xFFE6A316),
-              size: 16,
-            );
-          }),
-        ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildDivider(Color primaryColor) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: primaryColor.withOpacity(0.05),
     );
   }
 }
