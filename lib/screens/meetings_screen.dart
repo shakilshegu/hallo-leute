@@ -13,8 +13,7 @@ class MeetingsScreen extends StatefulWidget {
 
 class _MeetingsScreenState extends State<MeetingsScreen> {
   int _selectedTabIndex = 0; // 0 for Upcoming, 1 for Past
-  bool _isEmpty = true; // Set to true to show empty state
-
+  bool _isEmpty = false; // Set to true to show empty state
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -23,40 +22,32 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9F8),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.menu),
-                  color: colorScheme.primary,
-                  onPressed: () {
-                    // Hidden dev toggle for testing empty state
-                    setState(() => _isEmpty = !_isEmpty);
-                  },
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      'Coffee Meet',
-                      style: textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
-                ),
-              ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: GestureDetector(
+          onTap: () {
+            // Hidden dev toggle for testing empty state
+            setState(() => _isEmpty = !_isEmpty);
+          },
+          child: Text(
+            'Coffee Meet',
+            style: textTheme.titleMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
+            ),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

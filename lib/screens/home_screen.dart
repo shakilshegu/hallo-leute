@@ -340,7 +340,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                context.push(AppRoutes.chatPath('demo'));
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE2E8DF),
                                 foregroundColor: colorScheme.primary,

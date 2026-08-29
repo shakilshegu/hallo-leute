@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:poppylo/router/routes.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
@@ -10,8 +12,7 @@ class MatchesScreen extends StatefulWidget {
 
 class _MatchesScreenState extends State<MatchesScreen> {
   int _selectedTabIndex = 0; // 0 for ACTIVE, 1 for PAST
-  bool _isEmpty = true; // Set to true to show empty state
-
+  bool _isEmpty = false; // Set to true to show empty state
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -20,40 +21,32 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9F8),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.menu),
-                  color: colorScheme.primary,
-                  onPressed: () {
-                    // Hidden dev toggle for testing empty state
-                    setState(() => _isEmpty = !_isEmpty);
-                  },
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      'Coffee Meet',
-                      style: textTheme.titleMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: const NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // Example user avatar
-                ),
-              ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: GestureDetector(
+          onTap: () {
+            // Hidden dev toggle for testing empty state
+            setState(() => _isEmpty = !_isEmpty);
+          },
+          child: Text(
+            'Coffee Meet',
+            style: textTheme.titleMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
+        actions: [
+          const Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // Example user avatar
+            ),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -340,7 +333,10 @@ class _MatchesScreenState extends State<MatchesScreen> {
                     IconButton(
                       icon: const Icon(Icons.forum_outlined),
                       color: colorScheme.primary,
-                      onPressed: () {},
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        context.push(AppRoutes.chatPath('demo'));
+                      },
                       style: IconButton.styleFrom(
                         backgroundColor: const Color(0xFFE6EBE6),
                         padding: const EdgeInsets.all(12),
