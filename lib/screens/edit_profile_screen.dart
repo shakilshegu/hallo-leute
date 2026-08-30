@@ -12,6 +12,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _nameController =
       TextEditingController(text: 'Jane Doe');
+  final TextEditingController _ageController = TextEditingController(text: '28');
   final TextEditingController _whatYouDoController =
       TextEditingController(text: 'Independent Designer');
   final TextEditingController _bioController = TextEditingController(
@@ -24,6 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _ageController.dispose();
     _whatYouDoController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -100,6 +102,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _buildLabel('NAME', textTheme, colorScheme),
                   const SizedBox(height: 8),
                   _buildTextField(_nameController, colorScheme, textTheme),
+                  const SizedBox(height: 24),
+
+                  // Age Field
+                  _buildLabel('AGE', textTheme, colorScheme),
+                  const SizedBox(height: 8),
+                  _buildTextField(_ageController, colorScheme, textTheme),
                   const SizedBox(height: 24),
 
                   // What You Do Field

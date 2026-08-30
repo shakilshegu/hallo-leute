@@ -13,6 +13,15 @@ class _EditPreferencesScreenState extends State<EditPreferencesScreen> {
   RangeValues _ageRange = const RangeValues(24, 34);
   int _selectedDistance = 5;
 
+  final List<String> _conversationStyles = [
+    'Casual',
+    'Deep',
+    'Career',
+    'Hobbies',
+    'Anything',
+  ];
+  final Set<String> _selectedStyles = {'Deep', 'Anything'};
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -138,6 +147,55 @@ class _EditPreferencesScreenState extends State<EditPreferencesScreen> {
                                       : FontWeight.normal,
                                 ),
                               ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'CONVERSATION STYLE',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary.withOpacity(0.5),
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12.0,
+                    runSpacing: 16.0,
+                    children: _conversationStyles.map((style) {
+                      final isSelected = _selectedStyles.contains(style);
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() {
+                            if (isSelected) {
+                              _selectedStyles.remove(style);
+                            } else {
+                              _selectedStyles.add(style);
+                            }
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Text(
+                            style,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: isSelected
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
                             ),
                           ),
                         ),

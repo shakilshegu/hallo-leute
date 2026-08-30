@@ -6,24 +6,28 @@ enum OnboardingStep { profile, interests, preferences, purpose, notifications, d
 
 class AuthState {
   final bool isSignedIn;
+  final bool isNewUser;
   final String? pendingPhoneNumber;
   final OnboardingStep onboardingStep;
 
   const AuthState({
     this.isSignedIn = false,
+    this.isNewUser = false,
     this.pendingPhoneNumber,
     this.onboardingStep = OnboardingStep.profile,
   });
 
-  bool get isOnboardingComplete => onboardingStep == OnboardingStep.done;
+  bool get isOnboardingComplete => !isNewUser || onboardingStep == OnboardingStep.done;
 
   AuthState copyWith({
     bool? isSignedIn,
+    bool? isNewUser,
     String? pendingPhoneNumber,
     OnboardingStep? onboardingStep,
   }) {
     return AuthState(
       isSignedIn: isSignedIn ?? this.isSignedIn,
+      isNewUser: isNewUser ?? this.isNewUser,
       pendingPhoneNumber: pendingPhoneNumber ?? this.pendingPhoneNumber,
       onboardingStep: onboardingStep ?? this.onboardingStep,
     );

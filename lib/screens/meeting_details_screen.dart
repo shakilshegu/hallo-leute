@@ -5,6 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/meeting_controller.dart';
+import 'package:poppylo/widgets/cancel_meeting_sheet.dart';
+import 'package:poppylo/widgets/conversation_starters_sheet.dart';
+
+String _formatDuration(Duration d) {
+  final minutes = d.inMinutes;
+  return minutes >= 60 ? '${(minutes / 60).toStringAsFixed(0)} hr' : '$minutes min';
+}
 
 const _weekdayNames = [
   'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', //
@@ -102,12 +109,38 @@ class MeetingDetailsScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   _detailRow(context, 'WHEN', _formatMeetingTime(meeting.startTime)),
                   const SizedBox(height: 16),
+                  _detailRow(context, 'DURATION',
+                      _formatDuration(meeting.endTime.difference(meeting.startTime))),
+                  const SizedBox(height: 16),
                   _detailRow(
-                      context, 'WHERE', meeting.cafeName ?? 'Not agreed yet'),
+                      context, 'CAFÉ', meeting.cafeName ?? 'Not agreed yet'),
+                  if (meeting.cafeAddress != null) ...[
+                    const SizedBox(height: 16),
+                    _detailRow(context, 'ADDRESS', meeting.cafeAddress!),
+                  ],
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            // Map preview
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop',
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                color: Colors.white.withOpacity(0.5),
+                colorBlendMode: BlendMode.screen,
+              ),
+            ),
             const SizedBox(height: 24),
+            _actionRow(
+              context,
+              icon: Icons.directions_outlined,
+              label: 'Get directions',
+              onTap: () => HapticFeedback.lightImpact(),
+            ),
             _actionRow(
               context,
               icon: Icons.chat_bubble_outline,
@@ -116,9 +149,12 @@ class MeetingDetailsScreen extends ConsumerWidget {
             ),
             _actionRow(
               context,
-              icon: Icons.shield_outlined,
-              label: 'Safety center',
-              onTap: () => context.push(AppRoutes.safetyPath(meetingId)),
+              icon: Icons.check_circle_outline,
+              label: 'I\'ve arrived',
+              onTap: () {
+                // For MVP, just haptic feedback or go somewhere
+                HapticFeedback.heavyImpact();
+              },
             ),
             if (meeting.hasEnded && !meeting.feedbackSubmitted)
               _actionRow(
@@ -126,6 +162,21 @@ class MeetingDetailsScreen extends ConsumerWidget {
                 icon: Icons.rate_review_outlined,
                 label: 'Leave feedback',
                 onTap: () => context.push(AppRoutes.feedbackPath(meetingId)),
+              ),
+            if (!meeting.hasEnded)
+              _actionRow(
+                context,
+                icon: Icons.cancel_outlined,
+                label: 'Cancel meeting',
+                isDestructive: true,
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const CancelMeetingSheet(),
+                  );
+                },
               ),
           ],
         ),
@@ -162,9 +213,11 @@ class MeetingDetailsScreen extends ConsumerWidget {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool isDestructive = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final color = isDestructive ? const Color(0xFFA5392B) : colorScheme.primary;
     return InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -174,19 +227,18 @@ class MeetingDetailsScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         child: Row(
           children: [
-            Icon(icon, color: colorScheme.primary.withOpacity(0.7)),
+            Icon(icon, color: color.withOpacity(0.7)),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
                 style: textTheme.titleMedium?.copyWith(
-                  color: colorScheme.primary,
+                  color: color,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            Icon(Icons.chevron_right,
-                color: colorScheme.primary.withOpacity(0.3)),
+            Icon(Icons.chevron_right, color: color.withOpacity(0.3)),
           ],
         ),
       ),

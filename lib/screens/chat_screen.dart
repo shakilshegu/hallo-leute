@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:poppylo/router/routes.dart';
 import 'package:go_router/go_router.dart';
+import 'package:poppylo/widgets/conversation_starters_sheet.dart';
 
 class ChatScreen extends StatelessWidget {
   final String meetingId;
@@ -53,6 +54,21 @@ class ChatScreen extends StatelessWidget {
                   color: colorScheme.primary,
                   onPressed: () => _openSafetyCenter(context),
                 ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: colorScheme.primary),
+                  onSelected: (value) {
+                    if (value == 'cancel') {
+                      HapticFeedback.lightImpact();
+                      context.go(AppRoutes.home);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'cancel',
+                      child: Text('Cancel Meeting', style: TextStyle(color: Colors.redAccent)),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -61,32 +77,21 @@ class ChatScreen extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 16),
-          // Status pill
+          // Meeting status pill: ☕ date/time · café
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: const Color(0xFFE6EBE6),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                'COFFEE SAT 5 PM',
+                '☕ Saturday · 5:00 PM · Brew Lab',
                 style: textTheme.labelSmall?.copyWith(
                   color: colorScheme.primary.withOpacity(0.7),
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0.5,
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Date
-          Center(
-            child: Text(
-              'TODAY, 2:14 PM',
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary.withOpacity(0.5),
-                letterSpacing: 1.2,
               ),
             ),
           ),
@@ -117,29 +122,7 @@ class ChatScreen extends StatelessWidget {
                   imageUrl:
                       null, // Don't repeat avatar for consecutive messages if preferred, but mockup has it isolated anyway
                 ),
-                const SizedBox(height: 16),
-                // Typing indicator
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6EBE6).withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildTypingDot(),
-                        const SizedBox(width: 4),
-                        _buildTypingDot(),
-                        const SizedBox(width: 4),
-                        _buildTypingDot(),
-                      ],
-                    ),
-                  ),
-                ),
+
               ],
             ),
           ),
@@ -161,8 +144,16 @@ class ChatScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.lightbulb_outline,
-                        color: colorScheme.primary.withOpacity(0.5)),
+                    Semantics(
+                      button: true,
+                      label: 'Conversation starters',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => showConversationStartersSheet(context),
+                        child: Icon(Icons.lightbulb_outline,
+                            color: colorScheme.primary.withOpacity(0.5)),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: TextField(
@@ -202,16 +193,7 @@ class ChatScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTypingDot() {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: const BoxDecoration(
-        color: Colors.grey,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
+
 
   Widget _buildIncomingMessage({
     required BuildContext context,

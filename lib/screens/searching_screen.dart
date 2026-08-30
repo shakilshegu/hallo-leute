@@ -110,17 +110,21 @@ class _SearchingScreenState extends ConsumerState<SearchingScreen>
             _currentState = SearchState.matchesFound;
           });
 
-          // 3. Auto-transition to Match Found details after showing Matches Found state for a few seconds
+          // MOCK BACKEND RESULT: Auto-transition to Match Found details
           _stateTimer = Timer(const Duration(seconds: 4), () {
             if (mounted) {
-              HapticFeedback.heavyImpact();
-              // Searching can't be popped back into from Match found.
-              context.go(AppRoutes.matchPath('test_match'));
+              _onMatchFound('test_match');
             }
           });
         }
       });
     }
+  }
+
+  void _onMatchFound(String matchId) {
+    HapticFeedback.heavyImpact();
+    // Searching can't be popped back into from Match found.
+    context.go(AppRoutes.matchPath(matchId));
   }
 
   @override

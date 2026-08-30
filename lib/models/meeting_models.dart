@@ -12,6 +12,7 @@ class Meeting {
   /// Null until both people have agreed on a café. The meeting guard uses
   /// this to decide whether the café flow still needs to run.
   final String? cafeName;
+  final String? cafeAddress;
 
   const Meeting({
     required this.id,
@@ -22,6 +23,7 @@ class Meeting {
     this.status = MeetingStatus.scheduled,
     this.feedbackSubmitted = false,
     this.cafeName,
+    this.cafeAddress,
   });
 
   bool get hasEnded => DateTime.now().isAfter(endTime);
@@ -30,6 +32,7 @@ class Meeting {
     MeetingStatus? status,
     bool? feedbackSubmitted,
     String? cafeName,
+    String? cafeAddress,
   }) {
     return Meeting(
       id: id,
@@ -40,6 +43,7 @@ class Meeting {
       status: status ?? this.status,
       feedbackSubmitted: feedbackSubmitted ?? this.feedbackSubmitted,
       cafeName: cafeName ?? this.cafeName,
+      cafeAddress: cafeAddress ?? this.cafeAddress,
     );
   }
 }

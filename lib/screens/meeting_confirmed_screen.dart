@@ -212,7 +212,6 @@ class MeetingConfirmedScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    context.push(AppRoutes.chatPath(meetingId));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B3B2B),
@@ -222,16 +221,53 @@ class MeetingConfirmedScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
+                  child: const Text('Add to calendar',
+                      style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.push(AppRoutes.meetingPath(meetingId));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text('View meeting details',
+                      style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.push(AppRoutes.chatPath(meetingId));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
                   child: const Text('Message Sarah',
                       style: TextStyle(color: Colors.white)),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.go(AppRoutes.home);
+                  },
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white70,
+                    foregroundColor: Colors.redAccent,
                   ),
-                  child: const Text('View meeting'),
+                  child: const Text('Cancel Meeting'),
                 ),
                 const SizedBox(height: 48),
 

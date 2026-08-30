@@ -131,16 +131,6 @@ class CafeDetailsScreen extends ConsumerWidget {
                       height: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildTag(context, 'Quiet'),
-                      _buildTag(context, 'Good for conversation'),
-                      _buildTag(context, 'Indoor seating'),
-                    ],
-                  ),
                   const SizedBox(height: 32),
                   // Mock map snippet
                   ClipRRect(
@@ -224,19 +214,4 @@ class CafeDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTag(BuildContext context, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE2E8DF), // Very light green
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: const Color(0xFF2B4739), // Dark green text
-            ),
-      ),
-    );
-  }
 }

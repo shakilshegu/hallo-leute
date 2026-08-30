@@ -19,12 +19,11 @@ class _PurposeScreenState extends ConsumerState<PurposeScreen> {
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _purposes = [
-    {'title': 'Make new friends', 'icon': Icons.people_outline},
+    {'title': 'Make friends', 'icon': Icons.people_outline},
     {'title': 'Networking', 'icon': Icons.work_outline},
-    {'title': 'Meet people in my city', 'icon': Icons.location_city_outlined},
     {'title': 'Shared interests', 'icon': Icons.extension_outlined},
     {'title': 'Dating', 'icon': Icons.favorite_border},
-    {'title': 'Just a good conversation', 'icon': Icons.chat_bubble_outline},
+    {'title': 'Good conversation', 'icon': Icons.chat_bubble_outline},
   ];
 
   void _handleContinue() async {

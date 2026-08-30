@@ -27,23 +27,9 @@ class _MatchStatusScreenState extends ConsumerState<MatchStatusScreen>
     duration: const Duration(seconds: 3),
   )..repeat();
 
-  Timer? _matchTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _matchTimer = Timer(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      HapticFeedback.heavyImpact();
-      ref.read(matchRepositoryProvider.notifier).accept(widget.matchId);
-      context.pushReplacement(AppRoutes.matchConfirmedPath(widget.matchId));
-    });
-  }
-
   @override
   void dispose() {
     _radarController.dispose();
-    _matchTimer?.cancel();
     super.dispose();
   }
 
@@ -167,7 +153,21 @@ class _MatchStatusScreenState extends ConsumerState<MatchStatusScreen>
                 textAlign: TextAlign.center,
               ),
               const Spacer(flex: 3),
-
+              // MOCK BACKEND RESULT: Simulate the other person accepting
+              TextButton(
+                onPressed: () {
+                  HapticFeedback.heavyImpact();
+                  ref.read(matchRepositoryProvider.notifier).accept(widget.matchId);
+                  context.pushReplacement(AppRoutes.matchConfirmedPath(widget.matchId));
+                },
+                child: Text(
+                  '[DEV] Simulate Other Accepted',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.primary.withOpacity(0.5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
                   HapticFeedback.lightImpact();

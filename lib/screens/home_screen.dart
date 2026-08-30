@@ -11,13 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Pill selection state for the Find someone card
-  String _selectedPill = 'Today 5 PM';
-  final List<String> _timePills = [
-    'Today 5 PM',
-    'Tomorrow 11 AM',
-    'Pick a time'
-  ];
   DateTime? _lastBackPress;
 
   void _startCreateMeet() {
@@ -140,50 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Time Pills
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _timePills.map((time) {
-                            final isSelected = time == _selectedPill;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  setState(() => _selectedPill = time);
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.white.withOpacity(0.2)
-                                        : Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? Colors.white.withOpacity(0.5)
-                                          : Colors.transparent,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    time,
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -342,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: ElevatedButton(
                               onPressed: () {
                                 HapticFeedback.lightImpact();
-                                context.push(AppRoutes.chatPath('demo'));
+                                context.push(AppRoutes.chatPath('demo-meeting'));
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE2E8DF),
@@ -369,162 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Who's Free This Week
-                _buildSectionHeader(
-                    'WHO\'S FREE THIS WEEK', null, textTheme, colorScheme),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildFreeCard(
-                          'SAT 5 PM', '12 PEOPLE FREE', colorScheme, textTheme),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildFreeCard(
-                          'SUN 11 AM', '8 PEOPLE FREE', colorScheme, textTheme),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-
-                // Cafés Near You
-                _buildSectionHeader(
-                    'CAFÉS NEAR YOU', 'See all', textTheme, colorScheme),
-                const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  clipBehavior: Clip.none,
-                  child: Row(
-                    children: [
-                      _buildCafeCard(
-                        'Brew Lab',
-                        '4.6 • 1.2 KM • QUIET',
-                        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=400&auto=format&fit=crop',
-                        colorScheme,
-                        textTheme,
-                      ),
-                      const SizedBox(width: 16),
-                      _buildCafeCard(
-                        'The Daily Grind',
-                        '4.4 • 2.5 KM • LIVELY',
-                        'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=400&auto=format&fit=crop',
-                        colorScheme,
-                        textTheme,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Today's Starter
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5ECE4), // Light greenish-grey
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'TODAY\'S STARTER',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary.withOpacity(0.5),
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '"What\'s something you\'ve been really into lately?"',
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(
-                              color: colorScheme.primary.withOpacity(0.2)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                        ),
-                        child: Text(
-                          'Another one',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // People You've Met
-                _buildSectionHeader(
-                    'PEOPLE YOU\'VE MET', null, textTheme, colorScheme),
-                const SizedBox(height: 16),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 120, // Enough for 4 overlapping avatars
-                        height: 40,
-                        child: Stack(
-                          children: [
-                            _buildOverlappingAvatar(0,
-                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'),
-                            _buildOverlappingAvatar(1,
-                                'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop'),
-                            _buildOverlappingAvatar(2,
-                                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'),
-                            _buildOverlappingAvatar(3,
-                                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop'),
-                          ],
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'See all connections',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 48),
-
-                // Bottom Trust Badges
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildTrustBadge(Icons.verified_outlined, 'Photo verified',
-                        colorScheme, textTheme),
-                    _buildTrustBadge(Icons.storefront_outlined, 'Partner cafes',
-                        colorScheme, textTheme),
-                    _buildTrustBadge(Icons.access_time, 'You choose',
-                        colorScheme, textTheme),
-                  ],
-                ),
               ],
             ),
           ),
@@ -584,112 +377,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildFreeCard(
-      String time, String count, ColorScheme colorScheme, TextTheme textTheme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            time,
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            count,
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary.withOpacity(0.6),
-              letterSpacing: 0.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCafeCard(String name, String details, String imageUrl,
-      ColorScheme colorScheme, TextTheme textTheme) {
-    return SizedBox(
-      width: 240,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 140,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(
-                image: NetworkImage(imageUrl),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            name,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            details,
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary.withOpacity(0.6),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOverlappingAvatar(int index, String imageUrl) {
-    return Positioned(
-      left: index * 24.0,
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundImage: NetworkImage(imageUrl),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrustBadge(IconData icon, String label, ColorScheme colorScheme,
-      TextTheme textTheme) {
-    return Column(
-      children: [
-        Icon(icon, color: colorScheme.primary.withOpacity(0.5), size: 20),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.primary.withOpacity(0.5),
-            fontSize: 10,
-          ),
-        ),
       ],
     );
   }

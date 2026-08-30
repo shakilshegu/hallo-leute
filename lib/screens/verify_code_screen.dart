@@ -56,11 +56,22 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
 
     if (!mounted) return;
 
+    final isNewUser = ref.read(authControllerProvider).isNewUser;
     ref.read(authControllerProvider.notifier).verifyCode();
-    ref
-        .read(authControllerProvider.notifier)
-        .completeOnboardingStep(OnboardingStep.profile);
-    context.push(AppRoutes.onboardProfile);
+
+    if (isNewUser) {
+      ref
+          .read(authControllerProvider.notifier)
+          .completeOnboardingStep(OnboardingStep.profile);
+      context.push(AppRoutes.onboardProfile);
+    } else {
+      // Returning users skip onboarding entirely. This must be `go`, not
+      // `push`: pushing a route that the guard then redirects into the
+      // bottom-nav shell renders the destination screen without its shell
+      // chrome (no tab bar) — `go` recomputes the whole stack and mounts
+      // the shell correctly.
+      context.go(AppRoutes.home);
+    }
 
     setState(() => _isLoading = false);
   }

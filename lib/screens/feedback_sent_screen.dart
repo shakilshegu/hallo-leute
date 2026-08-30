@@ -96,8 +96,8 @@ class FeedbackSentScreen extends StatelessWidget {
                   context.go(AppRoutes.mutualConnectionPath(meetingId));
                 },
                 child: Text(
-                  'Test Mutual Connection Screen',
-                  style: TextStyle(color: colorScheme.primary.withOpacity(0.2)),
+                  '[DEV] Simulate Mutual Connection',
+                  style: TextStyle(color: colorScheme.primary.withOpacity(0.5)),
                 ),
               ),
               const SizedBox(height: 16),

@@ -21,21 +21,6 @@ class _CafeSuggestedScreenState extends ConsumerState<CafeSuggestedScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate Sarah accepting the café suggestion after 3 seconds.
-    Timer(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      HapticFeedback.heavyImpact();
-      final match = ref.read(matchProvider(widget.matchId));
-      final meetingId = 'meeting-${widget.matchId}';
-      ref.read(meetingRepositoryProvider.notifier).confirm(
-            meetingId,
-            widget.matchId,
-            cafeName: match.cafeName ?? 'Brew Lab',
-            partnerName: match.partnerName,
-            startTime: DateTime.now().add(const Duration(hours: 2)),
-          );
-      context.pushReplacement(AppRoutes.meetingConfirmedPath(meetingId));
-    });
   }
 
   @override
@@ -265,6 +250,29 @@ class _CafeSuggestedScreenState extends ConsumerState<CafeSuggestedScreen> {
                     style: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.primary,
                       decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                // MOCK BACKEND RESULT
+                TextButton(
+                  onPressed: () {
+                    HapticFeedback.heavyImpact();
+                    final match = ref.read(matchProvider(widget.matchId));
+                    final meetingId = 'meeting-${widget.matchId}';
+                    ref.read(meetingRepositoryProvider.notifier).confirm(
+                          meetingId,
+                          widget.matchId,
+                          cafeName: match.cafeName ?? 'Brew Lab',
+                          partnerName: match.partnerName,
+                          startTime: DateTime.now().add(const Duration(hours: 2)),
+                        );
+                    context.pushReplacement(AppRoutes.meetingConfirmedPath(meetingId));
+                  },
+                  child: Text(
+                    '[DEV] Simulate Other Accepted Cafe',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.primary.withOpacity(0.5),
                     ),
                   ),
                 ),

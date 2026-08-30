@@ -23,6 +23,7 @@ class MeetingRepository extends StateNotifier<Map<String, Meeting>> {
         matchId: 'demo-match',
         partnerName: 'Sarah',
         cafeName: 'Brew Lab',
+        cafeAddress: '1.2 km away',
         startTime: now.add(const Duration(hours: 2)),
         endTime: now.add(const Duration(hours: 2, minutes: 45)),
       ),
@@ -39,6 +40,7 @@ class MeetingRepository extends StateNotifier<Map<String, Meeting>> {
     required String cafeName,
     required String partnerName,
     required DateTime startTime,
+    String? cafeAddress,
     Duration duration = const Duration(minutes: 45),
   }) {
     state = {
@@ -48,6 +50,7 @@ class MeetingRepository extends StateNotifier<Map<String, Meeting>> {
         matchId: matchId,
         partnerName: partnerName,
         cafeName: cafeName,
+        cafeAddress: cafeAddress,
         startTime: startTime,
         endTime: startTime.add(duration),
       ),

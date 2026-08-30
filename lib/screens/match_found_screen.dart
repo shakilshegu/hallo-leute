@@ -116,7 +116,7 @@ class _MatchFoundScreenState extends State<MatchFoundScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     HapticFeedback.lightImpact();
-                    context.push(AppRoutes.chooseCafePath(widget.matchId));
+                    context.push(AppRoutes.matchDetailsPath(widget.matchId));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B3B2B),
@@ -127,7 +127,7 @@ class _MatchFoundScreenState extends State<MatchFoundScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Choose a café',
+                    'View Match',
                     style: textTheme.bodyLarge?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -151,7 +151,7 @@ class _MatchFoundScreenState extends State<MatchFoundScreen> {
                     ),
                   ),
                   child: Text(
-                    'Message later',
+                    'Pass',
                     style: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.primary,
                     ),

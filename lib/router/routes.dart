@@ -7,8 +7,6 @@ class AppRoutes {
   static const splash = '/splash';
   static const welcome = '/welcome';
   static const login = '/login';
-  static const emailLogin = 'email';
-  static String get emailLoginPath => '$login/$emailLogin';
   static const verify = '/verify';
 
   static const onboardProfile = '/onboarding/profile';

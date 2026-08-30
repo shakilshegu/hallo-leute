@@ -11,10 +11,9 @@ import 'routes.dart';
 
 typedef GuardFn = String? Function(BuildContext context, GoRouterState state);
 
-final _preAuthRoutes = {
+const _preAuthRoutes = {
   AppRoutes.welcome,
   AppRoutes.login,
-  AppRoutes.emailLoginPath,
   AppRoutes.verify,
 };
 

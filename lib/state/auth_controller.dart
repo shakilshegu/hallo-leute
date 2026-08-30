@@ -4,21 +4,12 @@ import 'package:poppylo/models/auth_models.dart';
 class AuthController extends StateNotifier<AuthState> {
   AuthController() : super(const AuthState());
 
-  void startPhoneVerification(String phoneNumber) {
-    state = state.copyWith(pendingPhoneNumber: phoneNumber);
+  void startPhoneVerification(String phoneNumber, {bool isNewUser = false}) {
+    state = state.copyWith(pendingPhoneNumber: phoneNumber, isNewUser: isNewUser);
   }
 
   void verifyCode() {
     state = state.copyWith(isSignedIn: true);
-  }
-
-  /// Email/password login for a returning user — unlike phone verification,
-  /// this skips onboarding entirely since the account already exists.
-  void signInExistingUser() {
-    state = state.copyWith(
-      isSignedIn: true,
-      onboardingStep: OnboardingStep.done,
-    );
   }
 
   void completeOnboardingStep(OnboardingStep next) {

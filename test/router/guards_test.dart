@@ -58,6 +58,22 @@ void main() {
   });
 
   testWidgets(
+      'auth guard sends a returning user (isNewUser: false) straight to home, skipping onboarding',
+      (tester) async {
+    final container = await pumpApp(tester);
+    final auth = container.read(authControllerProvider.notifier);
+    auth.startPhoneVerification('5551234567', isNewUser: false);
+    auth.verifyCode();
+    // Onboarding step is still at its default (profile) — a new user in
+    // this state would be held on /onboarding/profile by the guard.
+
+    container.read(routerProvider).go(AppRoutes.onboardProfile);
+    await tester.pumpAndSettle();
+
+    expect(currentLocation(container), AppRoutes.home);
+  });
+
+  testWidgets(
       'chat guard redirects to match details when the match is not yet accepted',
       (tester) async {
     final container = await pumpApp(tester);

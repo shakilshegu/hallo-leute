@@ -7,7 +7,8 @@ import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/auth_controller.dart';
 
 class GetStartedScreen extends ConsumerStatefulWidget {
-  const GetStartedScreen({super.key});
+  final bool isNewUser;
+  const GetStartedScreen({super.key, this.isNewUser = false});
 
   @override
   ConsumerState<GetStartedScreen> createState() => _GetStartedScreenState();
@@ -47,7 +48,7 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
 
     ref
         .read(authControllerProvider.notifier)
-        .startPhoneVerification(_phoneController.text.trim());
+        .startPhoneVerification(_phoneController.text.trim(), isNewUser: widget.isNewUser);
     context.push(AppRoutes.verify);
 
     setState(() => _isLoading = false);

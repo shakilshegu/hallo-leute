@@ -319,7 +319,7 @@ class MatchDetailScreen extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        context.pop();
+                        context.go(AppRoutes.home);
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),

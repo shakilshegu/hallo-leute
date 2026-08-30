@@ -11,7 +11,6 @@ import 'app_shell.dart';
 import '../screens/splash_screen.dart';
 import '../screens/welcome_screen.dart';
 import '../screens/get_started_screen.dart';
-import '../screens/login_screen.dart';
 import '../screens/verify_code_screen.dart';
 import '../screens/create_profile_screen.dart';
 import '../screens/interests_screen.dart';
@@ -87,13 +86,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.login,
-        pageBuilder: slideBuilder((c, s) => const GetStartedScreen()),
-        routes: [
-          GoRoute(
-            path: AppRoutes.emailLogin,
-            pageBuilder: slideBuilder((c, s) => const LoginScreen()),
-          ),
-        ],
+        pageBuilder: slideBuilder((c, s) {
+          final extra = s.extra as Map<String, dynamic>? ?? {};
+          final isNewUser = extra['isNewUser'] as bool? ?? false;
+          return GetStartedScreen(isNewUser: isNewUser);
+        }),
       ),
       GoRoute(
         path: AppRoutes.verify,

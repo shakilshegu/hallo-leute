@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/auth_controller.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  void _confirmLogout(BuildContext context, WidgetRef ref) {
+    HapticFeedback.lightImpact();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text("You'll need to verify your phone number again next time."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref.read(authControllerProvider.notifier).signOut();
+              context.go(AppRoutes.welcome);
+            },
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -37,42 +64,20 @@ class ProfileScreen extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Avatar with Badge
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: primaryColor.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 40,
-                        backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop'), // Aisha
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: primaryColor.withOpacity(0.2),
+                      width: 1,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE0A008), // Yellow badge
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                  child: const CircleAvatar(
+                    radius: 40,
+                    backgroundImage: NetworkImage(
+                        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop'), // Aisha
+                  ),
                 ),
                 const SizedBox(width: 20),
                 // Details
@@ -256,7 +261,8 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildSettingsRow(Icons.tune, 'Preferences', primaryColor, textTheme),
+                  _buildSettingsRow(Icons.tune, 'Preferences', primaryColor, textTheme,
+                      onTap: () => context.push(AppRoutes.editPreferencesPath)),
                   _buildDivider(primaryColor),
                   _buildSettingsRow(Icons.notifications_none, 'Notifications',
                       primaryColor, textTheme,
@@ -270,6 +276,13 @@ class ProfileScreen extends StatelessWidget {
                   _buildDivider(primaryColor),
                   _buildSettingsRow(Icons.info_outline, 'About Coffee Meet',
                       primaryColor, textTheme),
+                  _buildDivider(primaryColor),
+                  _buildSettingsRow(Icons.delete_outline, 'Delete Account',
+                      Colors.redAccent, textTheme, onTap: () {
+                    HapticFeedback.heavyImpact();
+                    ref.read(authControllerProvider.notifier).signOut();
+                    context.go(AppRoutes.welcome);
+                  }),
                 ],
               ),
             ),
@@ -278,7 +291,7 @@ class ProfileScreen extends StatelessWidget {
             // Footer
             Center(
               child: TextButton(
-                onPressed: () {},
+                onPressed: () => _confirmLogout(context, ref),
                 child: Text(
                   'Log out',
                   style: textTheme.titleMedium?.copyWith(
@@ -415,9 +428,9 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildSettingsRow(
       IconData icon, String label, Color primaryColor, TextTheme textTheme,
-      {bool hasDot = false}) {
+      {bool hasDot = false, VoidCallback? onTap}) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
