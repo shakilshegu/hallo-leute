@@ -42,9 +42,9 @@ void main() {
   }
 
   void signInAndCompleteOnboarding(ProviderContainer container) {
-    final auth = container.read(authControllerProvider.notifier);
-    auth.verifyCode();
-    auth.completeOnboardingStep(OnboardingStep.done);
+    container
+        .read(authControllerProvider.notifier)
+        .debugSignIn(isNewUser: true, onboardingStep: OnboardingStep.done);
   }
 
   testWidgets('auth guard redirects a signed-out user away from /home',
@@ -61,9 +61,9 @@ void main() {
       'auth guard sends a returning user (isNewUser: false) straight to home, skipping onboarding',
       (tester) async {
     final container = await pumpApp(tester);
-    final auth = container.read(authControllerProvider.notifier);
-    auth.startPhoneVerification('5551234567', isNewUser: false);
-    auth.verifyCode();
+    container
+        .read(authControllerProvider.notifier)
+        .debugSignIn(isNewUser: false);
     // Onboarding step is still at its default (profile) — a new user in
     // this state would be held on /onboarding/profile by the guard.
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poppylo/models/auth_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/auth_controller.dart';
 
@@ -18,6 +19,7 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _canProceed = false;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -38,20 +40,46 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
   void _handleContinue() async {
     if (!_canProceed || _isLoading) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     HapticFeedback.mediumImpact();
 
-    // Simulate network delay for sending OTP
-    await Future.delayed(const Duration(milliseconds: 800));
+    // E.164 format required by Firebase. Only US numbers for now — the
+    // country code picker above is display-only.
+    final e164Phone = '+1${_phoneController.text.trim()}';
 
-    if (!mounted) return;
+    try {
+      await ref.read(authControllerProvider.notifier).sendVerificationCode(
+            e164Phone,
+            isNewUser: widget.isNewUser,
+          );
+      if (!mounted) return;
 
-    ref
-        .read(authControllerProvider.notifier)
-        .startPhoneVerification(_phoneController.text.trim(), isNewUser: widget.isNewUser);
-    context.push(AppRoutes.verify);
-
-    setState(() => _isLoading = false);
+      final auth = ref.read(authControllerProvider);
+      if (auth.isSignedIn) {
+        // Android silently auto-verified via SMS retrieval — no code to type.
+        if (widget.isNewUser) {
+          ref
+              .read(authControllerProvider.notifier)
+              .completeOnboardingStep(OnboardingStep.profile);
+          context.push(AppRoutes.onboardProfile);
+        } else {
+          context.go(AppRoutes.home);
+        }
+      } else {
+        context.push(AppRoutes.verify);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+      HapticFeedback.heavyImpact();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -170,6 +198,13 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
                 ),
               ),
 
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: textTheme.bodySmall?.copyWith(color: Colors.red),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Continue Button

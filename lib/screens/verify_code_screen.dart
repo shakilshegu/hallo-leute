@@ -19,6 +19,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   final FocusNode _focusNode = FocusNode();
   bool _canProceed = false;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,32 +49,42 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   void _handleVerify() async {
     if (!_canProceed || _isLoading) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     HapticFeedback.mediumImpact();
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted) return;
-
-    final isNewUser = ref.read(authControllerProvider).isNewUser;
-    ref.read(authControllerProvider.notifier).verifyCode();
-
-    if (isNewUser) {
-      ref
+    try {
+      await ref
           .read(authControllerProvider.notifier)
-          .completeOnboardingStep(OnboardingStep.profile);
-      context.push(AppRoutes.onboardProfile);
-    } else {
-      // Returning users skip onboarding entirely. This must be `go`, not
-      // `push`: pushing a route that the guard then redirects into the
-      // bottom-nav shell renders the destination screen without its shell
-      // chrome (no tab bar) — `go` recomputes the whole stack and mounts
-      // the shell correctly.
-      context.go(AppRoutes.home);
-    }
+          .confirmVerificationCode(_codeController.text);
+      if (!mounted) return;
 
-    setState(() => _isLoading = false);
+      final isNewUser = ref.read(authControllerProvider).isNewUser;
+      if (isNewUser) {
+        ref
+            .read(authControllerProvider.notifier)
+            .completeOnboardingStep(OnboardingStep.profile);
+        context.push(AppRoutes.onboardProfile);
+      } else {
+        // Returning users skip onboarding entirely. This must be `go`, not
+        // `push`: pushing a route that the guard then redirects into the
+        // bottom-nav shell renders the destination screen without its shell
+        // chrome (no tab bar) — `go` recomputes the whole stack and mounts
+        // the shell correctly.
+        context.go(AppRoutes.home);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.heavyImpact();
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _codeController.clear();
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -118,7 +129,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
               const SizedBox(height: 12),
 
               Text(
-                'We sent a 6-digit code to\n+1 ${ref.watch(authControllerProvider).pendingPhoneNumber ?? ''}',
+                'We sent a 6-digit code to\n${ref.watch(authControllerProvider).pendingPhoneNumber ?? ''}',
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge?.copyWith(
                   color: colorScheme.primary.withOpacity(0.7),
@@ -187,6 +198,14 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
                 ),
               ),
 
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(color: Colors.red),
+                ),
+              ],
               const SizedBox(height: 32),
 
               Center(

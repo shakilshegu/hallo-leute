@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "967267012189",
+    "project_id": "coffee-meet-e8ea3",
+    "storage_bucket": "coffee-meet-e8ea3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967267012189:android:8925ea44c1f347e80f47b4",
+        "android_client_info": {
+          "package_name": "com.example.coffee_meet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdR1ITOrdgNGCSV0xxk-tJRMpEDRb8zGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,10 +21,13 @@ class ProfileScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(dialogContext).pop();
-              ref.read(authControllerProvider.notifier).signOut();
-              context.go(AppRoutes.welcome);
+              // Await so the auth guard sees the signed-out state before we
+              // navigate — otherwise it can still see isSignedIn: true and
+              // bounce this go(welcome) straight back to /home.
+              await ref.read(authControllerProvider.notifier).signOut();
+              if (context.mounted) context.go(AppRoutes.welcome);
             },
             child: const Text('Log out'),
           ),
@@ -278,10 +281,10 @@ class ProfileScreen extends ConsumerWidget {
                       primaryColor, textTheme),
                   _buildDivider(primaryColor),
                   _buildSettingsRow(Icons.delete_outline, 'Delete Account',
-                      Colors.redAccent, textTheme, onTap: () {
+                      Colors.redAccent, textTheme, onTap: () async {
                     HapticFeedback.heavyImpact();
-                    ref.read(authControllerProvider.notifier).signOut();
-                    context.go(AppRoutes.welcome);
+                    await ref.read(authControllerProvider.notifier).signOut();
+                    if (context.mounted) context.go(AppRoutes.welcome);
                   }),
                 ],
               ),
