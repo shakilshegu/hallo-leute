@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/services/api_client.dart';
+import 'package:poppylo/services/onboarding_api.dart';
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController([this._injectedFirebaseAuth]) : super(const AuthState());
@@ -93,6 +95,45 @@ class AuthController extends StateNotifier<AuthState> {
       throw Exception(e.message ?? "That code didn't work — try again.");
     }
     state = state.copyWith(isSignedIn: true);
+  }
+
+  /// Cold-start login: if Firebase still holds a session, re-establish it with
+  /// the backend so the user skips OTP. Called once before the router mounts.
+  ///
+  ///  - no Firebase session      → signed out (Welcome)
+  ///  - session + `/auth/sync` ok → routed by the backend's onboarding status
+  ///  - session + 401            → stale token, sign out (Welcome)
+  ///  - session + backend down   → let the returning user in; the profile
+  ///    screens re-sync once they're online
+  Future<void> restoreSession(OnboardingApi api) async {
+    User? user;
+    try {
+      user = _firebaseAuth.currentUser;
+    } catch (_) {
+      user = null;
+    }
+    if (user == null) {
+      state = const AuthState();
+      return;
+    }
+
+    try {
+      final sync = await api.syncUser();
+      applyBackendSync(onboardingCompleted: sync.onboardingCompleted);
+    } on ApiException catch (e) {
+      if (e.isUnauthorized) {
+        try {
+          await _firebaseAuth.signOut();
+        } catch (_) {}
+        state = const AuthState();
+      } else {
+        state = state.copyWith(
+          isSignedIn: true,
+          isNewUser: false,
+          onboardingStep: OnboardingStep.done,
+        );
+      }
+    }
   }
 
   void completeOnboardingStep(OnboardingStep next) {

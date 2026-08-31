@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:poppylo/models/profile_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/auth_controller.dart';
+import 'package:poppylo/state/profile_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  static const _primary = Color(0xFF1D3D33);
+  static const _bg = Color(0xFFF3F1EB);
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {
     HapticFeedback.lightImpact();
@@ -14,7 +20,8 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Log out?'),
-        content: const Text("You'll need to verify your phone number again next time."),
+        content: const Text(
+            "You'll need to verify your phone number again next time."),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
@@ -38,307 +45,326 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final primaryColor = const Color(0xFF1D3D33); // Dark green
-    final bgColor = const Color(0xFFF3F1EB); // Base app background
+    final me = ref.watch(meProvider);
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: _bg,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        child: me.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: _primary),
+          ),
+          error: (_, __) =>
+              _ErrorState(onRetry: () => ref.invalidate(meProvider)),
+          data: (data) => _Content(
+            me: data,
+            onLogout: () => _confirmLogout(context, ref),
+            onDeleteAccount: () async {
+              HapticFeedback.heavyImpact();
+              await ref.read(authControllerProvider.notifier).signOut();
+              if (context.mounted) context.go(AppRoutes.welcome);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wifi_off_rounded,
+              color: ProfileScreen._primary, size: 40),
+          const SizedBox(height: 12),
+          const Text("Couldn't load your profile",
+              style: TextStyle(color: ProfileScreen._primary)),
+          const SizedBox(height: 16),
+          TextButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+class _Content extends StatelessWidget {
+  const _Content({
+    required this.me,
+    required this.onLogout,
+    required this.onDeleteAccount,
+  });
+
+  final UserMe me;
+  final VoidCallback onLogout;
+  final Future<void> Function() onDeleteAccount;
+
+  static const _primary = ProfileScreen._primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final profile = me.profile;
+    final prefs = me.preferences;
+    final purposeLabel = purposeLabelFromApi(me.purpose);
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: IconButton(
+            icon: const Icon(Icons.settings_outlined, color: _primary),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push(AppRoutes.editPreferencesPath);
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // --- Header: avatar + name/job ---
+        Row(
           children: [
-            // Top Bar with Settings
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: Icon(Icons.settings_outlined, color: primaryColor),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  context.push(AppRoutes.editPreferencesPath);
-                },
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _primary.withOpacity(0.2)),
+              ),
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: _primary.withOpacity(0.08),
+                backgroundImage:
+                    (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty)
+                        ? NetworkImage(profile.photoUrl!)
+                        : null,
+                child: (profile?.photoUrl == null || profile!.photoUrl!.isEmpty)
+                    ? const Icon(Icons.person, color: _primary, size: 34)
+                    : null,
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Profile Info (Avatar + Details)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: primaryColor.withOpacity(0.2),
-                      width: 1,
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile == null
+                        ? 'Your profile'
+                        : '${profile.firstName}, ${profile.age}',
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: _primary,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: const CircleAvatar(
-                    radius: 40,
-                    backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop'), // Aisha
+                  if ((profile?.job ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      profile!.job!,
+                      style: textTheme.bodyMedium
+                          ?.copyWith(color: _primary.withOpacity(0.8)),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    'COFFEE MEET MEMBER',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: _primary.withOpacity(0.5),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                      fontSize: 9,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 20),
-                // Details
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        if ((profile?.bio ?? '').isNotEmpty) ...[
+          Text(
+            profile!.bio!,
+            style: textTheme.bodyMedium
+                ?.copyWith(color: _primary.withOpacity(0.8), height: 1.5),
+          ),
+          const SizedBox(height: 12),
+        ],
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push(AppRoutes.editProfilePath);
+          },
+          child: Text(
+            'Edit profile',
+            style: textTheme.bodyMedium
+                ?.copyWith(color: _primary, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // --- Stats (static placeholders — no backend yet) ---
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE2E8DF),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            children: [
+              Expanded(child: _stat('12', 'COFFEE MEETS', textTheme)),
+              _vDivider(),
+              Expanded(child: _stat('5', 'CONNECTIONS', textTheme)),
+              _vDivider(),
+              Expanded(child: _stat('4.9', 'AVG RATING', textTheme)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+
+        // --- Interests ---
+        if (me.interests.isNotEmpty) ...[
+          _sectionHeader('INTERESTS', textTheme, icon: Icons.edit, onTap: () {
+            HapticFeedback.lightImpact();
+            context.push(AppRoutes.editProfilePath);
+          }),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 12,
+            children: [
+              for (final i in me.interests) _interestChip(i.label, textTheme),
+            ],
+          ),
+          const SizedBox(height: 32),
+        ],
+
+        // --- Looking for ---
+        if (purposeLabel.isNotEmpty) ...[
+          _sectionHeader('LOOKING FOR', textTheme),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: _primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.local_cafe_outlined,
+                    color: Colors.white.withOpacity(0.9), size: 28),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Aisha, 28',
-                        style: textTheme.headlineSmall?.copyWith(
-                          color: primaryColor,
+                        purposeLabel,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Product designer',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: primaryColor.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'KOCHI • JOINED MAR 2024',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: primaryColor.withOpacity(0.5),
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Bio
-            Text(
-              'Obsessed with typography, specialty light roasts, and building tools that connect people. Always down to chat about design systems.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: primaryColor.withOpacity(0.8),
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                context.push(AppRoutes.editProfilePath);
-              },
-              child: Text(
-                'Edit profile',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Stats Container
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE2E8DF), // Light greyish green
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: _buildStatColumn(
-                          '12', 'COFFEE MEETS', primaryColor, textTheme)),
-                  Container(
-                      width: 1, height: 40, color: primaryColor.withOpacity(0.1)),
-                  Expanded(
-                      child: _buildStatColumn(
-                          '5', 'CONNECTIONS', primaryColor, textTheme)),
-                  Container(
-                      width: 1, height: 40, color: primaryColor.withOpacity(0.1)),
-                  Expanded(
-                      child: _buildStatColumn(
-                          '4.9', 'AVG RATING', primaryColor, textTheme)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Interests Section
-            _buildSectionHeader('INTERESTS',
-                icon: Icons.edit, primaryColor: primaryColor, textTheme: textTheme),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 12,
-              children: [
-                _buildInterestChip('Travel', primaryColor, textTheme),
-                _buildInterestChip('Design', primaryColor, textTheme),
-                _buildInterestChip('Startups', primaryColor, textTheme),
-                _buildInterestChip('Coffee', primaryColor, textTheme),
-                _buildInterestChip('Books', primaryColor, textTheme),
-              ],
-            ),
-            const SizedBox(height: 32),
-
-            // Looking For Section
-            _buildSectionHeader('LOOKING FOR',
-                primaryColor: primaryColor, textTheme: textTheme),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.people_alt_outlined,
-                      color: Colors.white.withOpacity(0.9), size: 28),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Shared interests',
-                          style: textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      if (prefs != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          'Casual conversation • Within 5 km • Ages 24 to 34',
+                          'Within ${prefs.maxDistanceKm} km • Ages ${prefs.minAge}–${prefs.maxAge}',
                           style: textTheme.bodySmall?.copyWith(
                             color: Colors.white.withOpacity(0.7),
                             height: 1.3,
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.chevron_right, color: Colors.white, size: 24),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // People You've Met
-            _buildSectionHeader('PEOPLE YOU\'VE MET',
-                actionText: 'See all',
-                primaryColor: primaryColor,
-                textTheme: textTheme),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildMetPerson('Marcus', 'AUG 2024',
-                    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop',
-                    primaryColor, textTheme),
-                _buildMetPerson('Elena', 'JUL 2024',
-                    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
-                    primaryColor, textTheme),
-                _buildMetPerson('David', 'JUN 2024',
-                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
-                    primaryColor, textTheme),
+                ),
+                GestureDetector(
+                  onTap: () => context.push(AppRoutes.editPreferencesPath),
+                  child: const Icon(Icons.chevron_right,
+                      color: Colors.white, size: 24),
+                ),
               ],
             ),
-            const SizedBox(height: 32),
+          ),
+          const SizedBox(height: 32),
+        ],
 
-            // Settings Section
-            _buildSectionHeader('SETTINGS',
-                primaryColor: primaryColor, textTheme: textTheme),
-            const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                children: [
-                  _buildSettingsRow(Icons.tune, 'Preferences', primaryColor, textTheme,
-                      onTap: () => context.push(AppRoutes.editPreferencesPath)),
-                  _buildDivider(primaryColor),
-                  _buildSettingsRow(Icons.notifications_none, 'Notifications',
-                      primaryColor, textTheme,
-                      hasDot: true),
-                  _buildDivider(primaryColor),
-                  _buildSettingsRow(Icons.shield_outlined, 'Safety centre',
-                      primaryColor, textTheme),
-                  _buildDivider(primaryColor),
-                  _buildSettingsRow(Icons.help_outline, 'Help and support',
-                      primaryColor, textTheme),
-                  _buildDivider(primaryColor),
-                  _buildSettingsRow(Icons.info_outline, 'About Coffee Meet',
-                      primaryColor, textTheme),
-                  _buildDivider(primaryColor),
-                  _buildSettingsRow(Icons.delete_outline, 'Delete Account',
-                      Colors.redAccent, textTheme, onTap: () async {
-                    HapticFeedback.heavyImpact();
-                    await ref.read(authControllerProvider.notifier).signOut();
-                    if (context.mounted) context.go(AppRoutes.welcome);
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // Footer
-            Center(
-              child: TextButton(
-                onPressed: () => _confirmLogout(context, ref),
-                child: Text(
-                  'Log out',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFFC04F43), // Red/Orange
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: Text(
-                'COFFEE MEET • VERSION 1.0.2',
-                style: textTheme.labelSmall?.copyWith(
-                  color: primaryColor.withOpacity(0.4),
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 10,
-                ),
-              ),
-            ),
-            const SizedBox(height: 48), // Padding for bottom nav
-          ],
+        // --- Settings (static) ---
+        _sectionHeader('SETTINGS', textTheme),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            children: [
+              _settingsRow(Icons.tune, 'Preferences', textTheme,
+                  onTap: () => context.push(AppRoutes.editPreferencesPath)),
+              _divider(),
+              _settingsRow(Icons.notifications_none, 'Notifications', textTheme,
+                  hasDot: true),
+              _divider(),
+              _settingsRow(Icons.shield_outlined, 'Safety centre', textTheme),
+              _divider(),
+              _settingsRow(Icons.help_outline, 'Help and support', textTheme),
+              _divider(),
+              _settingsRow(Icons.info_outline, 'About Coffee Meet', textTheme),
+              _divider(),
+              _settingsRow(Icons.delete_outline, 'Delete Account', textTheme,
+                  color: Colors.redAccent, onTap: onDeleteAccount),
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 48),
+
+        Center(
+          child: TextButton(
+            onPressed: onLogout,
+            child: Text(
+              'Log out',
+              style: textTheme.titleMedium?.copyWith(
+                color: const Color(0xFFC04F43),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: Text(
+            'COFFEE MEET • VERSION 1.0.2',
+            style: textTheme.labelSmall?.copyWith(
+              color: _primary.withOpacity(0.4),
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ),
+        const SizedBox(height: 48),
+      ],
     );
   }
 
-  Widget _buildStatColumn(
-      String number, String label, Color primaryColor, TextTheme textTheme) {
+  Widget _stat(String number, String label, TextTheme textTheme) {
     return Column(
       children: [
-        Text(
-          number,
-          style: textTheme.headlineSmall?.copyWith(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(number,
+            style: textTheme.headlineSmall
+                ?.copyWith(color: _primary, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(
           label,
           style: textTheme.labelSmall?.copyWith(
-            color: primaryColor.withOpacity(0.6),
+            color: _primary.withOpacity(0.6),
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
             fontSize: 9,
@@ -348,105 +374,63 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title,
-      {IconData? icon,
-      String? actionText,
-      required Color primaryColor,
-      required TextTheme textTheme}) {
+  Widget _vDivider() =>
+      Container(width: 1, height: 40, color: _primary.withOpacity(0.1));
+
+  Widget _sectionHeader(String title, TextTheme textTheme,
+      {IconData? icon, VoidCallback? onTap}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
           style: textTheme.labelSmall?.copyWith(
-            color: primaryColor.withOpacity(0.5),
+            color: _primary.withOpacity(0.5),
             letterSpacing: 1.5,
             fontWeight: FontWeight.bold,
             fontSize: 10,
           ),
         ),
         if (icon != null)
-          Icon(icon, size: 16, color: primaryColor.withOpacity(0.7)),
-        if (actionText != null)
-          Text(
-          actionText,
-          style: textTheme.labelSmall?.copyWith(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: onTap,
+            child: Icon(icon, size: 16, color: _primary.withOpacity(0.7)),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildInterestChip(String label, Color primaryColor, TextTheme textTheme) {
+  Widget _interestChip(String label, TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: primaryColor.withOpacity(0.1),
-        ),
+        border: Border.all(color: _primary.withOpacity(0.1)),
       ),
       child: Text(
         label,
-        style: textTheme.bodySmall?.copyWith(
-          color: primaryColor,
-          fontWeight: FontWeight.w600,
-        ),
+        style: textTheme.bodySmall
+            ?.copyWith(color: _primary, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _buildMetPerson(String name, String date, String imageUrl,
-      Color primaryColor, TextTheme textTheme) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 32,
-          backgroundImage: NetworkImage(imageUrl),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          name,
-          style: textTheme.bodyMedium?.copyWith(
-            color: primaryColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          date,
-          style: textTheme.labelSmall?.copyWith(
-            color: primaryColor.withOpacity(0.5),
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSettingsRow(
-      IconData icon, String label, Color primaryColor, TextTheme textTheme,
-      {bool hasDot = false, VoidCallback? onTap}) {
+  Widget _settingsRow(IconData icon, String label, TextTheme textTheme,
+      {bool hasDot = false, VoidCallback? onTap, Color? color}) {
+    final c = color ?? _primary;
     return InkWell(
       onTap: onTap ?? () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
-            Icon(icon, color: primaryColor.withOpacity(0.7), size: 22),
+            Icon(icon, color: c.withOpacity(0.7), size: 22),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
                 label,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: primaryColor,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: textTheme.bodyMedium
+                    ?.copyWith(color: c, fontWeight: FontWeight.w500),
               ),
             ),
             if (hasDot)
@@ -455,26 +439,23 @@ class ProfileScreen extends ConsumerWidget {
                 width: 6,
                 height: 6,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFE0A008), // Yellow dot
+                  color: Color(0xFFE0A008),
                   shape: BoxShape.circle,
                 ),
               ),
-            Icon(Icons.chevron_right,
-                color: primaryColor.withOpacity(0.3), size: 20),
+            Icon(Icons.chevron_right, color: c.withOpacity(0.3), size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDivider(Color primaryColor) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 58, right: 20), // Align with text
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: primaryColor.withOpacity(0.05),
-      ),
-    );
-  }
+  Widget _divider() => Padding(
+        padding: const EdgeInsets.only(left: 58, right: 20),
+        child: Divider(
+          height: 1,
+          thickness: 1,
+          color: _primary.withOpacity(0.05),
+        ),
+      );
 }

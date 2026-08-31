@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/auth_models.dart';
 import 'package:poppylo/models/onboarding_models.dart';
+import 'package:poppylo/models/profile_models.dart' show kInterestCatalog;
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/services/api_client.dart';
 import 'package:poppylo/services/onboarding_api.dart';
@@ -32,20 +33,7 @@ class _ConversationPrefsScreenState
     'Good conversation': Icons.chat_bubble_outline,
   };
 
-  static const _interests = [
-    'Travel',
-    'Food',
-    'Technology',
-    'Startups',
-    'Music',
-    'Movies',
-    'Fitness',
-    'Books',
-    'Design',
-    'Photography',
-    'Sports',
-    'Gaming',
-  ];
+  static const _interests = kInterestCatalog;
 
   static const _styles = ['Casual', 'Deep', 'Professional', 'Playful'];
 

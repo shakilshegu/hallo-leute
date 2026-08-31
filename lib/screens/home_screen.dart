@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/profile_controller.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _lastBackPress;
 
   void _startCreateMeet() {
@@ -18,11 +20,31 @@ class _HomeScreenState extends State<HomeScreen> {
     context.push(AppRoutes.create);
   }
 
+  String get _partOfDay {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+
+    final me = ref.watch(meProvider);
+    final firstName = me.maybeWhen(
+      data: (d) => d.profile?.firstName,
+      orElse: () => null,
+    );
+    final photoUrl = me.maybeWhen(
+      data: (d) => d.profile?.photoUrl,
+      orElse: () => null,
+    );
+    final greeting = (firstName != null && firstName.isNotEmpty)
+        ? '$_partOfDay, $firstName'
+        : _partOfDay;
 
     return PopScope(
       canPop: false,
@@ -62,12 +84,17 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.notifications_none, color: colorScheme.primary),
               onPressed: () {},
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 16.0),
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
               child: CircleAvatar(
                 radius: 16,
-                backgroundImage: NetworkImage(
-                    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop'),
+                backgroundColor: colorScheme.primary.withOpacity(0.1),
+                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: (photoUrl == null || photoUrl.isEmpty)
+                    ? Icon(Icons.person, size: 18, color: colorScheme.primary)
+                    : null,
               ),
             ),
           ],
@@ -81,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 // Header Section
                 Text(
-                  'Good morning, Aisha',
+                  greeting,
                   style: textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colorScheme.primary,
@@ -291,7 +318,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: ElevatedButton(
                               onPressed: () {
                                 HapticFeedback.lightImpact();
-                                context.push(AppRoutes.chatPath('demo-meeting'));
+                                context
+                                    .push(AppRoutes.chatPath('demo-meeting'));
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFE2E8DF),
