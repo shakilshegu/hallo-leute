@@ -50,7 +50,8 @@ class _MatchStatusScreenState extends ConsumerState<MatchStatusScreen>
             children: [
               const Spacer(flex: 2),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF3E7C9),
                   border: Border.all(color: const Color(0xFFE5C88B), width: 1),
@@ -157,8 +158,11 @@ class _MatchStatusScreenState extends ConsumerState<MatchStatusScreen>
               TextButton(
                 onPressed: () {
                   HapticFeedback.heavyImpact();
-                  ref.read(matchRepositoryProvider.notifier).accept(widget.matchId);
-                  context.pushReplacement(AppRoutes.matchConfirmedPath(widget.matchId));
+                  ref
+                      .read(matchRepositoryProvider.notifier)
+                      .accept(widget.matchId);
+                  context.pushReplacement(
+                      AppRoutes.matchConfirmedPath(widget.matchId));
                 },
                 child: Text(
                   '[DEV] Simulate Other Accepted',

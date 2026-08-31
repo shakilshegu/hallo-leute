@@ -20,8 +20,9 @@ class AppRoutes {
   static const coffeeReady = '/coffee-ready';
 
   static const home = '/home';
-  static const matches = '/matches';
-  static const meetings = '/meetings';
+  static const discover = '/discover';
+  static const matches = '/matches'; // "Chats" tab
+  static const meetings = '/meetings'; // off the nav bar, still routable
   static const profile = '/profile';
 
   static const editProfile = 'edit';

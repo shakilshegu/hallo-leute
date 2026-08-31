@@ -213,5 +213,4 @@ class CafeDetailsScreen extends ConsumerWidget {
       ),
     );
   }
-
 }

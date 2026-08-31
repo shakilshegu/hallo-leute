@@ -261,7 +261,8 @@ class _CreateCoffeeMeetScreenState
                   _buildSingleSelectChips(
                     options: _durationOptions,
                     selectedValue: _selectedDuration,
-                    onSelected: (val) => setState(() => _selectedDuration = val),
+                    onSelected: (val) =>
+                        setState(() => _selectedDuration = val),
                   ),
                   _buildSectionTitle('HOW FAR'),
                   Row(
@@ -364,4 +365,3 @@ class _CreateCoffeeMeetScreenState
     );
   }
 }
-

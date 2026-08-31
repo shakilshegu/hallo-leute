@@ -191,7 +191,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           child: ElevatedButton(
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              context.push(AppRoutes.login, extra: {'isNewUser': true});
+                              context.push(AppRoutes.login,
+                                  extra: {'isNewUser': true});
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
@@ -223,7 +224,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           child: TextButton(
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              context.push(AppRoutes.login, extra: {'isNewUser': false});
+                              context.push(AppRoutes.login,
+                                  extra: {'isNewUser': false});
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: colorScheme.primary,

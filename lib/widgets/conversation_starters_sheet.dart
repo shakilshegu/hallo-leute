@@ -13,8 +13,7 @@ class ConversationStartersSheet extends StatefulWidget {
       _ConversationStartersSheetState();
 }
 
-class _ConversationStartersSheetState
-    extends State<ConversationStartersSheet> {
+class _ConversationStartersSheetState extends State<ConversationStartersSheet> {
   static const _prompts = [
     "What's something you've been enjoying lately?",
     "What's a place you'd love to visit?",

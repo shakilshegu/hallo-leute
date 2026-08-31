@@ -10,7 +10,9 @@ import 'package:poppylo/widgets/conversation_starters_sheet.dart';
 
 String _formatDuration(Duration d) {
   final minutes = d.inMinutes;
-  return minutes >= 60 ? '${(minutes / 60).toStringAsFixed(0)} hr' : '$minutes min';
+  return minutes >= 60
+      ? '${(minutes / 60).toStringAsFixed(0)} hr'
+      : '$minutes min';
 }
 
 const _weekdayNames = [
@@ -107,10 +109,14 @@ class MeetingDetailsScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _detailRow(context, 'WHEN', _formatMeetingTime(meeting.startTime)),
+                  _detailRow(
+                      context, 'WHEN', _formatMeetingTime(meeting.startTime)),
                   const SizedBox(height: 16),
-                  _detailRow(context, 'DURATION',
-                      _formatDuration(meeting.endTime.difference(meeting.startTime))),
+                  _detailRow(
+                      context,
+                      'DURATION',
+                      _formatDuration(
+                          meeting.endTime.difference(meeting.startTime))),
                   const SizedBox(height: 16),
                   _detailRow(
                       context, 'CAFÉ', meeting.cafeName ?? 'Not agreed yet'),

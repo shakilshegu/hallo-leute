@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/profile_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/auth_api.dart';
 import 'package:poppylo/state/auth_controller.dart';
 import 'package:poppylo/state/profile_controller.dart';
 
@@ -33,7 +34,9 @@ class ProfileScreen extends ConsumerWidget {
               // Await so the auth guard sees the signed-out state before we
               // navigate — otherwise it can still see isSignedIn: true and
               // bounce this go(welcome) straight back to /home.
-              await ref.read(authControllerProvider.notifier).signOut();
+              await ref
+                  .read(authControllerProvider.notifier)
+                  .signOut(authApi: ref.read(authApiProvider));
               if (context.mounted) context.go(AppRoutes.welcome);
             },
             child: const Text('Log out'),
@@ -61,7 +64,9 @@ class ProfileScreen extends ConsumerWidget {
             onLogout: () => _confirmLogout(context, ref),
             onDeleteAccount: () async {
               HapticFeedback.heavyImpact();
-              await ref.read(authControllerProvider.notifier).signOut();
+              await ref
+                  .read(authControllerProvider.notifier)
+                  .signOut(authApi: ref.read(authApiProvider));
               if (context.mounted) context.go(AppRoutes.welcome);
             },
           ),

@@ -40,12 +40,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 ),
                 Row(
                   children: [
-                    _buildTabHeader('Active', _selectedTabIndex == 0, primaryColor, textTheme, () {
+                    _buildTabHeader('Active', _selectedTabIndex == 0,
+                        primaryColor, textTheme, () {
                       HapticFeedback.selectionClick();
                       setState(() => _selectedTabIndex = 0);
                     }),
                     const SizedBox(width: 16),
-                    _buildTabHeader('Past', _selectedTabIndex == 1, primaryColor, textTheme, () {
+                    _buildTabHeader(
+                        'Past', _selectedTabIndex == 1, primaryColor, textTheme,
+                        () {
                       HapticFeedback.selectionClick();
                       setState(() => _selectedTabIndex = 1);
                     }),
@@ -57,7 +60,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
             if (_selectedTabIndex == 0) ...[
               // Active Tab Content
-              
+
               // Main Action Card
               Stack(
                 clipBehavior: Clip.none,
@@ -66,11 +69,13 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   Container(
                     height: 380,
                     width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 28), // space for overlapping pill
+                    margin: const EdgeInsets.only(
+                        bottom: 28), // space for overlapping pill
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
                       image: const DecorationImage(
-                        image: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop'),
+                        image: NetworkImage(
+                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -91,58 +96,60 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         children: [
                           const Spacer(),
                           // Text content at bottom
-                        Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'NEEDS YOUR ANSWER',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: Colors.white.withOpacity(0.7),
-                                  letterSpacing: 1.5,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Sarah, 27',
-                                style: textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Product designer',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Text(
-                                    '2.1 KM • SAT 5:00 PM • 45 MIN',
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: Colors.white.withOpacity(0.6),
-                                      letterSpacing: 1.0,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
+                          Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'NEEDS YOUR ANSWER',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: Colors.white.withOpacity(0.7),
+                                    letterSpacing: 1.5,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
                                   ),
-                                  const Spacer(),
-                                  Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.5), size: 20),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                            ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sarah, 27',
+                                  style: textTheme.headlineMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Product designer',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Text(
+                                      '2.1 KM • SAT 5:00 PM • 45 MIN',
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: Colors.white.withOpacity(0.6),
+                                        letterSpacing: 1.0,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Icon(Icons.more_horiz,
+                                        color: Colors.white.withOpacity(0.5),
+                                        size: 20),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                   // Floating Action Pill
                   Positioned(
@@ -165,9 +172,11 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         children: [
                           InkWell(
                             onTap: () {},
-                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(28)),
+                            borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(28)),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
                               child: Text(
                                 'Pass',
                                 style: textTheme.titleSmall?.copyWith(
@@ -178,14 +187,16 @@ class _MatchesScreenState extends State<MatchesScreen> {
                             ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.only(right: 4, top: 4, bottom: 4),
+                            padding: const EdgeInsets.only(
+                                right: 4, top: 4, bottom: 4),
                             child: ElevatedButton(
                               onPressed: () {},
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -225,7 +236,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 subtitle: 'SENT 2H AGO',
                 status: 'WAITING',
                 statusColor: primaryColor.withOpacity(0.5),
-                imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
+                imageUrl:
+                    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
                 primaryColor: primaryColor,
                 textTheme: textTheme,
               ),
@@ -237,7 +249,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 subtitle: 'SUN 11:00 AM',
                 status: 'Choose café',
                 statusColor: const Color(0xFFE0A008), // Yellow
-                imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
+                imageUrl:
+                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
                 primaryColor: primaryColor,
                 textTheme: textTheme,
               ),
@@ -250,7 +263,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 status: 'CONFIRMED',
                 statusColor: primaryColor,
                 hasDot: true,
-                imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop',
+                imageUrl:
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop',
                 primaryColor: primaryColor,
                 textTheme: textTheme,
               ),
@@ -262,14 +276,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 subtitle: 'EXPIRED 1D AGO',
                 status: 'GONE',
                 statusColor: primaryColor.withOpacity(0.3),
-                imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop', // A grayscale image ideally, but we'll use opacity
+                imageUrl:
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop', // A grayscale image ideally, but we'll use opacity
                 primaryColor: primaryColor,
                 textTheme: textTheme,
                 isFaded: true,
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               OutlinedButton(
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
@@ -308,7 +323,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
-  Widget _buildTabHeader(String label, bool isSelected, Color primaryColor, TextTheme textTheme, VoidCallback onTap) {
+  Widget _buildTabHeader(String label, bool isSelected, Color primaryColor,
+      TextTheme textTheme, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Column(

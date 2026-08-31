@@ -22,7 +22,8 @@ class AuthState {
     this.onboardingStep = OnboardingStep.profile,
   });
 
-  bool get isOnboardingComplete => !isNewUser || onboardingStep == OnboardingStep.done;
+  bool get isOnboardingComplete =>
+      !isNewUser || onboardingStep == OnboardingStep.done;
 
   AuthState copyWith({
     bool? isSignedIn,

@@ -265,9 +265,11 @@ class _CafeSuggestedScreenState extends ConsumerState<CafeSuggestedScreen> {
                           widget.matchId,
                           cafeName: match.cafeName ?? 'Brew Lab',
                           partnerName: match.partnerName,
-                          startTime: DateTime.now().add(const Duration(hours: 2)),
+                          startTime:
+                              DateTime.now().add(const Duration(hours: 2)),
                         );
-                    context.pushReplacement(AppRoutes.meetingConfirmedPath(meetingId));
+                    context.pushReplacement(
+                        AppRoutes.meetingConfirmedPath(meetingId));
                   },
                   child: Text(
                     '[DEV] Simulate Other Accepted Cafe',

@@ -65,7 +65,8 @@ class ChatScreen extends StatelessWidget {
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: 'cancel',
-                      child: Text('Cancel Meeting', style: TextStyle(color: Colors.redAccent)),
+                      child: Text('Cancel Meeting',
+                          style: TextStyle(color: Colors.redAccent)),
                     ),
                   ],
                 ),
@@ -122,7 +123,6 @@ class ChatScreen extends StatelessWidget {
                   imageUrl:
                       null, // Don't repeat avatar for consecutive messages if preferred, but mockup has it isolated anyway
                 ),
-
               ],
             ),
           ),
@@ -192,8 +192,6 @@ class ChatScreen extends StatelessWidget {
       ),
     );
   }
-
-
 
   Widget _buildIncomingMessage({
     required BuildContext context,

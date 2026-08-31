@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:poppylo/router/routes.dart';
-import 'package:poppylo/state/profile_controller.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poppylo/models/discover_models.dart';
+import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/discover_controller.dart';
+import 'package:poppylo/state/profile_controller.dart';
+import 'package:poppylo/widgets/coffee_meet_card.dart';
+import 'package:poppylo/widgets/nearby_person_card.dart';
+
+const _green = Color(0xFF1B3B2B);
+const _bg = Color(0xFFF3F1EB);
+
+/// Home / Discover — the first screen after onboarding. Personalised header
+/// from `/users/me`; the discovery feed is realistic sample data (matching
+/// has no backend yet).
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -14,11 +25,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _lastBackPress;
+  String? _locationOverride;
+  bool _hasUnreadNotifications = true;
 
-  void _startCreateMeet() {
-    HapticFeedback.mediumImpact();
-    context.push(AppRoutes.create);
-  }
+  static const _cities = [
+    'Kochi, India',
+    'Bengaluru, India',
+    'Mumbai, India',
+    'Chennai, India',
+    'Hyderabad, India',
+    'Pune, India',
+  ];
 
   String get _partOfDay {
     final h = DateTime.now().hour;
@@ -27,12 +44,150 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return 'Good evening';
   }
 
+  Future<void> _handleBack() async {
+    final now = DateTime.now();
+    if (_lastBackPress != null &&
+        now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBackPress = now;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        content: Text('Press back again to exit'),
+        duration: Duration(seconds: 2),
+      ));
+  }
+
+  void _openCreate() {
+    HapticFeedback.mediumImpact();
+    context.push(AppRoutes.create);
+  }
+
+  Future<void> _changeLocation() async {
+    HapticFeedback.selectionClick();
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: _bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'CHOOSE YOUR CITY',
+                  style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                        color: _green.withOpacity(0.5),
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ),
+            for (final c in _cities)
+              ListTile(
+                leading: const Icon(Icons.location_on_outlined, color: _green),
+                title: Text(c),
+                onTap: () => Navigator.pop(ctx, c),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) setState(() => _locationOverride = picked);
+  }
+
+  void _viewMeet(CoffeeMeet meet) {
+    HapticFeedback.lightImpact();
+    context.push(AppRoutes.matchPath(meet.id));
+  }
+
+  void _viewPerson(NearbyPerson person) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _bg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: _green.withOpacity(0.08),
+                backgroundImage: NetworkImage(person.avatarUrl),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                person.name,
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                      color: _green,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${formatDistance(person.distanceKm)} away',
+                style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                      color: _green.withOpacity(0.5),
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 6,
+                children: [
+                  for (final t in person.interestTags)
+                    Chip(
+                      label: Text(t),
+                      backgroundColor: _green.withOpacity(0.06),
+                      side: BorderSide.none,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _openCreate();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const Text('Invite for a coffee'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
     final me = ref.watch(meProvider);
     final firstName = me.maybeWhen(
       data: (d) => d.profile?.firstName,
@@ -46,306 +201,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ? '$_partOfDay, $firstName'
         : _partOfDay;
 
+    final feed = ref.watch(discoverFeedProvider);
+    final filtered = ref.watch(filteredDiscoverProvider);
+    final activeFilters = ref.watch(discoverFiltersProvider);
+    final String location = _locationOverride ??
+        feed.maybeWhen<String>(
+          data: (f) => f.location,
+          orElse: () => 'Kochi, India',
+        );
+
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        final now = DateTime.now();
-        final canExit = _lastBackPress != null &&
-            now.difference(_lastBackPress!) < const Duration(seconds: 2);
-        if (canExit) {
-          SystemNavigator.pop();
-          return;
-        }
-        _lastBackPress = now;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            const SnackBar(
-              content: Text('Press back again to exit'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF3F1EB), // Base app color
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Text(
-            'Coffee Meet',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.notifications_none, color: colorScheme.primary),
-              onPressed: () {},
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: colorScheme.primary.withOpacity(0.1),
-                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                    ? NetworkImage(photoUrl)
-                    : null,
-                child: (photoUrl == null || photoUrl.isEmpty)
-                    ? Icon(Icons.person, size: 18, color: colorScheme.primary)
-                    : null,
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: _bg,
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          bottom: false,
+          child: RefreshIndicator(
+            color: _green,
+            onRefresh: () async {
+              ref.invalidate(discoverFeedProvider);
+              await ref.read(discoverFeedProvider.future);
+            },
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
-                // Header Section
-                Text(
-                  greeting,
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
-                  ),
+                _Header(
+                  greeting: greeting,
+                  photoUrl: photoUrl,
+                  hasUnread: _hasUnreadNotifications,
+                  onBell: () => setState(() => _hasUnreadNotifications = false),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Ready for a good conversation?',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.primary.withOpacity(0.8),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Stats Row
-                Row(
-                  children: [
-                    _buildStat('12 COFFEE MEETS', textTheme, colorScheme),
-                    _buildStatDot(colorScheme),
-                    _buildStat('5 CONNECTIONS', textTheme, colorScheme),
-                    _buildStatDot(colorScheme),
-                    _buildStat('4.8 AVG', textTheme, colorScheme),
-                  ],
+                const SizedBox(height: 14),
+                _LocationRow(location: location, onChange: _changeLocation),
+                const SizedBox(height: 20),
+                _Hero(onFind: _openCreate),
+                const SizedBox(height: 24),
+                _FilterChips(
+                  active: activeFilters,
+                  onToggle: (f) {
+                    HapticFeedback.selectionClick();
+                    final next = {...activeFilters};
+                    next.contains(f) ? next.remove(f) : next.add(f);
+                    ref.read(discoverFiltersProvider.notifier).state = next;
+                  },
                 ),
                 const SizedBox(height: 24),
-
-                // Main Action Card (Find someone for coffee)
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1B3B2B), // Dark green
-                    borderRadius: BorderRadius.circular(24),
+                filtered.when(
+                  loading: () => const _LoadingList(),
+                  error: (_, __) => _ErrorCard(
+                    onRetry: () => ref.invalidate(discoverFeedProvider),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'CONNECTION AWAITS',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withOpacity(0.6),
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
+                  data: (f) {
+                    if (f.meets.isEmpty) {
+                      return _EmptyState(
+                        filtered: activeFilters.isNotEmpty,
+                        onClearFilters: () => ref
+                            .read(discoverFiltersProvider.notifier)
+                            .state = {},
+                        onCreate: _openCreate,
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionHeader(
+                          title: 'Recommended for you',
+                          subtitle: 'Based on your interests and preferences',
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Find someone for\ncoffee',
-                        style: textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Find Match Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _startCreateMeet,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFFE89A00), // Yellow/Orange
-                            foregroundColor: colorScheme.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(26),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            'Find my match',
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary, // Dark text
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Upcoming Coffee
-                _buildSectionHeader(
-                    'UPCOMING COFFEE', 'See all', textTheme, colorScheme),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const CircleAvatar(
-                            radius: 28,
-                            backgroundImage: NetworkImage(
-                                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop'),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Sarah, 27',
-                                      style: textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.primary,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF0D4),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'CONFIRMED',
-                                        style: textTheme.labelSmall?.copyWith(
-                                          color: const Color(0xFFD97706),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 9,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'SAT 5:00 PM • BREW LAB • 1.2 KM',
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.primary.withOpacity(0.6),
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        const SizedBox(height: 16),
+                        for (final meet in f.meets) ...[
+                          CoffeeMeetCard(
+                              meet: meet, onView: () => _viewMeet(meet)),
+                          const SizedBox(height: 14),
                         ],
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F1EB),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'STARTS IN 2H 30M',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {},
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                    color:
-                                        colorScheme.primary.withOpacity(0.2)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: Text(
-                                'Get directions',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                context
-                                    .push(AppRoutes.chatPath('demo-meeting'));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE2E8DF),
-                                foregroundColor: colorScheme.primary,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: Text(
-                                'Message',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        if (f.nearbyPeople.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _SectionHeader(title: 'People nearby'),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 244,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.zero,
+                              itemCount: f.nearbyPeople.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (_, i) => NearbyPersonCard(
+                                person: f.nearbyPeople[i],
+                                onViewProfile: () =>
+                                    _viewPerson(f.nearbyPeople[i]),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -353,59 +308,441 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+}
 
-  Widget _buildStat(String text, TextTheme textTheme, ColorScheme colorScheme) {
-    return Text(
-      text,
-      style: textTheme.labelSmall?.copyWith(
-        color: colorScheme.primary.withOpacity(0.6),
-        fontWeight: FontWeight.bold,
-        fontSize: 9,
-        letterSpacing: 0.5,
-      ),
-    );
-  }
+class _Header extends StatelessWidget {
+  const _Header({
+    required this.greeting,
+    required this.photoUrl,
+    required this.hasUnread,
+    required this.onBell,
+  });
 
-  Widget _buildStatDot(ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-      child: Container(
-        width: 3,
-        height: 3,
-        decoration: BoxDecoration(
-          color: colorScheme.primary.withOpacity(0.3),
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
+  final String greeting;
+  final String? photoUrl;
+  final bool hasUnread;
+  final VoidCallback onBell;
 
-  Widget _buildSectionHeader(String title, String? action, TextTheme textTheme,
-      ColorScheme colorScheme) {
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.primary.withOpacity(0.6),
-            letterSpacing: 1.5,
-            fontWeight: FontWeight.bold,
-            fontSize: 10,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                greeting,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.headlineSmall?.copyWith(
+                  color: _green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Ready for a good conversation?',
+                style: textTheme.bodySmall?.copyWith(
+                  color: _green.withOpacity(0.6),
+                ),
+              ),
+            ],
           ),
         ),
-        if (action != null)
-          GestureDetector(
-            onTap: () {},
-            child: Text(
-              action,
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
+        const SizedBox(width: 8),
+        Stack(
+          children: [
+            IconButton(
+              onPressed: onBell,
+              icon: const Icon(Icons.notifications_none, color: _green),
+            ),
+            if (hasUnread)
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE89A00),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _bg, width: 1.5),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 4),
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: _green.withOpacity(0.1),
+          backgroundImage: (photoUrl != null && photoUrl!.isNotEmpty)
+              ? NetworkImage(photoUrl!)
+              : null,
+          child: (photoUrl == null || photoUrl!.isEmpty)
+              ? const Icon(Icons.person, size: 20, color: _green)
+              : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _LocationRow extends StatelessWidget {
+  const _LocationRow({required this.location, required this.onChange});
+
+  final String location;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        const Icon(Icons.location_on, size: 16, color: _green),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            location,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium?.copyWith(
+              color: _green,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: onChange,
+          child: Text(
+            'Change',
+            style: textTheme.labelSmall?.copyWith(
+              color: _green.withOpacity(0.7),
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Hero extends StatelessWidget {
+  const _Hero({required this.onFind});
+  final VoidCallback onFind;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _green,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Find someone to share a coffee with.',
+            style: textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              height: 1.25,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Meet interesting people nearby over a simple cup of coffee.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withOpacity(0.75),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: onFind,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE89A00),
+                foregroundColor: _green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              child: Text(
+                'Find a Coffee Meet',
+                style: textTheme.titleMedium?.copyWith(
+                  color: _green,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChips extends StatelessWidget {
+  const _FilterChips({required this.active, required this.onToggle});
+
+  final Set<DiscoverFilter> active;
+  final ValueChanged<DiscoverFilter> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: DiscoverFilter.values.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final f = DiscoverFilter.values[i];
+          final selected = active.contains(f);
+          return GestureDetector(
+            onTap: () => onToggle(f),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? _green : Colors.white,
+                borderRadius: BorderRadius.circular(19),
+                border: Border.all(
+                  color: selected ? _green : _green.withOpacity(0.12),
+                ),
+              ),
+              child: Text(
+                f.label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: selected ? Colors.white : _green.withOpacity(0.8),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.subtitle});
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: textTheme.titleLarge?.copyWith(
+            color: _green,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle!,
+            style: textTheme.bodySmall?.copyWith(
+              color: _green.withOpacity(0.6),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _LoadingList extends StatelessWidget {
+  const _LoadingList();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget skeleton(double height) => Container(
+          height: height,
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _green.withOpacity(0.3),
+              ),
+            ),
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: 'Recommended for you',
+          subtitle: 'Based on your interests and preferences',
+        ),
+        const SizedBox(height: 16),
+        skeleton(180),
+        skeleton(180),
+      ],
+    );
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.wifi_off_rounded,
+              color: _green.withOpacity(0.7), size: 34),
+          const SizedBox(height: 12),
+          Text(
+            "Couldn't load coffee meets",
+            style: textTheme.titleSmall?.copyWith(color: _green),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Check your connection and try again.',
+            style:
+                textTheme.bodySmall?.copyWith(color: _green.withOpacity(0.6)),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: onRetry,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _green,
+              side: BorderSide(color: _green.withOpacity(0.3)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+            ),
+            child: const Text('Try again'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.filtered,
+    required this.onClearFilters,
+    required this.onCreate,
+  });
+
+  final bool filtered;
+  final VoidCallback onClearFilters;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: _green.withOpacity(0.06),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.local_cafe_outlined,
+                color: _green.withOpacity(0.6), size: 34),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'No coffee meets nearby yet',
+            textAlign: TextAlign.center,
+            style: textTheme.titleMedium?.copyWith(
+              color: _green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            filtered
+                ? 'No meets match these filters. Try clearing a few, '
+                    'or create your own.'
+                : 'Try expanding your search or create your own meet.',
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(
+              color: _green.withOpacity(0.65),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: onCreate,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: const Text('Create a Meet'),
+            ),
+          ),
+          if (filtered) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: onClearFilters,
+              child: Text(
+                'Clear filters',
+                style: textTheme.bodySmall?.copyWith(
+                  color: _green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

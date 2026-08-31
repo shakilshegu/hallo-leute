@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/models/auth_models.dart';
 import 'package:poppylo/services/api_client.dart';
+import 'package:poppylo/services/auth_api.dart';
 import 'package:poppylo/services/onboarding_api.dart';
 
 class AuthController extends StateNotifier<AuthState> {
@@ -152,7 +153,13 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> signOut() async {
+  Future<void> signOut({AuthApi? authApi}) async {
+    // Best-effort server-side revocation; never block sign-out on it.
+    if (authApi != null) {
+      try {
+        await authApi.logout();
+      } catch (_) {}
+    }
     await _firebaseAuth.signOut();
     state = const AuthState();
   }

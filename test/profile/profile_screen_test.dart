@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:poppylo/screens/profile_screen.dart';
 import 'package:poppylo/services/api_client.dart';
 import 'package:poppylo/services/profile_api.dart';
-import 'package:poppylo/state/profile_controller.dart';
 
 import '../support/fake_profile_api.dart';
 import '../support/mock_network_images.dart';

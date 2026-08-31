@@ -20,7 +20,11 @@ const countries = [
   Country(name: 'Australia', isoCode: 'AU', dialCode: '+61', flag: '🇦🇺'),
   Country(name: 'Germany', isoCode: 'DE', dialCode: '+49', flag: '🇩🇪'),
   Country(name: 'France', isoCode: 'FR', dialCode: '+33', flag: '🇫🇷'),
-  Country(name: 'United Arab Emirates', isoCode: 'AE', dialCode: '+971', flag: '🇦🇪'),
+  Country(
+      name: 'United Arab Emirates',
+      isoCode: 'AE',
+      dialCode: '+971',
+      flag: '🇦🇪'),
   Country(name: 'Singapore', isoCode: 'SG', dialCode: '+65', flag: '🇸🇬'),
   Country(name: 'Pakistan', isoCode: 'PK', dialCode: '+92', flag: '🇵🇰'),
 ];

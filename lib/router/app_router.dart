@@ -45,10 +45,9 @@ import '../screens/report_user_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'home');
-final _shellNavigatorMatchesKey =
-    GlobalKey<NavigatorState>(debugLabel: 'matches');
-final _shellNavigatorMeetingsKey =
-    GlobalKey<NavigatorState>(debugLabel: 'meetings');
+final _shellNavigatorDiscoverKey =
+    GlobalKey<NavigatorState>(debugLabel: 'discover');
+final _shellNavigatorChatsKey = GlobalKey<NavigatorState>(debugLabel: 'chats');
 final _shellNavigatorProfileKey =
     GlobalKey<NavigatorState>(debugLabel: 'profile');
 
@@ -122,20 +121,20 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
-            navigatorKey: _shellNavigatorMatchesKey,
+            navigatorKey: _shellNavigatorDiscoverKey,
             routes: [
               GoRoute(
-                path: AppRoutes.matches,
-                builder: (context, state) => const MatchesScreen(),
+                path: AppRoutes.discover,
+                builder: (context, state) => const HomeScreen(),
               ),
             ],
           ),
           StatefulShellBranch(
-            navigatorKey: _shellNavigatorMeetingsKey,
+            navigatorKey: _shellNavigatorChatsKey,
             routes: [
               GoRoute(
-                path: AppRoutes.meetings,
-                builder: (context, state) => const MeetingsScreen(),
+                path: AppRoutes.matches,
+                builder: (context, state) => const MatchesScreen(),
               ),
             ],
           ),
@@ -152,6 +151,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // --- Full screen, pushed above the shell (no bottom nav) ---
+      GoRoute(
+        path: AppRoutes.meetings,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder((c, s) => const MeetingsScreen()),
+      ),
       GoRoute(
         path: AppRoutes.editProfilePath,
         parentNavigatorKey: _rootNavigatorKey,
