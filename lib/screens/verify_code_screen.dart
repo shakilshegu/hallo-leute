@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/auth_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/api_client.dart';
+import 'package:poppylo/services/onboarding_api.dart';
 import 'package:poppylo/state/auth_controller.dart';
 
 class VerifyCodeScreen extends ConsumerStatefulWidget {
@@ -61,20 +63,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
           .confirmVerificationCode(_codeController.text);
       if (!mounted) return;
 
-      final isNewUser = ref.read(authControllerProvider).isNewUser;
-      if (isNewUser) {
-        ref
-            .read(authControllerProvider.notifier)
-            .completeOnboardingStep(OnboardingStep.profile);
-        context.push(AppRoutes.onboardProfile);
-      } else {
-        // Returning users skip onboarding entirely. This must be `go`, not
-        // `push`: pushing a route that the guard then redirects into the
-        // bottom-nav shell renders the destination screen without its shell
-        // chrome (no tab bar) — `go` recomputes the whole stack and mounts
-        // the shell correctly.
-        context.go(AppRoutes.home);
-      }
+      await _syncAndRoute();
     } catch (e) {
       if (!mounted) return;
       HapticFeedback.heavyImpact();
@@ -84,6 +73,38 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Creates/finds the backend user and routes by its authoritative
+  /// onboarding status. If the API can't be reached, fall back to the
+  /// welcome-screen choice so a flaky network doesn't strand the user —
+  /// the onboarding screens will retry the real work.
+  Future<void> _syncAndRoute() async {
+    final auth = ref.read(authControllerProvider.notifier);
+    try {
+      final sync = await ref.read(onboardingApiProvider).syncUser();
+      auth.applyBackendSync(onboardingCompleted: sync.onboardingCompleted);
+      if (!mounted) return;
+      if (sync.onboardingCompleted) {
+        context.go(AppRoutes.home);
+      } else {
+        context.push(AppRoutes.onboardProfile);
+      }
+      return;
+    } on ApiException {
+      // Offline-friendly fallback below.
+    }
+
+    if (!mounted) return;
+    if (ref.read(authControllerProvider).isNewUser) {
+      auth.completeOnboardingStep(OnboardingStep.profile);
+      context.push(AppRoutes.onboardProfile);
+    } else {
+      // `go`, not `push`: the guard redirects returning users into the
+      // bottom-nav shell, which only mounts correctly when the whole stack
+      // is recomputed.
+      context.go(AppRoutes.home);
     }
   }
 

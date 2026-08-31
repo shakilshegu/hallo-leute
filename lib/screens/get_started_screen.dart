@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/auth_models.dart';
+import 'package:poppylo/models/country.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/api_client.dart';
+import 'package:poppylo/services/onboarding_api.dart';
 import 'package:poppylo/state/auth_controller.dart';
 
 class GetStartedScreen extends ConsumerStatefulWidget {
@@ -17,6 +20,7 @@ class GetStartedScreen extends ConsumerStatefulWidget {
 
 class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  Country _selectedCountry = countries.first;
   bool _canProceed = false;
   bool _isLoading = false;
   String? _errorMessage;
@@ -46,9 +50,9 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
     });
     HapticFeedback.mediumImpact();
 
-    // E.164 format required by Firebase. Only US numbers for now — the
-    // country code picker above is display-only.
-    final e164Phone = '+1${_phoneController.text.trim()}';
+    // E.164 format required by Firebase.
+    final digits = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final e164Phone = '${_selectedCountry.dialCode}$digits';
 
     try {
       await ref.read(authControllerProvider.notifier).sendVerificationCode(
@@ -60,14 +64,7 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
       final auth = ref.read(authControllerProvider);
       if (auth.isSignedIn) {
         // Android silently auto-verified via SMS retrieval — no code to type.
-        if (widget.isNewUser) {
-          ref
-              .read(authControllerProvider.notifier)
-              .completeOnboardingStep(OnboardingStep.profile);
-          context.push(AppRoutes.onboardProfile);
-        } else {
-          context.go(AppRoutes.home);
-        }
+        await _syncAndRoute();
       } else {
         context.push(AppRoutes.verify);
       }
@@ -79,6 +76,71 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
       HapticFeedback.heavyImpact();
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Mirrors [VerifyCodeScreen]'s post-verification routing for the rare
+  /// Android auto-verify path: sync the backend user, route by its
+  /// onboarding status, fall back to the welcome-screen choice if offline.
+  Future<void> _syncAndRoute() async {
+    final auth = ref.read(authControllerProvider.notifier);
+    try {
+      final sync = await ref.read(onboardingApiProvider).syncUser();
+      auth.applyBackendSync(onboardingCompleted: sync.onboardingCompleted);
+      if (!mounted) return;
+      if (sync.onboardingCompleted) {
+        context.go(AppRoutes.home);
+      } else {
+        context.push(AppRoutes.onboardProfile);
+      }
+      return;
+    } on ApiException {
+      // Offline-friendly fallback below.
+    }
+
+    if (!mounted) return;
+    if (widget.isNewUser) {
+      auth.completeOnboardingStep(OnboardingStep.profile);
+      context.push(AppRoutes.onboardProfile);
+    } else {
+      context.go(AppRoutes.home);
+    }
+  }
+
+  Future<void> _pickCountry() async {
+    HapticFeedback.selectionClick();
+    final theme = Theme.of(context);
+    final selected = await showModalBottomSheet<Country>(
+      context: context,
+      backgroundColor: const Color(0xFFF3F1EB),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: countries.length,
+          itemBuilder: (context, index) {
+            final country = countries[index];
+            return ListTile(
+              leading: Text(country.flag, style: const TextStyle(fontSize: 24)),
+              title: Text(country.name),
+              trailing: Text(
+                country.dialCode,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () => Navigator.pop(context, country),
+            );
+          },
+        ),
+      ),
+    );
+
+    if (selected != null && mounted) {
+      setState(() => _selectedCountry = selected);
     }
   }
 
@@ -134,17 +196,16 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
                     // Country Code
                     Semantics(
                       button: true,
-                      label: 'Change country code, currently US +1',
+                      label:
+                          'Change country code, currently ${_selectedCountry.name} ${_selectedCountry.dialCode}',
                       child: InkWell(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                        },
+                        onTap: _pickCountry,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Row(
                             children: [
                               Text(
-                                'US +1',
+                                '${_selectedCountry.isoCode} ${_selectedCountry.dialCode}',
                                 style: textTheme.bodyLarge?.copyWith(
                                   color: colorScheme.primary,
                                   fontWeight: FontWeight.w500,

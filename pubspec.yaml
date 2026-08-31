@@ -17,6 +17,9 @@ dependencies:
   app_links: ^7.2.1
   firebase_core: ^4.14.0
   firebase_auth: ^6.6.1
+  http: ^1.6.0
+  http_parser: ^4.1.2
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

@@ -10,10 +10,14 @@ class AppRoutes {
   static const verify = '/verify';
 
   static const onboardProfile = '/onboarding/profile';
-  static const onboardInterests = '/onboarding/interests';
-  static const onboardPurpose = '/onboarding/purpose';
-  static const onboardPreferences = '/onboarding/preferences';
-  static const onboardNotifications = '/onboarding/notifications';
+  static const onboardConversation = '/onboarding/conversation';
+  static const onboardCoffee = '/onboarding/coffee';
+
+  /// Post-onboarding success beat that auto-advances into [searching].
+  /// Not under `/onboarding/` on purpose — by the time it shows, onboarding
+  /// is already marked done and the auth guard would bounce an onboarding
+  /// route to /home.
+  static const coffeeReady = '/coffee-ready';
 
   static const home = '/home';
   static const matches = '/matches';

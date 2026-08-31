@@ -12,11 +12,10 @@ import '../screens/splash_screen.dart';
 import '../screens/welcome_screen.dart';
 import '../screens/get_started_screen.dart';
 import '../screens/verify_code_screen.dart';
-import '../screens/create_profile_screen.dart';
-import '../screens/interests_screen.dart';
-import '../screens/purpose_screen.dart';
-import '../screens/preferences_screen.dart';
-import '../screens/notification_permission_screen.dart';
+import '../screens/build_profile_screen.dart';
+import '../screens/conversation_prefs_screen.dart';
+import '../screens/coffee_prefs_screen.dart';
+import '../screens/profile_ready_screen.dart';
 
 import '../screens/home_screen.dart';
 import '../screens/matches_screen.dart';
@@ -98,25 +97,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.onboardProfile,
-        pageBuilder: slideBuilder((c, s) => const CreateProfileScreen()),
+        pageBuilder: slideBuilder((c, s) => const BuildProfileScreen()),
       ),
       GoRoute(
-        path: AppRoutes.onboardInterests,
-        pageBuilder: slideBuilder((c, s) => const InterestsScreen()),
+        path: AppRoutes.onboardConversation,
+        pageBuilder: slideBuilder((c, s) => const ConversationPrefsScreen()),
       ),
       GoRoute(
-        path: AppRoutes.onboardPurpose,
-        pageBuilder: slideBuilder((c, s) => const PurposeScreen()),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardPreferences,
-        pageBuilder: slideBuilder((c, s) => const PreferencesScreen()),
-      ),
-      GoRoute(
-        path: AppRoutes.onboardNotifications,
-        pageBuilder: slideBuilder(
-          (c, s) => const NotificationPermissionScreen(),
-        ),
+        path: AppRoutes.onboardCoffee,
+        pageBuilder: slideBuilder((c, s) => const CoffeePrefsScreen()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -179,6 +168,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: slideBuilder((c, s) => const CreateCoffeeMeetScreen()),
       ),
       GoRoute(
+        path: AppRoutes.coffeeReady,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: fadeBuilder((c, s) => const ProfileReadyScreen()),
+      ),
+      GoRoute(
         path: AppRoutes.searching,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: fadeBuilder((c, s) => const SearchingScreen()),
@@ -193,19 +187,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.matchDetails,
             pageBuilder: slideBuilder(
-              (c, s) => MatchDetailScreen(matchId: s.pathParameters['matchId']!),
+              (c, s) =>
+                  MatchDetailScreen(matchId: s.pathParameters['matchId']!),
             ),
           ),
           GoRoute(
             path: AppRoutes.matchWaiting,
             pageBuilder: slideBuilder(
-              (c, s) => MatchStatusScreen(matchId: s.pathParameters['matchId']!),
+              (c, s) =>
+                  MatchStatusScreen(matchId: s.pathParameters['matchId']!),
             ),
           ),
           GoRoute(
             path: AppRoutes.matchConfirmed,
             pageBuilder: fadeBuilder(
-              (c, s) => MatchConfirmedScreen(matchId: s.pathParameters['matchId']!),
+              (c, s) =>
+                  MatchConfirmedScreen(matchId: s.pathParameters['matchId']!),
             ),
           ),
           GoRoute(
@@ -239,7 +236,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.meetingDetails,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: slideBuilder(
-          (c, s) => MeetingDetailsScreen(meetingId: s.pathParameters['meetingId']!),
+          (c, s) =>
+              MeetingDetailsScreen(meetingId: s.pathParameters['meetingId']!),
         ),
         routes: [
           GoRoute(
@@ -265,7 +263,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutes.feedback,
             pageBuilder: slideBuilder(
-              (c, s) => FeedbackScreen(meetingId: s.pathParameters['meetingId']!),
+              (c, s) =>
+                  FeedbackScreen(meetingId: s.pathParameters['meetingId']!),
             ),
             routes: [
               GoRoute(

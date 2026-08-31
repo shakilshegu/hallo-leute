@@ -13,7 +13,8 @@ class AuthController extends StateNotifier<AuthState> {
   // require Firebase.initializeApp() to have run, e.g. in widget tests that
   // never touch the phone-auth methods below.
   final FirebaseAuth? _injectedFirebaseAuth;
-  FirebaseAuth get _firebaseAuth => _injectedFirebaseAuth ?? FirebaseAuth.instance;
+  FirebaseAuth get _firebaseAuth =>
+      _injectedFirebaseAuth ?? FirebaseAuth.instance;
   String? _verificationId;
 
   /// Test-only: sets signed-in state directly, bypassing real Firebase
@@ -41,7 +42,8 @@ class AuthController extends StateNotifier<AuthState> {
     String phoneNumber, {
     required bool isNewUser,
   }) {
-    state = state.copyWith(pendingPhoneNumber: phoneNumber, isNewUser: isNewUser);
+    state =
+        state.copyWith(pendingPhoneNumber: phoneNumber, isNewUser: isNewUser);
     final completer = Completer<void>();
 
     _firebaseAuth.verifyPhoneNumber(
@@ -95,6 +97,18 @@ class AuthController extends StateNotifier<AuthState> {
 
   void completeOnboardingStep(OnboardingStep next) {
     state = state.copyWith(onboardingStep: next);
+  }
+
+  /// Applies the authoritative onboarding status from `POST /auth/sync`.
+  /// A completed user is treated as a returning user (straight to home);
+  /// anyone else is put back at the start of the 3-step onboarding.
+  void applyBackendSync({required bool onboardingCompleted}) {
+    state = state.copyWith(
+      isSignedIn: true,
+      isNewUser: !onboardingCompleted,
+      onboardingStep:
+          onboardingCompleted ? OnboardingStep.done : OnboardingStep.profile,
+    );
   }
 
   Future<void> signOut() async {

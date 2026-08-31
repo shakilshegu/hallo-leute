@@ -21,14 +21,10 @@ String _onboardingStepPath(OnboardingStep step) {
   switch (step) {
     case OnboardingStep.profile:
       return AppRoutes.onboardProfile;
-    case OnboardingStep.interests:
-      return AppRoutes.onboardInterests;
-    case OnboardingStep.purpose:
-      return AppRoutes.onboardPurpose;
-    case OnboardingStep.preferences:
-      return AppRoutes.onboardPreferences;
-    case OnboardingStep.notifications:
-      return AppRoutes.onboardNotifications;
+    case OnboardingStep.conversation:
+      return AppRoutes.onboardConversation;
+    case OnboardingStep.coffee:
+      return AppRoutes.onboardCoffee;
     case OnboardingStep.done:
       return AppRoutes.home;
   }
@@ -57,7 +53,9 @@ final authGuardProvider = Provider<GuardFn>((ref) {
     }
 
     if (!auth.isOnboardingComplete) {
-      return isOnboardingRoute ? null : _onboardingStepPath(auth.onboardingStep);
+      return isOnboardingRoute
+          ? null
+          : _onboardingStepPath(auth.onboardingStep);
     }
 
     if (_preAuthRoutes.contains(path) || isOnboardingRoute) {

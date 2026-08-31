@@ -50,7 +50,8 @@ class _AppShellState extends State<AppShell>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FadeTransition(opacity: _fadeController, child: widget.navigationShell),
+      body: FadeTransition(
+          opacity: _fadeController, child: widget.navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _goBranch,
