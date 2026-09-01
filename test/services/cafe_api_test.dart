@@ -178,4 +178,115 @@ void main() {
           'Unable to connect. Please try again.');
     });
   });
+
+  group('Google Places cafés (/cafes/*)', () {
+    test('nearbyGoogleCafes sends lat/lng/radius + Bearer, parses cards',
+        () async {
+      String? auth;
+      Uri? url;
+      final api = _api(MockClient((req) async {
+        auth = req.headers['Authorization'];
+        url = req.url;
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'data': [
+              {
+                'placeId': 'ChIJ1',
+                'name': 'Bonanza Coffee',
+                'address': 'Berlin',
+                'latitude': 52.54,
+                'longitude': 13.40,
+                'rating': 4.6,
+                'reviewCount': 245,
+                'isOpen': true,
+                'distanceMeters': 850,
+                'photoUrl':
+                    '/api/v1/cafes/photo?ref=places%2FChIJ1%2Fphotos%2Fx',
+              },
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }));
+
+      final cafes = await api.nearbyGoogleCafes(
+        latitude: 52.52,
+        longitude: 13.405,
+        radiusMeters: 5000,
+      );
+      expect(auth, 'Bearer tok');
+      expect(url!.path, '/api/v1/cafes/nearby');
+      expect(url!.queryParameters,
+          {'latitude': '52.52', 'longitude': '13.405', 'radius': '5000'});
+      expect(cafes.single.placeId, 'ChIJ1');
+      expect(cafes.single.reviewCount, 245);
+      expect(cafes.single.distanceText, '850 m away');
+      expect(cafes.single.openLabel, 'Open now');
+    });
+
+    test('cafePlaceDetails parses opening hours + photos', () async {
+      final api = _api(MockClient((req) async {
+        expect(req.url.path, '/api/v1/cafes/ChIJ1');
+        expect(req.url.queryParameters,
+            {'latitude': '52.52', 'longitude': '13.405'});
+        return http.Response(
+          jsonEncode({
+            'success': true,
+            'data': {
+              'placeId': 'ChIJ1',
+              'name': 'Bonanza Coffee',
+              'address': 'Berlin',
+              'latitude': 52.54,
+              'longitude': 13.40,
+              'rating': 4.6,
+              'reviewCount': 245,
+              'isOpen': true,
+              'distanceMeters': 850,
+              'openingHours': ['Monday: 8:00 AM – 6:00 PM'],
+              'photos': [
+                '/api/v1/cafes/photo?ref=a',
+                '/api/v1/cafes/photo?ref=b'
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }));
+      final d = await api.cafePlaceDetails('ChIJ1',
+          latitude: 52.52, longitude: 13.405);
+      expect(d.name, 'Bonanza Coffee');
+      expect(d.openingHours, ['Monday: 8:00 AM – 6:00 PM']);
+      expect(d.photos, hasLength(2));
+    });
+
+    test('suggestCafe sends placeId (not coffeeShopId)', () async {
+      Map<String, dynamic>? body;
+      final api = _api(MockClient((req) async {
+        body = jsonDecode(req.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({'success': true, 'data': _suggestion()}),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }));
+      await api.suggestCafe('m1',
+          placeId: 'ChIJ1', date: '2026-09-05', startTime: '17:00');
+      expect(body, {
+        'placeId': 'ChIJ1',
+        'date': '2026-09-05',
+        'startTime': '17:00',
+      });
+    });
+
+    test('a 503 from the backend surfaces the message', () {
+      expect(
+        cafeErrorMessage(ApiException(
+            503, 'Café search is temporarily unavailable. Please try again.')),
+        'Café search is temporarily unavailable. Please try again.',
+      );
+    });
+  });
 }

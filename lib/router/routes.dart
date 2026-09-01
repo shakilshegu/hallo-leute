@@ -96,4 +96,8 @@ class AppRoutes {
   static const connections = '/connections';
   static const connectionDetail = '/connections/:connectionId';
   static String connectionDetailPath(String id) => '/connections/$id';
+
+  /// A person's public profile opened from Discover ("View Profile").
+  static const discoverProfile = '/discover/:userId';
+  static String discoverProfilePath(String id) => '/discover/$id';
 }

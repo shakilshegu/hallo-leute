@@ -82,48 +82,112 @@ void main() {
   setUpAll(() => HttpOverrides.global = MockNetworkImagesHttpOverrides());
   tearDownAll(() => HttpOverrides.global = null);
 
-  testWidgets('Choose Café lists backend cafés and suggests one', (t) async {
-    final cafe = FakeCafeApi(cafes: [
-      sampleCafe(id: 'shop-1', name: 'Brew Lab', rating: 4.6),
-      sampleCafe(id: 'shop-2', name: 'The Loft', rating: 4.2),
+  testWidgets('Choose Café lists Google cafés and selects one via placeId',
+      (t) async {
+    final cafe = FakeCafeApi(nearbyCafesResult: [
+      sampleNearbyCafe(placeId: 'p-1', name: 'Bonanza Coffee', rating: 4.6),
+      sampleNearbyCafe(placeId: 'p-2', name: 'The Barn', rating: 4.2),
     ]);
     await _pump(t, initial: '/match/m1/cafes', cafe: cafe);
 
-    expect(find.text('Brew Lab'), findsOneWidget);
-    expect(find.text('The Loft'), findsOneWidget);
-    expect(find.textContaining('4.6'), findsWidgets);
+    expect(find.text('Choose a coffee spot ☕'), findsOneWidget);
+    expect(find.text('Bonanza Coffee'), findsOneWidget);
+    expect(find.text('The Barn'), findsOneWidget);
+    expect(find.textContaining('245 reviews'), findsWidgets);
+    expect(find.text('Open now'), findsWidgets);
+    expect(cafe.nearbyRadii, [5000]); // default radius
 
-    await t.tap(find.text('Suggest this café').first);
+    await t.tap(find.text('Select').first);
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 40));
     }
 
     expect(cafe.suggestCalls, 1);
     expect(cafe.lastSuggestPayload, {
-      'coffeeShopId': 'shop-1',
-      'date': '2026-09-05', // from the match's agreed slot
+      'placeId': 'p-1',
+      'date': '2026-09-05',
       'startTime': '17:00',
     });
     expect(find.text('Café suggestion sent'), findsOneWidget);
 
-    await t.pumpWidget(const SizedBox()); // dispose polling screen
+    await t.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Choose Café → card opens Café Details → suggest', (t) async {
-    final cafe =
-        FakeCafeApi(cafes: [sampleCafe(id: 'shop-1', name: 'Brew Lab')]);
+  testWidgets('empty → "Search within 10 km" expands the radius', (t) async {
+    final cafe = FakeCafeApi(nearbyCafesResult: const []);
     await _pump(t, initial: '/match/m1/cafes', cafe: cafe);
 
-    await t.tap(find.text('Brew Lab'));
-    await t.pumpAndSettle();
-    expect(find.text('Brew Lab'), findsWidgets);
-    expect(find.textContaining('Bright specialty roaster'), findsOneWidget);
+    expect(find.text('No coffee spots found nearby'), findsOneWidget);
+    await t.tap(find.text('Search within 10 km'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    expect(cafe.nearbyRadii, [5000, 10000]);
 
-    await t.tap(find.text('Suggest this café'));
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('API failure shows "Try again" and recovers', (t) async {
+    final cafe = FakeCafeApi()..nearbyError = Exception('boom');
+    await _pump(t, initial: '/match/m1/cafes', cafe: cafe);
+
+    expect(find.text("Couldn't load nearby coffee shops"), findsOneWidget);
+    cafe.nearbyError = null;
+    cafe.nearbyCafesResult = [sampleNearbyCafe(name: 'Bonanza Coffee')];
+    await t.tap(find.text('Try again'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    expect(find.text('Bonanza Coffee'), findsOneWidget);
+    expect(t.takeException(), isNull);
+
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('location permission denied → "Enable location"', (t) async {
+    final cafe = FakeCafeApi(nearbyCafesResult: const []);
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          cafeApiProvider.overrideWithValue(cafe),
+          locationServiceProvider.overrideWithValue(_DeniedLocationService()),
+          matchingApiProvider.overrideWithValue(
+            FakeMatchingApi(matchDetail: sampleMatch(id: 'm1')),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: _router('/match/m1/cafes')),
+      ),
+    );
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Location needed'), findsOneWidget);
+    expect(find.text('Enable location'), findsOneWidget);
+
+    // manual fallback: tapping the Berlin demo chip searches there
+    await t.tap(find.widgetWithText(ActionChip, 'Berlin'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    expect(cafe.nearbyRadii.isNotEmpty, isTrue);
+
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Choose Café → card opens Café Details → choose', (t) async {
+    final cafe = FakeCafeApi(
+      nearbyCafesResult: [sampleNearbyCafe(placeId: 'p-9', name: 'Bonanza')],
+    );
+    await _pump(t, initial: '/match/m1/cafes', cafe: cafe);
+
+    await t.tap(find.text('Bonanza'));
+    await t.pumpAndSettle();
+    expect(find.text('Bonanza'), findsWidgets);
+    expect(find.text('OPENING HOURS'), findsOneWidget);
+
+    await t.tap(find.text('Choose this café'));
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 40));
     }
     expect(cafe.suggestCalls, 1);
+    expect(cafe.lastSuggestPayload!['placeId'], 'p-9');
     expect(find.text('Café suggestion sent'), findsOneWidget);
 
     await t.pumpWidget(const SizedBox());
@@ -199,6 +263,16 @@ void main() {
     final msgBtn = tester_find_button(t, 'Message Ben');
     expect(msgBtn.enabled, isTrue);
   });
+}
+
+class _DeniedLocationService implements LocationService {
+  @override
+  Future<ResolvedPlace> currentPlace() async =>
+      throw LocationDenied('Location permission is needed.');
+
+  @override
+  Future<ResolvedPlace> placeFromQuery(String query) async =>
+      const ResolvedPlace(latitude: 52.52, longitude: 13.405, name: 'Berlin');
 }
 
 ElevatedButton tester_find_button(WidgetTester t, String label) {

@@ -15,6 +15,32 @@ class DiscoverApi {
     final data = await _client.get('/home');
     return _feedFromHome(data);
   }
+
+  // --- People discovery (`GET /discover`) --------------------------
+
+  /// `GET /discover?page&limit&distance&purpose&interest&availability`.
+  Future<DiscoverPage> people({
+    required int page,
+    int limit = 20,
+    DiscoverFilters filters = DiscoverFilters.none,
+  }) async {
+    final params = <String, String>{
+      'page': '$page',
+      'limit': '$limit',
+      ...filters.toQuery(),
+    };
+    final query = params.entries
+        .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
+        .join('&');
+    final envelope = await _client.getRaw('/discover?$query');
+    return DiscoverPage.fromEnvelope(envelope);
+  }
+
+  /// `GET /discover/:userId` — the public profile for "View Profile".
+  Future<DiscoverUserProfile> profile(String userId) async {
+    final data = await _client.get('/discover/$userId');
+    return DiscoverUserProfile.fromJson(data);
+  }
 }
 
 DiscoverFeed _feedFromHome(Map<String, dynamic> data) {

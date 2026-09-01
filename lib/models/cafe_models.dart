@@ -284,3 +284,95 @@ String formatMeetingTimeRange(MeetingDetails m) {
       '${prettyClock('${end.hour.toString().padLeft(2, '0')}:'
           '${end.minute.toString().padLeft(2, '0')}')}';
 }
+
+// --- Google-Places-backed café discovery (coffee-meet-api `GET /cafes/*`) ----
+
+/// A café from `GET /api/v1/cafes/nearby`. Discovery is Google Places (via our
+/// backend) — this is never persisted client-side.
+@immutable
+class NearbyCafe {
+  const NearbyCafe({
+    required this.placeId,
+    required this.name,
+    required this.address,
+    required this.latitude,
+    required this.longitude,
+    required this.rating,
+    required this.reviewCount,
+    required this.isOpen,
+    required this.distanceMeters,
+    required this.photoUrl,
+  });
+
+  final String placeId;
+  final String name;
+  final String address;
+  final double latitude;
+  final double longitude;
+  final double? rating;
+  final int? reviewCount;
+  final bool? isOpen;
+  final int? distanceMeters;
+
+  /// Path on our own API (`/api/v1/cafes/photo?ref=...`); needs the Bearer
+  /// header — resolve to a full URL + headers at the widget.
+  final String? photoUrl;
+
+  /// "0.9 km away" / "850 m away" / "".
+  String get distanceText {
+    final m = distanceMeters;
+    if (m == null) return '';
+    if (m >= 1000) return '${(m / 1000).toStringAsFixed(1)} km away';
+    return '$m m away';
+  }
+
+  String? get openLabel => switch (isOpen) {
+        true => 'Open now',
+        false => 'Closed',
+        _ => null,
+      };
+
+  factory NearbyCafe.fromJson(Map<String, dynamic> json) {
+    return NearbyCafe(
+      placeId: json['placeId'] as String? ?? '',
+      name: json['name'] as String? ?? 'Café',
+      address: json['address'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble(),
+      reviewCount: (json['reviewCount'] as num?)?.toInt(),
+      isOpen: json['isOpen'] as bool?,
+      distanceMeters: (json['distanceMeters'] as num?)?.toInt(),
+      photoUrl: json['photoUrl'] as String?,
+    );
+  }
+}
+
+/// `GET /api/v1/cafes/:placeId` — adds opening hours + more photos.
+@immutable
+class CafePlaceDetails {
+  const CafePlaceDetails({
+    required this.summary,
+    required this.openingHours,
+    required this.photos,
+  });
+
+  final NearbyCafe summary;
+  final List<String> openingHours;
+  final List<String> photos; // photo-proxy paths
+
+  String get placeId => summary.placeId;
+  String get name => summary.name;
+
+  factory CafePlaceDetails.fromJson(Map<String, dynamic> json) {
+    return CafePlaceDetails(
+      summary: NearbyCafe.fromJson(json),
+      openingHours: (json['openingHours'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      photos: (json['photos'] as List<dynamic>? ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+    );
+  }
+}

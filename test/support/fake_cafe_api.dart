@@ -40,6 +40,28 @@ CafeSuggestion sampleSuggestion({
   );
 }
 
+NearbyCafe sampleNearbyCafe({
+  String placeId = 'ChIJ-1',
+  String name = 'Bonanza Coffee',
+  double? rating = 4.6,
+  int? reviewCount = 245,
+  bool? isOpen = true,
+  int? distanceMeters = 900,
+}) {
+  return NearbyCafe(
+    placeId: placeId,
+    name: name,
+    address: 'Oderberger Str. 35, Berlin',
+    latitude: 52.5405,
+    longitude: 13.4055,
+    rating: rating,
+    reviewCount: reviewCount,
+    isOpen: isOpen,
+    distanceMeters: distanceMeters,
+    photoUrl: null,
+  );
+}
+
 MeetingDetails sampleMeeting({String id = 'mt1'}) {
   return MeetingDetails(
     id: id,
@@ -57,11 +79,17 @@ MeetingDetails sampleMeeting({String id = 'mt1'}) {
 class FakeCafeApi implements CafeApi {
   FakeCafeApi({
     this.cafes = const [],
+    List<NearbyCafe>? nearbyCafesResult,
+    this.cafeDetails,
+    this.nearbyError,
     this.suggestion,
     this.meetingDetail,
-  });
+  }) : nearbyCafesResult = nearbyCafesResult ?? const [];
 
   List<CoffeeShop> cafes;
+  List<NearbyCafe> nearbyCafesResult;
+  CafePlaceDetails? cafeDetails;
+  Object? nearbyError;
   CafeSuggestion? suggestion;
   MeetingDetails? meetingDetail;
   Object? error;
@@ -69,6 +97,7 @@ class FakeCafeApi implements CafeApi {
   Map<String, Object?>? lastSuggestPayload;
   int suggestCalls = 0;
   int acceptCalls = 0;
+  final List<int> nearbyRadii = [];
 
   @override
   Future<List<CoffeeShop>> nearbyCafes({
@@ -82,6 +111,43 @@ class FakeCafeApi implements CafeApi {
   }
 
   @override
+  Future<List<NearbyCafe>> nearbyGoogleCafes({
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+  }) async {
+    nearbyRadii.add(radiusMeters);
+    if (nearbyError != null) throw nearbyError!;
+    return nearbyCafesResult;
+  }
+
+  @override
+  Future<CafePlaceDetails> cafePlaceDetails(
+    String placeId, {
+    double? latitude,
+    double? longitude,
+  }) async {
+    if (nearbyError != null) throw nearbyError!;
+    if (cafeDetails != null) return cafeDetails!;
+    final fromList = nearbyCafesResult
+        .where((c) => c.placeId == placeId)
+        .cast<NearbyCafe?>()
+        .firstWhere((_) => true, orElse: () => null);
+    return CafePlaceDetails(
+      summary: fromList ?? sampleNearbyCafe(placeId: placeId),
+      openingHours: const ['Monday: 8:00 AM – 6:00 PM'],
+      photos: const [],
+    );
+  }
+
+  @override
+  String cafePhotoUrl(String proxyPath) => 'https://api.test$proxyPath';
+
+  @override
+  Future<Map<String, String>> imageAuthHeaders() async =>
+      const {'Authorization': 'Bearer tok'};
+
+  @override
   Future<CoffeeShop> cafe(String id) async {
     if (error != null) throw error!;
     return cafes.firstWhere((c) => c.id == id,
@@ -91,13 +157,15 @@ class FakeCafeApi implements CafeApi {
   @override
   Future<CafeSuggestion> suggestCafe(
     String matchId, {
-    required String coffeeShopId,
+    String? placeId,
+    String? coffeeShopId,
     required String date,
     required String startTime,
   }) async {
     suggestCalls++;
     lastSuggestPayload = {
-      'coffeeShopId': coffeeShopId,
+      if (placeId != null) 'placeId': placeId,
+      if (coffeeShopId != null) 'coffeeShopId': coffeeShopId,
       'date': date,
       'startTime': startTime,
     };
@@ -144,4 +212,8 @@ class FakeLocationService implements LocationService {
         longitude: 76.2934,
         name: 'Kochi',
       );
+
+  @override
+  Future<ResolvedPlace> placeFromQuery(String query) async =>
+      ResolvedPlace(latitude: 52.52, longitude: 13.405, name: query);
 }

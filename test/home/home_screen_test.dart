@@ -185,4 +185,6 @@ class _FakeLocationService implements LocationService {
   final ResolvedPlace place;
   @override
   Future<ResolvedPlace> currentPlace() async => place;
+  @override
+  Future<ResolvedPlace> placeFromQuery(String query) async => place;
 }

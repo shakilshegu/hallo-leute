@@ -54,6 +54,11 @@ class ApiClient {
     return data is List ? data : const [];
   }
 
+  /// GET returning the whole `{ success, data, pagination, message }` envelope
+  /// — for paginated list endpoints that also carry `pagination` / `message`
+  /// (e.g. `/discover`).
+  Future<Map<String, dynamic>> getRaw(String path) => _sendRaw('GET', path);
+
   Future<Map<String, dynamic>> _send(
     String method,
     String path, {

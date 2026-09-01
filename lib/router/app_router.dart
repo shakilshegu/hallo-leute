@@ -43,6 +43,8 @@ import '../screens/feedback_sent_screen.dart';
 import '../screens/mutual_connection_screen.dart';
 import '../screens/connections_screen.dart';
 import '../screens/connection_detail_screen.dart';
+import '../screens/discover_screen.dart';
+import '../screens/discover_profile_screen.dart';
 import '../screens/report_user_screen.dart';
 import '../screens/blocked_users_screen.dart';
 
@@ -128,7 +130,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: AppRoutes.discover,
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) => const DiscoverPeopleScreen(),
               ),
             ],
           ),
@@ -327,6 +329,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: slideBuilder(
           (c, s) => ConnectionDetailScreen(
             connectionId: s.pathParameters['connectionId']!,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.discoverProfile,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder(
+          (c, s) => DiscoverProfileScreen(
+            userId: s.pathParameters['userId']!,
           ),
         ),
       ),

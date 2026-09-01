@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/cafe_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/cafe_controller.dart';
 import 'package:poppylo/state/matching_controller.dart';
+import 'package:poppylo/widgets/cafe_photo.dart';
+
+const _bg = Color(0xFFF9F8F5);
+const _ink = Color(0xFF2B4739);
 
 class ChooseCafeScreen extends ConsumerStatefulWidget {
   final String matchId;
@@ -19,14 +24,14 @@ class ChooseCafeScreen extends ConsumerStatefulWidget {
 class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
   bool _suggesting = false;
 
-  Future<void> _suggest(String coffeeShopId) async {
+  Future<void> _suggest(NearbyCafe cafe) async {
     if (_suggesting) return;
     setState(() => _suggesting = true);
     try {
       final match = await ref.read(matchDetailsProvider(widget.matchId).future);
       await ref.read(cafeApiProvider).suggestCafe(
             widget.matchId,
-            coffeeShopId: coffeeShopId,
+            placeId: cafe.placeId,
             date: match.date,
             startTime: match.startTime,
           );
@@ -49,14 +54,15 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final cafesAsync = ref.watch(nearbyCafesProvider);
+    final state = ref.watch(nearbyCafesControllerProvider);
+    final controller = ref.read(nearbyCafesControllerProvider.notifier);
     final suggestion =
         ref.watch(cafeSuggestionProvider(widget.matchId)).valueOrNull;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F8F5),
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F8F5),
+        backgroundColor: _bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -72,149 +78,160 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
         ),
         centerTitle: true,
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Where should you meet?',
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Pick a comfortable public café.',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.primary.withOpacity(0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Map Card Mockup (decorative, unchanged)
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3EAE1),
-                      borderRadius: BorderRadius.circular(16),
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                            'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop'),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                            Color(0x88FFFFFF), BlendMode.lighten),
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.my_location,
-                                    size: 14, color: colorScheme.primary),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'CURRENT AREA',
-                                  style: textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2B4739),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.local_cafe,
-                                    size: 16, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  if (suggestion != null &&
-                      !suggestion.isAccepted &&
-                      !suggestion.isDeclined)
-                    _suggestionBanner(context, suggestion, textTheme),
-
-                  // Café cards from the backend
-                  cafesAsync.when(
-                    loading: () => const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                    error: (e, _) => _errorBox(
-                      context,
-                      cafeErrorMessage(e),
-                      () => ref.invalidate(nearbyCafesProvider),
-                    ),
-                    data: (cafes) {
-                      if (cafes.isEmpty) {
-                        return _errorBox(
-                          context,
-                          'No cafés found near you.',
-                          () => ref.invalidate(nearbyCafesProvider),
-                        );
-                      }
-                      return Column(
-                        children: [
-                          for (final cafe in cafes) ...[
-                            _CafeCard(
-                              matchId: widget.matchId,
-                              cafe: cafe,
-                              suggesting: _suggesting,
-                              onSuggest: () => _suggest(cafe.id),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 80),
-                ],
-              ),
+      body: ListView(
+        padding: const EdgeInsets.all(24.0),
+        children: [
+          Text(
+            'Choose a coffee spot ☕',
+            style: textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+              letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'Pick a convenient place to meet.',
+            style: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.primary.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (state.origin != null) _LocationChip(name: state.origin!.name),
+          if (state.origin != null) const SizedBox(height: 20),
+          if (suggestion != null &&
+              !suggestion.isAccepted &&
+              !suggestion.isDeclined)
+            _suggestionBanner(context, suggestion, textTheme),
+          _body(state, controller),
+          const SizedBox(height: 60),
         ],
       ),
+    );
+  }
+
+  Widget _body(NearbyCafesState state, NearbyCafesController controller) {
+    switch (state.phase) {
+      case NearbyCafesPhase.locating:
+        return const _Status(
+          icon: Icons.my_location,
+          title: 'Getting your location…',
+        );
+      case NearbyCafesPhase.loading:
+        return const _Status(
+          icon: Icons.local_cafe_outlined,
+          title: 'Finding nearby coffee spots…',
+        );
+      case NearbyCafesPhase.gpsOff:
+        return _withFallback(
+          controller,
+          _Status(
+            icon: Icons.location_disabled,
+            title: 'Location is turned off',
+            message: state.message,
+            actionLabel: 'Try again',
+            onAction: controller.retry,
+          ),
+        );
+      case NearbyCafesPhase.locationDenied:
+        return _withFallback(
+          controller,
+          _Status(
+            icon: Icons.location_off_outlined,
+            title: 'Location needed',
+            message: state.message ??
+                'Location permission is needed to find nearby coffee spots.',
+            actionLabel: 'Enable location',
+            onAction: controller.retry,
+          ),
+        );
+      case NearbyCafesPhase.locationUnavailable:
+        return _withFallback(
+          controller,
+          _Status(
+            icon: Icons.location_searching,
+            title: "Couldn't get your location",
+            message: state.message ??
+                "We couldn't get a location fix. Please try again.",
+            actionLabel: 'Try again',
+            onAction: controller.retry,
+          ),
+        );
+      case NearbyCafesPhase.locationBlocked:
+        return _withFallback(
+          controller,
+          _Status(
+            icon: Icons.location_off_outlined,
+            title: 'Location is blocked',
+            message:
+                'Enable location for Coffee Meet in Settings, then try again.',
+            actionLabel: 'Open settings',
+            onAction: () => Geolocator.openAppSettings(),
+            secondaryLabel: 'Try again',
+            onSecondary: controller.retry,
+          ),
+        );
+      case NearbyCafesPhase.error:
+        return _Status(
+          icon: Icons.wifi_off_rounded,
+          title: "Couldn't load nearby coffee shops",
+          message: state.message,
+          actionLabel: 'Try again',
+          onAction: controller.retry,
+        );
+      case NearbyCafesPhase.empty:
+        return _Status(
+          icon: Icons.local_cafe_outlined,
+          title: 'No coffee spots found nearby',
+          message:
+              state.canExpandRadius ? null : 'Try again from a different spot.',
+          actionLabel: state.canExpandRadius
+              ? 'Search within ${state.nextRadiusMeters ~/ 1000} km'
+              : 'Try again',
+          onAction: state.canExpandRadius
+              ? controller.expandRadius
+              : controller.retry,
+        );
+      case NearbyCafesPhase.ready:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final cafe in state.cafes) ...[
+              _CafeCard(
+                matchId: widget.matchId,
+                cafe: cafe,
+                suggesting: _suggesting,
+                onSelect: () => _suggest(cafe),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (state.canExpandRadius)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: TextButton.icon(
+                  onPressed: controller.expandRadius,
+                  icon: const Icon(Icons.travel_explore, size: 18),
+                  label: Text(
+                    'Search within ${state.nextRadiusMeters ~/ 1000} km',
+                  ),
+                  style: TextButton.styleFrom(foregroundColor: _ink),
+                ),
+              ),
+          ],
+        );
+    }
+  }
+
+  Widget _withFallback(NearbyCafesController controller, Widget status) {
+    return Column(
+      children: [
+        status,
+        const SizedBox(height: 8),
+        _LocationFallback(
+          onSearch: controller.useTypedLocation,
+          onCity: controller.useCoords,
+        ),
+      ],
     );
   }
 
@@ -223,7 +240,6 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
     CafeSuggestion s,
     TextTheme textTheme,
   ) {
-    final ink = const Color(0xFF2B4739);
     final mine = s.suggestedBy.isMe;
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -240,12 +256,12 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
                 ? 'You suggested ${s.cafe.name}'
                 : '${s.suggestedBy.name} suggested ${s.cafe.name}',
             style: textTheme.titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold, color: ink),
+                ?.copyWith(fontWeight: FontWeight.bold, color: _ink),
           ),
           const SizedBox(height: 4),
           Text(
             formatSlotDateTime(s.date, s.startTime),
-            style: textTheme.bodySmall?.copyWith(color: ink.withOpacity(0.7)),
+            style: textTheme.bodySmall?.copyWith(color: _ink.withOpacity(0.7)),
           ),
           const SizedBox(height: 12),
           Align(
@@ -254,7 +270,7 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
               onPressed: () =>
                   context.push(AppRoutes.cafeProposedPath(widget.matchId)),
               style: TextButton.styleFrom(
-                foregroundColor: ink,
+                foregroundColor: _ink,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: Text(mine ? 'View suggestion' : 'Review & accept'),
@@ -264,37 +280,242 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
       ),
     );
   }
+}
 
-  Widget _errorBox(BuildContext context, String message, VoidCallback retry) {
-    final ink = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
+class _LocationChip extends StatelessWidget {
+  const _LocationChip({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _ink.withOpacity(0.08)),
+      ),
+      child: Row(
         children: [
-          Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: ink.withOpacity(0.7))),
-          const SizedBox(height: 12),
-          OutlinedButton(onPressed: retry, child: const Text('Retry')),
+          const Icon(Icons.my_location, size: 15, color: _ink),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Near $name',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(
+                color: _ink.withOpacity(0.8),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// The existing warm café card — same layout, real data.
+/// Manual "search by area" fallback shown when the device can't give a fix.
+class _LocationFallback extends StatefulWidget {
+  const _LocationFallback({required this.onSearch, required this.onCity});
+
+  final ValueChanged<String> onSearch;
+  final void Function(double lat, double lng, String name) onCity;
+
+  static const _demoCities = <String, (double, double)>{
+    'Berlin': (52.5200, 13.4050),
+    'Munich': (48.1374, 11.5755),
+  };
+
+  @override
+  State<_LocationFallback> createState() => _LocationFallbackState();
+}
+
+class _LocationFallbackState extends State<_LocationFallback> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final q = _controller.text.trim();
+    if (q.isNotEmpty) {
+      FocusScope.of(context).unfocus();
+      widget.onSearch(q);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        Text(
+          'Or search by area',
+          style: textTheme.labelMedium?.copyWith(color: _ink.withOpacity(0.6)),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  hintText: 'Type a city or address…',
+                  isDense: true,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: _ink.withOpacity(0.12)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: _ink.withOpacity(0.12)),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              onPressed: _submit,
+              style: IconButton.styleFrom(backgroundColor: _ink),
+              icon: const Icon(Icons.arrow_forward, size: 18),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (final entry in _LocationFallback._demoCities.entries)
+              ActionChip(
+                label: Text(entry.key),
+                onPressed: () => widget.onCity(
+                  entry.value.$1,
+                  entry.value.$2,
+                  entry.key,
+                ),
+                backgroundColor: Colors.white,
+                side: BorderSide(color: _ink.withOpacity(0.12)),
+                labelStyle: TextStyle(
+                  color: _ink,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _Status extends StatelessWidget {
+  const _Status({
+    required this.icon,
+    required this.title,
+    this.message,
+    this.actionLabel,
+    this.onAction,
+    this.secondaryLabel,
+    this.onSecondary,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final loading = onAction == null && message == null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 44),
+      child: Column(
+        children: [
+          if (loading)
+            const SizedBox(
+              width: 26,
+              height: 26,
+              child: CircularProgressIndicator(strokeWidth: 2, color: _ink),
+            )
+          else
+            Icon(icon, size: 34, color: _ink.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: textTheme.titleMedium
+                ?.copyWith(color: _ink, fontWeight: FontWeight.bold),
+          ),
+          if (message != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: _ink.withOpacity(0.6),
+                height: 1.4,
+              ),
+            ),
+          ],
+          if (actionLabel != null) ...[
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: onAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _ink,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: Text(actionLabel!),
+            ),
+          ],
+          if (secondaryLabel != null) ...[
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: onSecondary,
+              style: TextButton.styleFrom(foregroundColor: _ink),
+              child: Text(secondaryLabel!),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Warm café card — same visual language, real Google data.
 class _CafeCard extends StatelessWidget {
   const _CafeCard({
     required this.matchId,
     required this.cafe,
     required this.suggesting,
-    required this.onSuggest,
+    required this.onSelect,
   });
 
   final String matchId;
-  final CoffeeShop cafe;
+  final NearbyCafe cafe;
   final bool suggesting;
-  final VoidCallback onSuggest;
+  final VoidCallback onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -302,15 +523,10 @@ class _CafeCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final meta = <String>[
-      if (cafe.distanceKm != null) '${cafe.distanceKm!.toStringAsFixed(1)} KM',
-      if (cafe.priceLabel.isNotEmpty) cafe.priceLabel,
-    ].join('  ·  ');
-
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        context.push(AppRoutes.cafeDetailsPath(matchId, cafe.id));
+        context.push(AppRoutes.cafeDetailsPath(matchId, cafe.placeId));
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -322,19 +538,7 @@ class _CafeCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: (cafe.imageUrl != null && cafe.imageUrl!.isNotEmpty)
-                  ? Image.network(cafe.imageUrl!,
-                      width: 100, height: 100, fit: BoxFit.cover)
-                  : Container(
-                      width: 100,
-                      height: 100,
-                      color: const Color(0xFFE2E8DF),
-                      child: const Icon(Icons.local_cafe,
-                          color: Color(0xFF2B4739)),
-                    ),
-            ),
+            CafePhoto(proxyPath: cafe.photoUrl, width: 96, height: 96),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -348,34 +552,51 @@ class _CafeCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (cafe.rating != null) ...[
+                  if (cafe.rating != null)
+                    Row(
+                      children: [
                         Text(cafe.rating!.toStringAsFixed(1),
                             style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.primary.withOpacity(0.7))),
+                                color: colorScheme.primary.withOpacity(0.75))),
                         Icon(Icons.star,
                             size: 12,
-                            color: colorScheme.primary.withOpacity(0.7)),
+                            color: colorScheme.primary.withOpacity(0.75)),
+                        if (cafe.reviewCount != null)
+                          Text('  ·  ${cafe.reviewCount} reviews',
+                              style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.primary.withOpacity(0.6))),
                       ],
-                      if (meta.isNotEmpty)
-                        Text('  ·  $meta',
-                            style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.primary.withOpacity(0.7))),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                    ),
+                  if (cafe.distanceText.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(cafe.distanceText,
+                        style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.primary.withOpacity(0.6))),
+                  ],
+                  const SizedBox(height: 6),
                   Text(
-                    cafe.description ?? cafe.address,
+                    cafe.address,
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.primary.withOpacity(0.8),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (cafe.openLabel != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      cafe.openLabel!,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: cafe.isOpen == true
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFFB03A2E),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   InkWell(
-                    onTap: suggesting ? null : onSuggest,
+                    onTap: suggesting ? null : onSelect,
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -387,9 +608,9 @@ class _CafeCard extends StatelessWidget {
                             Border.all(color: Colors.black.withOpacity(0.05)),
                       ),
                       child: Text(
-                        suggesting ? 'Sending…' : 'Suggest this café',
+                        suggesting ? 'Sending…' : 'Select',
                         style: textTheme.labelSmall?.copyWith(
-                          color: const Color(0xFF2B4739),
+                          color: _ink,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

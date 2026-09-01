@@ -5,11 +5,18 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/cafe_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/maps_launcher.dart';
 import 'package:poppylo/state/cafe_controller.dart';
 import 'package:poppylo/state/matching_controller.dart';
+import 'package:poppylo/widgets/cafe_photo.dart';
+
+const _bg = Color(0xFFF9F8F5);
+const _ink = Color(0xFF2B4739);
 
 class CafeDetailsScreen extends ConsumerStatefulWidget {
   final String matchId;
+
+  /// A Google Places place id (the route segment is historically `:cafeId`).
   final String cafeId;
   const CafeDetailsScreen({
     super.key,
@@ -24,14 +31,14 @@ class CafeDetailsScreen extends ConsumerStatefulWidget {
 class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
   bool _suggesting = false;
 
-  Future<void> _suggest() async {
+  Future<void> _choose() async {
     if (_suggesting) return;
     setState(() => _suggesting = true);
     try {
       final match = await ref.read(matchDetailsProvider(widget.matchId).future);
       await ref.read(cafeApiProvider).suggestCafe(
             widget.matchId,
-            coffeeShopId: widget.cafeId,
+            placeId: widget.cafeId,
             date: match.date,
             startTime: match.startTime,
           );
@@ -46,77 +53,65 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
     }
   }
 
+  Future<void> _openInMaps(NearbyCafe cafe) async {
+    final ok = await openCafeInMaps(
+      latitude: cafe.latitude,
+      longitude: cafe.longitude,
+      name: cafe.name,
+      placeId: cafe.placeId,
+    );
+    if (!ok && mounted) _snack("Couldn't open Maps.");
+  }
+
   void _snack(String message) => ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final cafeAsync = ref.watch(cafeProvider(widget.cafeId));
+    final detailAsync = ref.watch(cafePlaceDetailsProvider(widget.cafeId));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F8F5),
-      body: cafeAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _errorScaffold(context, cafeErrorMessage(e)),
-        data: (cafe) => _content(context, cafe, textTheme, colorScheme),
-      ),
-      bottomSheet: cafeAsync.hasValue
-          ? _bottomBar(context, textTheme, colorScheme)
-          : null,
-    );
-  }
-
-  Widget _errorScaffold(BuildContext context, String message) {
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(message, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => context.pop(),
-                child: const Text('Back'),
-              ),
-            ],
-          ),
+      backgroundColor: _bg,
+      body: detailAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: _ink),
         ),
+        error: (e, _) => _ErrorView(
+          message: cafeErrorMessage(e),
+          onRetry: () =>
+              ref.invalidate(cafePlaceDetailsProvider(widget.cafeId)),
+        ),
+        data: (detail) => _content(context, detail),
       ),
+      bottomSheet:
+          detailAsync.hasValue ? _bottomBar(detailAsync.value!.summary) : null,
     );
   }
 
-  Widget _content(
-    BuildContext context,
-    CoffeeShop cafe,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _content(BuildContext context, CafePlaceDetails detail) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final cafe = detail.summary;
+
     final meta = <String>[
       if (cafe.rating != null) '${cafe.rating!.toStringAsFixed(1)} ★',
-      if (cafe.distanceKm != null) '${cafe.distanceKm!.toStringAsFixed(1)} KM',
-      if (cafe.priceLabel.isNotEmpty) cafe.priceLabel,
+      if (cafe.reviewCount != null) '${cafe.reviewCount} reviews',
+      if (cafe.distanceText.isNotEmpty) cafe.distanceText,
     ].join('  ·  ');
 
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 300,
+          expandedHeight: 280,
           pinned: true,
-          backgroundColor: const Color(0xFFF9F8F5),
+          backgroundColor: _bg,
           elevation: 0,
           scrolledUnderElevation: 0,
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
               decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
+                  color: Colors.white, shape: BoxShape.circle),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () {
@@ -127,20 +122,13 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
             ),
           ),
           flexibleSpace: FlexibleSpaceBar(
-            background: ClipRRect(
+            background: CafePhoto(
+              proxyPath: cafe.photoUrl,
+              fit: BoxFit.cover,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),
               ),
-              child: (cafe.imageUrl != null && cafe.imageUrl!.isNotEmpty)
-                  ? Image.network(cafe.imageUrl!, fit: BoxFit.cover)
-                  : Container(
-                      color: const Color(0xFFE2E8DF),
-                      child: const Center(
-                        child: Icon(Icons.local_cafe,
-                            size: 64, color: Color(0xFF2B4739)),
-                      ),
-                    ),
             ),
           ),
         ),
@@ -162,9 +150,20 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
                   const SizedBox(height: 8),
                   Text(
                     meta,
-                    style: textTheme.labelSmall?.copyWith(
+                    style: textTheme.labelMedium?.copyWith(
                       color: colorScheme.primary.withOpacity(0.7),
-                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ],
+                if (cafe.openLabel != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    cafe.openLabel!,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: cafe.isOpen == true
+                          ? const Color(0xFF2E7D32)
+                          : const Color(0xFFB03A2E),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -186,17 +185,29 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
                     ),
                   ],
                 ),
-                if ((cafe.description ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 32),
+                if (detail.openingHours.isNotEmpty) ...[
+                  const SizedBox(height: 28),
                   Text(
-                    cafe.description!,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.primary.withOpacity(0.8),
-                      height: 1.6,
+                    'OPENING HOURS',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary.withOpacity(0.5),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  for (final line in detail.openingHours)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        line,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.primary.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
                 ],
-                const SizedBox(height: 140),
+                const SizedBox(height: 160),
               ],
             ),
           ),
@@ -205,15 +216,12 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
     );
   }
 
-  Widget _bottomBar(
-    BuildContext context,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _bottomBar(NearbyCafe cafe) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F8F5),
+        color: _bg,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -227,9 +235,9 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ElevatedButton(
-            onPressed: _suggesting ? null : _suggest,
+            onPressed: _suggesting ? null : _choose,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2B4739),
+              backgroundColor: _ink,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -244,31 +252,55 @@ class _CafeDetailsScreenState extends ConsumerState<CafeDetailsScreen> {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Suggest this café',
-                        style: textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward, size: 18),
-                    ],
+                : Text(
+                    'Choose this café',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () => _openInMaps(cafe),
             icon: const Icon(Icons.map_outlined, size: 18),
-            label: const Text('View on map'),
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.primary,
-            ),
+            label: const Text('Open in Maps'),
+            style: TextButton.styleFrom(foregroundColor: _ink),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Try Again'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => context.pop(),
+                child: const Text('Back'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

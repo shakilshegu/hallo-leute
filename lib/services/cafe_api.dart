@@ -36,18 +36,77 @@ class CafeApi {
     return CoffeeShop.fromJson(data);
   }
 
+  // --- nearby cafés via Google Places (`GET /cafes/*`) --------------
+
+  /// `GET /api/v1/cafes/nearby?latitude&longitude&radius` — discovery is
+  /// Google Places, proxied by the backend (the API key stays server-side).
+  Future<List<NearbyCafe>> nearbyGoogleCafes({
+    required double latitude,
+    required double longitude,
+    required int radiusMeters,
+  }) async {
+    final rows = await _client.getList(
+      '/cafes/nearby?latitude=$latitude&longitude=$longitude'
+      '&radius=$radiusMeters',
+    );
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(NearbyCafe.fromJson)
+        .toList();
+  }
+
+  /// `GET /api/v1/cafes/:placeId` — opening hours + photos. `latitude`/
+  /// `longitude` (the user's origin) are optional and only fill in `distance`.
+  Future<CafePlaceDetails> cafePlaceDetails(
+    String placeId, {
+    double? latitude,
+    double? longitude,
+  }) async {
+    final q = (latitude != null && longitude != null)
+        ? '?latitude=$latitude&longitude=$longitude'
+        : '';
+    final data = await _client.get('/cafes/$placeId$q');
+    return CafePlaceDetails.fromJson(data);
+  }
+
+  /// Full URL for a café photo-proxy path. The backend returns an absolute
+  /// path (`/api/v1/cafes/photo?ref=...`), so build it against the API
+  /// origin — NOT `baseUrl` (which already ends in `/api/v1`).
+  String cafePhotoUrl(String proxyPath) {
+    if (proxyPath.startsWith('http')) return proxyPath;
+    final base = Uri.parse(_client.baseUrl);
+    final origin = '${base.scheme}://${base.authority}';
+    final path = proxyPath.startsWith('/') ? proxyPath : '/$proxyPath';
+    return '$origin$path';
+  }
+
+  /// Bearer header for loading a café photo via `Image.network`.
+  Future<Map<String, String>> imageAuthHeaders() async {
+    final token = await _client.tokenProvider();
+    return token == null ? const {} : {'Authorization': 'Bearer $token'};
+  }
+
   // --- café suggestion ----------------------------------------------
 
+  /// Propose a café for a confirmed match. Pass a Google `placeId` (preferred —
+  /// the backend fetches it from Google and stores a copy) OR an existing
+  /// `coffeeShopId` (the hand-seeded demo shops). Exactly one.
   Future<CafeSuggestion> suggestCafe(
     String matchId, {
-    required String coffeeShopId,
+    String? placeId,
+    String? coffeeShopId,
     required String date, // YYYY-MM-DD
     required String startTime, // HH:mm
   }) async {
+    assert(
+      (placeId == null) != (coffeeShopId == null),
+      'Pass exactly one of placeId / coffeeShopId',
+    );
     final data = await _client.post(
       '/matches/$matchId/cafe-suggestion',
       body: {
-        'coffeeShopId': coffeeShopId,
+        if (placeId != null) 'placeId': placeId,
+        if (coffeeShopId != null) 'coffeeShopId': coffeeShopId,
         'date': date,
         'startTime': startTime,
       },
