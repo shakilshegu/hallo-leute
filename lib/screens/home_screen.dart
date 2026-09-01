@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/discover_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/api_client.dart';
+import 'package:poppylo/services/location_service.dart';
+import 'package:poppylo/services/profile_api.dart';
 import 'package:poppylo/state/discover_controller.dart';
 import 'package:poppylo/state/profile_controller.dart';
 import 'package:poppylo/widgets/coffee_meet_card.dart';
@@ -25,17 +28,19 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _lastBackPress;
-  String? _locationOverride;
   bool _hasUnreadNotifications = true;
+  bool _savingLocation = false;
 
-  static const _cities = [
-    'Kochi, India',
-    'Bengaluru, India',
-    'Mumbai, India',
-    'Chennai, India',
-    'Hyderabad, India',
-    'Pune, India',
-  ];
+  // Coarse coordinates so a manual city pick still gives the backend a point
+  // to sort distance by (a device fix from "Use my location" is exact).
+  static const _cities = <String, (double, double)>{
+    'Kochi, India': (9.9312, 76.2673),
+    'Bengaluru, India': (12.9716, 77.5946),
+    'Mumbai, India': (19.076, 72.8777),
+    'Chennai, India': (13.0827, 80.2707),
+    'Hyderabad, India': (17.385, 78.4867),
+    'Pune, India': (18.5204, 73.8567),
+  };
 
   String get _partOfDay {
     final h = DateTime.now().hour;
@@ -67,43 +72,93 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _changeLocation() async {
     HapticFeedback.selectionClick();
-    final picked = await showModalBottomSheet<String>(
+    final choice = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: _bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'CHOOSE YOUR CITY',
-                  style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
-                        color: _green.withOpacity(0.5),
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.bold,
-                      ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const Icon(Icons.my_location, color: _green),
+                title: const Text('Use my current location'),
+                onTap: () => Navigator.pop(ctx, '__gps__'),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'OR PICK A CITY',
+                    style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                          color: _green.withOpacity(0.5),
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ),
               ),
-            ),
-            for (final c in _cities)
-              ListTile(
-                leading: const Icon(Icons.location_on_outlined, color: _green),
-                title: Text(c),
-                onTap: () => Navigator.pop(ctx, c),
-              ),
-            const SizedBox(height: 8),
-          ],
+              for (final c in _cities.keys)
+                ListTile(
+                  leading:
+                      const Icon(Icons.location_on_outlined, color: _green),
+                  title: Text(c),
+                  onTap: () => Navigator.pop(ctx, c),
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
-    if (picked != null) setState(() => _locationOverride = picked);
+    if (choice == null) return;
+    if (choice == '__gps__') {
+      await _useDeviceLocation();
+    } else {
+      final coords = _cities[choice]!;
+      await _saveLocation(coords.$1, coords.$2, choice);
+    }
+  }
+
+  Future<void> _useDeviceLocation() async {
+    setState(() => _savingLocation = true);
+    try {
+      final place = await ref.read(locationServiceProvider).currentPlace();
+      await _saveLocation(place.latitude, place.longitude, place.name);
+    } on LocationDenied catch (e) {
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) _snack("Couldn't get your location. Try again.");
+    } finally {
+      if (mounted) setState(() => _savingLocation = false);
+    }
+  }
+
+  Future<void> _saveLocation(double lat, double lng, String name) async {
+    try {
+      await ref.read(profileApiProvider).updateProfile(
+            latitude: lat,
+            longitude: lng,
+            locationName: name,
+          );
+      ref.invalidate(meProvider);
+      ref.invalidate(discoverFeedProvider);
+      if (mounted) _snack('Location set to $name');
+    } on ApiException catch (e) {
+      if (mounted) _snack("Couldn't save your location (${e.message}).");
+    }
+  }
+
+  void _snack(String m) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(m)));
   }
 
   void _viewMeet(CoffeeMeet meet) {
@@ -201,14 +256,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ? '$_partOfDay, $firstName'
         : _partOfDay;
 
-    final feed = ref.watch(discoverFeedProvider);
     final filtered = ref.watch(filteredDiscoverProvider);
     final activeFilters = ref.watch(discoverFiltersProvider);
-    final String location = _locationOverride ??
-        feed.maybeWhen<String>(
-          data: (f) => f.location,
-          orElse: () => 'Kochi, India',
-        );
+
+    final savedLocation = me.maybeWhen(
+      data: (d) => d.profile?.locationName,
+      orElse: () => null,
+    );
 
     return PopScope(
       canPop: false,
@@ -235,7 +289,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onBell: () => setState(() => _hasUnreadNotifications = false),
                 ),
                 const SizedBox(height: 14),
-                _LocationRow(location: location, onChange: _changeLocation),
+                _LocationRow(
+                  location: savedLocation,
+                  busy: _savingLocation,
+                  onChange: _changeLocation,
+                ),
                 const SizedBox(height: 20),
                 _Hero(onFind: _openCreate),
                 const SizedBox(height: 24),
@@ -391,42 +449,62 @@ class _Header extends StatelessWidget {
 }
 
 class _LocationRow extends StatelessWidget {
-  const _LocationRow({required this.location, required this.onChange});
+  const _LocationRow({
+    required this.location,
+    required this.busy,
+    required this.onChange,
+  });
 
-  final String location;
+  final String? location;
+  final bool busy;
   final VoidCallback onChange;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        const Icon(Icons.location_on, size: 16, color: _green),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            location,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodyMedium?.copyWith(
-              color: _green,
-              fontWeight: FontWeight.w600,
+    final hasLocation = (location ?? '').isNotEmpty;
+
+    return GestureDetector(
+      onTap: busy ? null : onChange,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Icon(hasLocation ? Icons.location_on : Icons.location_off_outlined,
+              size: 16, color: _green),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              busy
+                  ? 'Getting your location…'
+                  : hasLocation
+                      ? location!
+                      : 'Set your location',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium?.copyWith(
+                color: _green,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: onChange,
-          child: Text(
-            'Change',
-            style: textTheme.labelSmall?.copyWith(
-              color: _green.withOpacity(0.7),
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
+          const SizedBox(width: 8),
+          if (busy)
+            const SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(strokeWidth: 2, color: _green),
+            )
+          else
+            Text(
+              hasLocation ? 'Change' : 'Enable',
+              style: textTheme.labelSmall?.copyWith(
+                color: _green.withOpacity(0.7),
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+              ),
             ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

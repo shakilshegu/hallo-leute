@@ -22,12 +22,18 @@ class ProfileApi {
     int? age,
     String? job,
     String? bio,
+    double? latitude,
+    double? longitude,
+    String? locationName,
   }) {
     return _client.put('/profile', body: {
       if (firstName != null) 'firstName': firstName,
       if (age != null) 'age': age,
       if (job != null) 'job': job,
       if (bio != null) 'bio': bio,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (locationName != null) 'locationName': locationName,
     });
   }
 

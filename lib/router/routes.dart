@@ -68,8 +68,15 @@ class AppRoutes {
   static const chat = 'chat';
   static String chatPath(String id) => '${meetingPath(id)}/$chat';
 
+  /// Chat opened by match id (from the Chats tab or a resolved meeting).
+  static const chatByMatch = '/chat/:matchId';
+  static String chatByMatchPath(String matchId) => '/chat/$matchId';
+
   static const safety = 'safety';
   static String safetyPath(String id) => '${meetingPath(id)}/$safety';
+
+  /// Account-level blocked-users management.
+  static const blockedUsers = '/settings/blocked';
 
   static const feedback = 'feedback';
   static String feedbackPath(String id) => '${meetingPath(id)}/$feedback';
@@ -84,4 +91,9 @@ class AppRoutes {
 
   static const reportUser = '/report/:userId';
   static String reportPath(String id) => '/report/$id';
+
+  /// Mutual connections list + one connection's public profile.
+  static const connections = '/connections';
+  static const connectionDetail = '/connections/:connectionId';
+  static String connectionDetailPath(String id) => '/connections/$id';
 }

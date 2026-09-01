@@ -1,25 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/models/safety_models.dart';
+import 'package:poppylo/state/safety_controller.dart';
 
-class CancelMeetingSheet extends StatefulWidget {
-  const CancelMeetingSheet({super.key});
+/// Bottom sheet to cancel a confirmed Coffee Meet. Pops with `true` once the
+/// backend confirms the cancellation — the caller navigates + refreshes.
+class CancelMeetingSheet extends ConsumerStatefulWidget {
+  const CancelMeetingSheet({
+    super.key,
+    required this.meetingId,
+    this.partnerName = 'your match',
+  });
+
+  final String meetingId;
+  final String partnerName;
 
   @override
-  State<CancelMeetingSheet> createState() => _CancelMeetingSheetState();
+  ConsumerState<CancelMeetingSheet> createState() => _CancelMeetingSheetState();
 }
 
-class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
+class _CancelMeetingSheetState extends ConsumerState<CancelMeetingSheet> {
   String _selectedReason = 'Something came up';
+  bool _cancelling = false;
 
-  final List<String> _reasons = [
+  final List<String> _reasons = const [
     'Something came up',
     "I don't feel comfortable",
     'Plans changed',
     'Other',
   ];
+
+  Future<void> _confirmCancel() async {
+    if (_cancelling) return;
+    setState(() => _cancelling = true);
+    try {
+      await ref.read(safetyApiProvider).cancelMeeting(
+            widget.meetingId,
+            reason: kCancelReasonToApi[_selectedReason] ?? 'other',
+          );
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cancelling = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(safetyErrorMessage(e))));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +59,7 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF8F9F8), // Match background exactly
+        color: Color(0xFFF8F9F8),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -42,7 +72,6 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
           Center(
             child: Container(
               width: 40,
@@ -54,7 +83,6 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
               ),
             ),
           ),
-
           Text(
             'Cancel this Coffee Meet?',
             textAlign: TextAlign.center,
@@ -65,39 +93,30 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            "We'll let Sarah know",
+            "We'll let ${widget.partnerName} know",
             textAlign: TextAlign.center,
             style: textTheme.bodyMedium?.copyWith(
               color: colorScheme.primary.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 32),
-
-          // Radio list
           ..._reasons.map((reason) => _buildRadioOption(
                 context: context,
                 label: reason,
                 isSelected: _selectedReason == reason,
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(() {
-                    _selectedReason = reason;
-                  });
+                  setState(() => _selectedReason = reason);
                 },
               )),
-
           const SizedBox(height: 32),
-
-          // Keep meeting button
           SizedBox(
             height: 56,
             child: ElevatedButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.pop(context); // just close the sheet
-              },
+              onPressed:
+                  _cancelling ? null : () => Navigator.pop(context, false),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1B3B2B), // Dark green
+                backgroundColor: const Color(0xFF1B3B2B),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
@@ -114,26 +133,27 @@ class _CancelMeetingSheetState extends State<CancelMeetingSheet> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Cancel text button
           TextButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context); // close the sheet
-              context.go(AppRoutes.home);
-            },
+            onPressed: _cancelling ? null : _confirmCancel,
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFFD32F2F),
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: Text(
-              'Cancel meeting',
-              style: textTheme.labelLarge?.copyWith(
-                color: const Color(0xFFD32F2F),
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
+            child: _cancelling
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Color(0xFFD32F2F)),
+                  )
+                : Text(
+                    'Cancel meeting',
+                    style: textTheme.labelLarge?.copyWith(
+                      color: const Color(0xFFD32F2F),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
           ),
         ],
       ),

@@ -24,6 +24,20 @@ class MatchRepository extends StateNotifier<Map<String, Match>> {
 
   Match _ensure(String id) => state[id] ?? _placeholderMatch(id);
 
+  /// Replace the cached match with a fresh copy from the backend, preserving
+  /// any café already chosen locally. Called by [matchDetailsProvider] on
+  /// every load so the route guards read real status.
+  void upsert(Match match) {
+    final existing = state[match.id];
+    state = {
+      ...state,
+      match.id: match.copyWith(
+        cafeId: existing?.cafeId,
+        cafeName: existing?.cafeName,
+      ),
+    };
+  }
+
   void setStatus(String id, MatchStatus status) {
     final match = _ensure(id);
     state = {...state, id: match.copyWith(status: status)};

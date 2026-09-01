@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/cafe_controller.dart'
+    show upcomingMeetingsProvider;
+import 'package:poppylo/state/feedback_controller.dart';
 import 'package:poppylo/state/meeting_controller.dart';
 import 'package:poppylo/widgets/cancel_meeting_sheet.dart';
-import 'package:poppylo/widgets/conversation_starters_sheet.dart';
 
 String _formatDuration(Duration d) {
   final minutes = d.inMinutes;
@@ -39,6 +41,10 @@ class MeetingDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meeting = ref.watch(meetingProvider(meetingId));
+    // The backend is the source of truth for feedback eligibility.
+    final canLeaveFeedback =
+        ref.watch(feedbackStatusProvider(meetingId)).valueOrNull?.canSubmit ??
+            false;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -63,6 +69,16 @@ class MeetingDetailsScreen extends ConsumerWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shield_outlined, color: colorScheme.primary),
+            tooltip: 'Safety Center',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push(AppRoutes.safetyPath(meetingId));
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -162,7 +178,7 @@ class MeetingDetailsScreen extends ConsumerWidget {
                 HapticFeedback.heavyImpact();
               },
             ),
-            if (meeting.hasEnded && !meeting.feedbackSubmitted)
+            if (canLeaveFeedback)
               _actionRow(
                 context,
                 icon: Icons.rate_review_outlined,
@@ -175,13 +191,23 @@ class MeetingDetailsScreen extends ConsumerWidget {
                 icon: Icons.cancel_outlined,
                 label: 'Cancel meeting',
                 isDestructive: true,
-                onTap: () {
-                  showModalBottomSheet(
+                onTap: () async {
+                  final cancelled = await showModalBottomSheet<bool>(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
-                    builder: (context) => const CancelMeetingSheet(),
+                    builder: (_) => CancelMeetingSheet(
+                      meetingId: meetingId,
+                      partnerName: meeting.partnerName,
+                    ),
                   );
+                  if (cancelled == true && context.mounted) {
+                    ref.invalidate(upcomingMeetingsProvider);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coffee Meet cancelled.')),
+                    );
+                    context.go(AppRoutes.home);
+                  }
                 },
               ),
           ],

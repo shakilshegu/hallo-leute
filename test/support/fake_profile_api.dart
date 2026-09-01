@@ -28,6 +28,9 @@ class FakeProfileApi implements ProfileApi {
     int? age,
     String? job,
     String? bio,
+    double? latitude,
+    double? longitude,
+    String? locationName,
   }) async {
     calls.add('updateProfile');
     if (failWith != null) throw failWith!;
@@ -36,6 +39,9 @@ class FakeProfileApi implements ProfileApi {
       'age': age,
       'job': job,
       'bio': bio,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (locationName != null) 'locationName': locationName,
     };
   }
 
@@ -90,6 +96,9 @@ UserMe sampleUserMe({
     Interest(id: 'startups', label: 'Startups'),
   ],
   String? purpose = 'networking',
+  double? latitude,
+  double? longitude,
+  String? locationName,
   MePreferences? preferences = const MePreferences(
     minAge: 24,
     maxAge: 36,
@@ -107,6 +116,9 @@ UserMe sampleUserMe({
       job: job,
       bio: bio,
       photoUrl: photoUrl,
+      latitude: latitude,
+      longitude: longitude,
+      locationName: locationName,
     ),
     interests: interests,
     preferences: preferences,

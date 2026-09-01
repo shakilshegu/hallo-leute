@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poppylo/models/feedback_models.dart';
+import 'package:poppylo/services/api_client.dart' show ApiException;
+import 'package:poppylo/state/cafe_controller.dart'
+    show meetingDetailsProvider, upcomingMeetingsProvider;
+import 'package:poppylo/state/feedback_controller.dart';
 import 'package:poppylo/state/meeting_controller.dart';
 
 class FeedbackScreen extends ConsumerStatefulWidget {
@@ -19,6 +24,69 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
   String? _conversationFeel;
   String? _meetAgain;
   final Set<String> _stoodOut = {};
+  bool _submitting = false;
+
+  bool get _canSubmit =>
+      _rating > 0 &&
+      _conversationFeel != null &&
+      _meetAgain != null &&
+      !_submitting;
+
+  Future<void> _submit() async {
+    if (!_canSubmit) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _submitting = true);
+    try {
+      final result = await ref.read(feedbackApiProvider).submit(
+            widget.meetingId,
+            rating: _rating,
+            conversationFeeling:
+                kConversationFeelingToApi[_conversationFeel] ?? 'OKAY',
+            wouldMeetAgain: wouldMeetAgainFromLabel(_meetAgain),
+            tags: _stoodOut
+                .map((label) => kFeedbackTagToApi[label])
+                .whereType<String>()
+                .toList(),
+          );
+
+      // Keep the local caches the meeting screens + route guard read in sync.
+      ref.read(meetingRepositoryProvider.notifier).submitFeedback(
+            widget.meetingId,
+          );
+      ref.invalidate(feedbackStatusProvider(widget.meetingId));
+      ref.invalidate(upcomingMeetingsProvider);
+
+      if (!mounted) return;
+      _goNext(result.mutualConnectionCreated, result.connectionId);
+    } catch (e) {
+      if (!mounted) return;
+      // A 409 means it's already recorded — treat it as done, not an error to
+      // retry.
+      if (e is ApiException && e.statusCode == 409) {
+        ref.read(meetingRepositoryProvider.notifier).submitFeedback(
+              widget.meetingId,
+            );
+        ref.invalidate(feedbackStatusProvider(widget.meetingId));
+        _goNext(false, null);
+        return;
+      }
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(feedbackErrorMessage(e))),
+      );
+    }
+  }
+
+  void _goNext(bool mutualConnectionCreated, String? connectionId) {
+    if (mutualConnectionCreated) {
+      context.pushReplacement(
+        AppRoutes.mutualConnectionPath(widget.meetingId),
+        extra: connectionId,
+      );
+    } else {
+      context.pushReplacement(AppRoutes.feedbackSentPath(widget.meetingId));
+    }
+  }
 
   final List<String> _feelOptions = ['GREAT', 'GOOD', 'OKAY', 'NOT GREAT'];
   final List<String> _meetOptions = ['YES', 'MAYBE', 'NO'];
@@ -35,6 +103,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final partner = ref
+        .watch(meetingDetailsProvider(widget.meetingId))
+        .valueOrNull
+        ?.partner;
+    final partnerName = partner?.name ?? 'them';
 
     return Scaffold(
       backgroundColor:
@@ -79,8 +152,16 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   Center(
                     child: CircleAvatar(
                       radius: 32,
-                      backgroundImage: const NetworkImage(
-                          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'),
+                      backgroundColor: const Color(0xFFE6EBE6),
+                      backgroundImage: (partner?.profileImage != null &&
+                              partner!.profileImage!.isNotEmpty)
+                          ? NetworkImage(partner.profileImage!)
+                          : null,
+                      child: (partner?.profileImage == null ||
+                              partner!.profileImage!.isEmpty)
+                          ? Icon(Icons.person,
+                              color: colorScheme.primary, size: 32)
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -143,8 +224,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   const SizedBox(height: 32),
 
                   // Question 2
-                  _buildQuestionLabel('02', 'Would you meet Sarah again?',
-                      textTheme, colorScheme),
+                  _buildQuestionLabel(
+                      '02',
+                      'Would you meet $partnerName again?',
+                      textTheme,
+                      colorScheme),
                   const SizedBox(height: 16),
                   Row(
                     children: _meetOptions
@@ -206,30 +290,34 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    ref
-                        .read(meetingRepositoryProvider.notifier)
-                        .submitFeedback(widget.meetingId);
-                    context.pushReplacement(
-                        AppRoutes.feedbackSentPath(widget.meetingId));
-                  },
+                  onPressed: _canSubmit ? _submit : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B3B2B), // Dark green
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor:
+                        const Color(0xFF1B3B2B).withOpacity(0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'SUBMIT FEEDBACK',
-                    style: textTheme.labelLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'SUBMIT FEEDBACK',
+                          style: textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
                 ),
               ),
             ),

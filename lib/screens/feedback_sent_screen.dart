@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:go_router/go_router.dart';
 
-class FeedbackSentScreen extends StatelessWidget {
+import 'package:poppylo/state/cafe_controller.dart' show meetingDetailsProvider;
+
+class FeedbackSentScreen extends ConsumerWidget {
   final String meetingId;
   const FeedbackSentScreen({super.key, required this.meetingId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final partnerName = ref
+            .watch(meetingDetailsProvider(meetingId))
+            .valueOrNull
+            ?.partner
+            .name ??
+        'your match';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F1EB), // Warm beige
@@ -55,7 +64,7 @@ class FeedbackSentScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
-                  "If Sarah also wants to meet again, we'll let you both know.",
+                  "If $partnerName also wants to meet again, we'll let you both know.",
                   textAlign: TextAlign.center,
                   style: textTheme.bodyLarge?.copyWith(
                     color: colorScheme.primary.withOpacity(0.8),
@@ -88,19 +97,6 @@ class FeedbackSentScreen extends StatelessWidget {
               ),
 
               const Spacer(),
-
-              // Hidden test button for Mutual Connection
-              TextButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  context.go(AppRoutes.mutualConnectionPath(meetingId));
-                },
-                child: Text(
-                  '[DEV] Simulate Mutual Connection',
-                  style: TextStyle(color: colorScheme.primary.withOpacity(0.5)),
-                ),
-              ),
-              const SizedBox(height: 16),
             ],
           ),
         ),

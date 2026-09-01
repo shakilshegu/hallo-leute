@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poppylo/models/discover_models.dart';
 import 'package:poppylo/models/profile_models.dart';
 import 'package:poppylo/screens/home_screen.dart';
+import 'package:poppylo/services/location_service.dart';
 import 'package:poppylo/services/profile_api.dart';
 import 'package:poppylo/state/discover_controller.dart';
 
@@ -56,6 +57,7 @@ void main() {
     WidgetTester tester, {
     required FakeProfileApi profile,
     required DiscoverFeed Function() feedBuilder,
+    LocationService? location,
   }) async {
     final router = GoRouter(routes: [
       GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
@@ -71,6 +73,8 @@ void main() {
         overrides: [
           profileApiProvider.overrideWithValue(profile),
           discoverFeedProvider.overrideWith((ref) async => feedBuilder()),
+          if (location != null)
+            locationServiceProvider.overrideWithValue(location),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -93,6 +97,34 @@ void main() {
     expect(find.text('Ananya, 27'), findsOneWidget);
     expect(find.text('View Meet'), findsOneWidget);
     expect(find.text('People nearby'), findsOneWidget);
+  });
+
+  testWidgets('"Enable" → use my location saves it to the profile',
+      (tester) async {
+    final profile = FakeProfileApi(sampleUserMe(locationName: null));
+    await pump(
+      tester,
+      profile: profile,
+      feedBuilder: feed,
+      location: _FakeLocationService(const ResolvedPlace(
+        latitude: 9.93,
+        longitude: 76.27,
+        name: 'Kochi, India',
+      )),
+    );
+
+    expect(find.text('Set your location'), findsOneWidget);
+    expect(find.text('Enable'), findsOneWidget);
+
+    await tester.tap(find.text('Enable'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use my current location'));
+    await tester.pumpAndSettle();
+
+    expect(profile.calls, contains('updateProfile'));
+    expect(profile.updatedProfile!['latitude'], 9.93);
+    expect(profile.updatedProfile!['locationName'], 'Kochi, India');
+    expect(find.text('Location set to Kochi, India'), findsOneWidget);
   });
 
   testWidgets('shows the empty state when there are no meets', (tester) async {
@@ -146,4 +178,11 @@ class _NeverProfileApi extends FakeProfileApi {
   _NeverProfileApi() : super(sampleUserMe());
   @override
   Future<UserMe> getMe() => Completer<UserMe>().future;
+}
+
+class _FakeLocationService implements LocationService {
+  _FakeLocationService(this.place);
+  final ResolvedPlace place;
+  @override
+  Future<ResolvedPlace> currentPlace() async => place;
 }

@@ -32,6 +32,19 @@ class MeetingRepository extends StateNotifier<Map<String, Meeting>> {
 
   Meeting _ensure(String id) => state[id] ?? _placeholderMeeting(id);
 
+  /// Replace the cached meeting with a fresh copy from the backend, keeping
+  /// any locally-tracked feedback flag. Called by `meetingDetailsProvider`
+  /// on every load so the route guards see the real café + times.
+  void upsert(Meeting meeting) {
+    final existing = state[meeting.id];
+    state = {
+      ...state,
+      meeting.id: meeting.copyWith(
+        feedbackSubmitted: existing?.feedbackSubmitted,
+      ),
+    };
+  }
+
   /// Called once both people have agreed on a café and time, creating (or
   /// updating) the meeting tied to [matchId].
   void confirm(

@@ -118,8 +118,11 @@ final meetingGuardProvider = Provider<GuardFn>((ref) {
   };
 });
 
-/// 5. Feedback guard: feedback can only be given after the meeting has
-/// ended, and only once.
+/// 5. Feedback guard: once feedback is submitted, keep the user out of the
+/// form (send them to the "sent" screen instead). Eligibility itself
+/// (meeting ended / not cancelled) is the backend's call — `FeedbackScreen`
+/// reads `GET /feedback/status` and the "Leave feedback" entry point is only
+/// shown when the backend says `canSubmit`.
 final feedbackGuardProvider = Provider<GuardFn>((ref) {
   return (context, state) {
     if (!state.matchedLocation.endsWith('/${AppRoutes.feedback}')) {
@@ -131,9 +134,6 @@ final feedbackGuardProvider = Provider<GuardFn>((ref) {
     final meeting = ref.read(meetingProvider(meetingId));
     if (meeting.feedbackSubmitted) {
       return AppRoutes.feedbackSentPath(meetingId);
-    }
-    if (!meeting.hasEnded) {
-      return AppRoutes.meetingPath(meetingId);
     }
     return null;
   };
@@ -156,8 +156,8 @@ final staleMatchGuardProvider = Provider<GuardFn>((ref) {
         SnackBar(
           content: Text(
             match.status == MatchStatus.expired
-                ? 'That match expired.'
-                : 'Sarah passed on this match.',
+                ? 'Sorry, this match has expired.'
+                : '${match.partnerName} passed on this match.',
           ),
         ),
       );

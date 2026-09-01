@@ -44,7 +44,29 @@ class ApiClient {
   Future<Map<String, dynamic>> put(String path, {Object? body}) =>
       _send('PUT', path, body: body);
 
+  Future<Map<String, dynamic>> delete(String path) => _send('DELETE', path);
+
+  /// GET where the response envelope's `data` is a JSON array
+  /// (the "list" endpoints — `/coffee-shops/nearby`, `/meetings/upcoming`, …).
+  Future<List<dynamic>> getList(String path) async {
+    final envelope = await _sendRaw('GET', path);
+    final data = envelope['data'];
+    return data is List ? data : const [];
+  }
+
   Future<Map<String, dynamic>> _send(
+    String method,
+    String path, {
+    Object? body,
+  }) async {
+    final envelope = await _sendRaw(method, path, body: body);
+    final data = envelope['data'];
+    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+  }
+
+  /// Runs the request and returns the full decoded envelope, throwing
+  /// [ApiException] for any non-2xx or `{ "success": false }` response.
+  Future<Map<String, dynamic>> _sendRaw(
     String method,
     String path, {
     Object? body,
@@ -63,6 +85,7 @@ class ApiClient {
         'GET' => _http.get(uri, headers: headers),
         'POST' => _http.post(uri, headers: headers, body: encodedBody),
         'PUT' => _http.put(uri, headers: headers, body: encodedBody),
+        'DELETE' => _http.delete(uri, headers: headers),
         _ => throw ArgumentError('Unsupported method: $method'),
       };
       response = await future.timeout(timeout);
@@ -73,7 +96,7 @@ class ApiClient {
           0, "Couldn't reach Coffee Meet. Check your connection.");
     }
 
-    return _parse(response);
+    return _parseRaw(response);
   }
 
   /// Multipart upload of a single file field (`fieldName`) at [path].
@@ -127,7 +150,15 @@ class ApiClient {
     }
   }
 
+  /// Used by [upload] — same contract as [get]/[post]: the envelope's `data`
+  /// object, or `{}`.
   Map<String, dynamic> _parse(http.Response response) {
+    final envelope = _parseRaw(response);
+    final data = envelope['data'];
+    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+  }
+
+  Map<String, dynamic> _parseRaw(http.Response response) {
     Map<String, dynamic> decoded;
     try {
       decoded = jsonDecode(response.body) as Map<String, dynamic>;
@@ -137,8 +168,7 @@ class ApiClient {
 
     final ok = response.statusCode >= 200 && response.statusCode < 300;
     if (ok && decoded['success'] == true) {
-      final data = decoded['data'];
-      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+      return decoded;
     }
 
     throw ApiException(

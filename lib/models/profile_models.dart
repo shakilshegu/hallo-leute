@@ -55,6 +55,9 @@ class MeProfile {
     required this.job,
     required this.bio,
     required this.photoUrl,
+    required this.latitude,
+    required this.longitude,
+    required this.locationName,
   });
 
   final String firstName;
@@ -62,6 +65,11 @@ class MeProfile {
   final String? job;
   final String? bio;
   final String? photoUrl;
+  final double? latitude;
+  final double? longitude;
+  final String? locationName;
+
+  bool get hasLocation => latitude != null && longitude != null;
 
   factory MeProfile.fromJson(Map<String, dynamic> json) {
     return MeProfile(
@@ -70,6 +78,9 @@ class MeProfile {
       job: json['job'] as String?,
       bio: json['bio'] as String?,
       photoUrl: json['photoUrl'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      locationName: json['locationName'] as String?,
     );
   }
 }

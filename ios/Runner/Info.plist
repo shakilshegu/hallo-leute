@@ -62,6 +62,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Coffee Meet uses your camera so you can add a profile photo.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Coffee Meet uses your location to show coffee meets and people near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Coffee Meet needs access to your photos so you can choose a profile photo.</string>
 	<key>UILaunchStoryboardName</key>

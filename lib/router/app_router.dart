@@ -41,7 +41,10 @@ import '../screens/safety_screen.dart';
 import '../screens/feedback_screen.dart';
 import '../screens/feedback_sent_screen.dart';
 import '../screens/mutual_connection_screen.dart';
+import '../screens/connections_screen.dart';
+import '../screens/connection_detail_screen.dart';
 import '../screens/report_user_screen.dart';
+import '../screens/blocked_users_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'home');
@@ -167,6 +170,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: slideBuilder((c, s) => const EditPreferencesScreen()),
       ),
       GoRoute(
+        path: AppRoutes.chatByMatch,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder(
+          (c, s) => ChatScreen(matchId: s.pathParameters['matchId']!),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.create,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: slideBuilder((c, s) => const CreateCoffeeMeetScreen()),
@@ -179,7 +189,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.searching,
         parentNavigatorKey: _rootNavigatorKey,
-        pageBuilder: fadeBuilder((c, s) => const SearchingScreen()),
+        pageBuilder: fadeBuilder(
+          (c, s) => SearchingScreen(requestId: s.extra as String?),
+        ),
       ),
       GoRoute(
         path: AppRoutes.match,
@@ -286,6 +298,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: fadeBuilder(
               (c, s) => MutualConnectionScreen(
                 meetingId: s.pathParameters['meetingId']!,
+                connectionId: s.extra as String?,
               ),
             ),
           ),
@@ -296,6 +309,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: slideBuilder(
           (c, s) => ReportUserScreen(userId: s.pathParameters['userId']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.blockedUsers,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder((c, s) => const BlockedUsersScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.connections,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder((c, s) => const ConnectionsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.connectionDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: slideBuilder(
+          (c, s) => ConnectionDetailScreen(
+            connectionId: s.pathParameters['connectionId']!,
+          ),
         ),
       ),
     ],

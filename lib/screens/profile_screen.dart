@@ -226,7 +226,16 @@ class _Content extends StatelessWidget {
             children: [
               Expanded(child: _stat('12', 'COFFEE MEETS', textTheme)),
               _vDivider(),
-              Expanded(child: _stat('5', 'CONNECTIONS', textTheme)),
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.push(AppRoutes.connections);
+                  },
+                  child: _stat('5', 'CONNECTIONS', textTheme),
+                ),
+              ),
               _vDivider(),
               Expanded(child: _stat('4.9', 'AVG RATING', textTheme)),
             ],
@@ -318,6 +327,9 @@ class _Content extends StatelessWidget {
                   hasDot: true),
               _divider(),
               _settingsRow(Icons.shield_outlined, 'Safety centre', textTheme),
+              _divider(),
+              _settingsRow(Icons.block, 'Blocked users', textTheme,
+                  onTap: () => context.push(AppRoutes.blockedUsers)),
               _divider(),
               _settingsRow(Icons.help_outline, 'Help and support', textTheme),
               _divider(),

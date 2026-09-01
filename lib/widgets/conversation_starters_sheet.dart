@@ -98,6 +98,28 @@ class _ConversationStartersSheetState extends State<ConversationStartersSheet> {
           SizedBox(
             width: double.infinity,
             height: 56,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(_current),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              child: Text(
+                'Use this prompt',
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
             child: OutlinedButton(
               onPressed: _another,
               style: OutlinedButton.styleFrom(
@@ -121,10 +143,12 @@ class _ConversationStartersSheetState extends State<ConversationStartersSheet> {
   }
 }
 
-/// Convenience for opening the sheet from anywhere.
-void showConversationStartersSheet(BuildContext context) {
+/// Opens the sheet and resolves to the prompt the user picked, or null if
+/// they dismissed it. The caller inserts the prompt into the message input —
+/// it is never sent automatically.
+Future<String?> showConversationStartersSheet(BuildContext context) {
   HapticFeedback.mediumImpact();
-  showModalBottomSheet(
+  return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,

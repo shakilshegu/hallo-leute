@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:go_router/go_router.dart';
 
-class MutualConnectionScreen extends StatelessWidget {
+import 'package:poppylo/state/cafe_controller.dart' show meetingDetailsProvider;
+
+class MutualConnectionScreen extends ConsumerWidget {
   final String meetingId;
-  const MutualConnectionScreen({super.key, required this.meetingId});
+
+  /// Passed via `GoRouter` `extra` when arriving from a feedback submission
+  /// that formed a connection. Null when deep-linked without it — "View
+  /// profile" is then unavailable, everything else still works.
+  final String? connectionId;
+
+  const MutualConnectionScreen({
+    super.key,
+    required this.meetingId,
+    this.connectionId,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+
+    final partner =
+        ref.watch(meetingDetailsProvider(meetingId)).valueOrNull?.partner;
+    final partnerName = partner?.name ?? 'your match';
+    final partnerImage = partner?.profileImage;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F1EB), // Warm beige
@@ -26,8 +44,8 @@ class MutualConnectionScreen extends StatelessWidget {
         ),
         // A simple way to get gradient border is to wrap in a Container with padding
         child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
               colors: [
                 Color(0xFF8A2BE2),
                 Color(0xFF4169E1)
@@ -77,32 +95,18 @@ class MutualConnectionScreen extends StatelessWidget {
                         children: [
                           Positioned(
                             left: MediaQuery.of(context).size.width / 2 - 80,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: const Color(0xFFF3F1EB), width: 4),
-                              ),
-                              child: const CircleAvatar(
-                                radius: 48,
-                                backgroundImage: NetworkImage(
-                                    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop'), // User avatar mock
-                              ),
+                            child: _avatar(
+                              null,
+                              fallbackIcon: Icons.person,
+                              color: colorScheme.primary,
                             ),
                           ),
                           Positioned(
                             right: MediaQuery.of(context).size.width / 2 - 80,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: const Color(0xFFF3F1EB), width: 4),
-                              ),
-                              child: const CircleAvatar(
-                                radius: 48,
-                                backgroundImage: NetworkImage(
-                                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'), // Sarah avatar mock
-                              ),
+                            child: _avatar(
+                              partnerImage,
+                              fallbackIcon: Icons.person_outline,
+                              color: colorScheme.primary,
                             ),
                           ),
                         ],
@@ -112,7 +116,7 @@ class MutualConnectionScreen extends StatelessWidget {
                     const SizedBox(height: 48),
 
                     Text(
-                      'MATCH SECURED • 08:42AM',
+                      'CONNECTION MADE • ${partnerName.toUpperCase()}',
                       textAlign: TextAlign.center,
                       style: textTheme.labelSmall?.copyWith(
                         color: colorScheme.primary.withOpacity(0.5),
@@ -128,6 +132,8 @@ class MutualConnectionScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           HapticFeedback.lightImpact();
+                          // Reuse the existing chat for this meeting's match —
+                          // never creates a new one.
                           context.go(AppRoutes.chatPath(meetingId));
                         },
                         style: ElevatedButton.styleFrom(
@@ -151,9 +157,14 @@ class MutualConnectionScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     TextButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                      },
+                      onPressed: connectionId == null
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              context.push(
+                                AppRoutes.connectionDetailPath(connectionId!),
+                              );
+                            },
                       style: TextButton.styleFrom(
                         foregroundColor: colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -172,6 +183,26 @@ class MutualConnectionScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _avatar(
+    String? url, {
+    required IconData fallbackIcon,
+    required Color color,
+  }) {
+    final hasImage = url != null && url.isNotEmpty;
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFF3F1EB), width: 4),
+      ),
+      child: CircleAvatar(
+        radius: 48,
+        backgroundColor: const Color(0xFFE6EBE6),
+        backgroundImage: hasImage ? NetworkImage(url) : null,
+        child: hasImage ? null : Icon(fallbackIcon, color: color, size: 36),
       ),
     );
   }
