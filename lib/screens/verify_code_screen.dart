@@ -23,17 +23,11 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   final FocusNode _focusNode = FocusNode();
   bool _canProceed = false;
   bool _isLoading = false;
-  bool _isResending = false;
   String? _errorMessage;
-
-  static const _resendCooldown = 30;
-  int _resendIn = _resendCooldown;
-  Timer? _resendTimer;
 
   @override
   void initState() {
     super.initState();
-    _startResendCooldown();
     _codeController.addListener(() {
       setState(() {
         _canProceed = _codeController.text.length == 6;
@@ -43,7 +37,7 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
         _handleVerify();
       }
     });
-    // Auto focus the hidden text field
+    // Bring up the keyboard once the screen has settled.
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _focusNode.requestFocus();
     });
@@ -51,47 +45,31 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
 
   @override
   void dispose() {
-    _resendTimer?.cancel();
     _codeController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _startResendCooldown() {
-    _resendTimer?.cancel();
-    setState(() => _resendIn = _resendCooldown);
-    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() => _resendIn--);
-      if (_resendIn <= 0) timer.cancel();
-    });
-  }
-
-  Future<void> _handleResend() async {
-    if (_resendIn > 0 || _isResending || _isLoading) return;
-    setState(() {
-      _isResending = true;
-      _errorMessage = null;
-    });
+  /// Re-request the code. Throws on failure so the resend button doesn't
+  /// restart its cooldown.
+  Future<void> _resend() async {
     HapticFeedback.lightImpact();
+    setState(() => _errorMessage = null);
     try {
       await ref.read(authControllerProvider.notifier).resendCode();
-      if (!mounted) return;
-      _codeController.clear();
-      _startResendCooldown();
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('New code sent.')));
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _errorMessage =
-          e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isResending = false);
+      if (mounted) {
+        setState(() =>
+            _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+      }
+      rethrow;
     }
+    if (!mounted) return;
+    _codeController.clear();
+    _focusNode.requestFocus();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('New code sent.')));
   }
 
   void _handleVerify() async {
@@ -215,64 +193,77 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
               ),
               const SizedBox(height: 32),
 
-              // 6-digit Code Input
-              GestureDetector(
-                onTap: () {
-                  if (!_isLoading) _focusNode.requestFocus();
-                },
-                child: AbsorbPointer(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Hidden TextField to capture input
-                      Opacity(
-                        opacity: 0,
-                        child: TextField(
-                          controller: _codeController,
-                          focusNode: _focusNode,
-                          enabled: !_isLoading,
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          autofocus: true,
-                          autofillHints: const [AutofillHints.oneTimeCode],
+              // 6-digit code input: the boxes are just a visual; a real,
+              // interactive (but transparent) TextField sits on top and
+              // captures every tap and keystroke.
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(6, (index) {
+                      final text = _codeController.text;
+                      final char = index < text.length ? text[index] : '';
+                      final isActive = text.length == index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 44,
+                        height: 56,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isActive && !_isLoading
+                                ? colorScheme.primary
+                                : Colors.transparent,
+                            width: 2,
+                          ),
                         ),
-                      ),
-                      // UI representation of the 6 digits
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(6, (index) {
-                          final text = _codeController.text;
-                          final char = index < text.length ? text[index] : '';
-                          final isActive = text.length == index;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 44,
-                            height: 56,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isActive && !_isLoading
-                                    ? colorScheme.primary
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              char,
-                              style: textTheme.headlineMedium?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
+                        alignment: Alignment.center,
+                        child: Text(
+                          char,
+                          style: textTheme.headlineMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                ),
+                  Positioned.fill(
+                    child: TextField(
+                      controller: _codeController,
+                      focusNode: _focusNode,
+                      enabled: !_isLoading,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      maxLength: 6,
+                      showCursor: false,
+                      enableInteractiveSelection: false,
+                      autofillHints: const [AutofillHints.oneTimeCode],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.transparent,
+                        fontSize: 1,
+                      ),
+                      cursorColor: Colors.transparent,
+                      decoration: const InputDecoration(
+                        counterText: '',
+                        border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        fillColor: Colors.transparent,
+                        filled: true,
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               if (_errorMessage != null) ...[
@@ -286,32 +277,9 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
               const SizedBox(height: 32),
 
               Center(
-                child: Semantics(
-                  button: true,
-                  label: 'Resend code',
-                  child: TextButton(
-                    onPressed: (_resendIn > 0 || _isResending || _isLoading)
-                        ? null
-                        : _handleResend,
-                    child: _isResending
-                        ? const SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _resendIn > 0
-                                ? 'Resend code in ${_resendIn}s'
-                                : 'Resend Code',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: _resendIn > 0
-                                  ? colorScheme.primary.withOpacity(0.4)
-                                  : colorScheme.primary,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
+                child: _ResendCode(
+                  enabled: !_isLoading,
+                  onResend: _resend,
                 ),
               ),
 
@@ -363,6 +331,93 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Resend Code" with a 30-second cooldown. Kept as its own stateful widget so
+/// its per-second timer only rebuilds this button — not the parent screen and
+/// its text field, which would fight the user's typing.
+class _ResendCode extends StatefulWidget {
+  const _ResendCode({required this.onResend, required this.enabled});
+
+  /// Should throw on failure so the cooldown is not restarted.
+  final Future<void> Function() onResend;
+  final bool enabled;
+
+  @override
+  State<_ResendCode> createState() => _ResendCodeState();
+}
+
+class _ResendCodeState extends State<_ResendCode> {
+  static const _cooldown = 30;
+  int _left = _cooldown;
+  bool _busy = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _start() {
+    _timer?.cancel();
+    setState(() => _left = _cooldown);
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() => _left--);
+      if (_left <= 0) t.cancel();
+    });
+  }
+
+  Future<void> _tap() async {
+    if (_left > 0 || _busy || !widget.enabled) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onResend();
+      if (mounted) _start();
+    } catch (_) {
+      // onResend surfaced the error; leave the button active for a retry.
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final base = Theme.of(context).textTheme.labelSmall;
+    final onCooldown = _left > 0;
+    return Semantics(
+      button: true,
+      label: 'Resend code',
+      child: TextButton(
+        onPressed: (onCooldown || _busy || !widget.enabled) ? null : _tap,
+        child: _busy
+            ? const SizedBox(
+                height: 14,
+                width: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Text(
+                onCooldown ? 'Resend code in ${_left}s' : 'Resend Code',
+                style: base?.copyWith(
+                  color: onCooldown ? primary.withOpacity(0.4) : primary,
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
       ),
     );
   }
