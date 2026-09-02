@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,11 +23,17 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
   final FocusNode _focusNode = FocusNode();
   bool _canProceed = false;
   bool _isLoading = false;
+  bool _isResending = false;
   String? _errorMessage;
+
+  static const _resendCooldown = 30;
+  int _resendIn = _resendCooldown;
+  Timer? _resendTimer;
 
   @override
   void initState() {
     super.initState();
+    _startResendCooldown();
     _codeController.addListener(() {
       setState(() {
         _canProceed = _codeController.text.length == 6;
@@ -43,9 +51,47 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _codeController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _startResendCooldown() {
+    _resendTimer?.cancel();
+    setState(() => _resendIn = _resendCooldown);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() => _resendIn--);
+      if (_resendIn <= 0) timer.cancel();
+    });
+  }
+
+  Future<void> _handleResend() async {
+    if (_resendIn > 0 || _isResending || _isLoading) return;
+    setState(() {
+      _isResending = true;
+      _errorMessage = null;
+    });
+    HapticFeedback.lightImpact();
+    try {
+      await ref.read(authControllerProvider.notifier).resendCode();
+      if (!mounted) return;
+      _codeController.clear();
+      _startResendCooldown();
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('New code sent.')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage =
+          e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isResending = false);
+    }
   }
 
   void _handleVerify() async {
@@ -244,19 +290,27 @@ class _VerifyCodeScreenState extends ConsumerState<VerifyCodeScreen> {
                   button: true,
                   label: 'Resend code',
                   child: TextButton(
-                    onPressed: _isLoading
+                    onPressed: (_resendIn > 0 || _isResending || _isLoading)
                         ? null
-                        : () {
-                            HapticFeedback.lightImpact();
-                          },
-                    child: Text(
-                      'Resend Code',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                        : _handleResend,
+                    child: _isResending
+                        ? const SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            _resendIn > 0
+                                ? 'Resend code in ${_resendIn}s'
+                                : 'Resend Code',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: _resendIn > 0
+                                  ? colorScheme.primary.withOpacity(0.4)
+                                  : colorScheme.primary,
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),

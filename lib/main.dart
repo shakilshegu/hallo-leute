@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -37,9 +39,13 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   /// Cold-start login runs before the router mounts so the auth guard sees the
   /// restored session on its first evaluation instead of bouncing to Welcome.
+  /// Capped so a slow/cold backend can't leave the user staring at the splash —
+  /// `restoreSession` sets an optimistic signed-in state immediately, and the
+  /// router re-runs its guards once the backend sync finishes in the background.
   late final Future<void> _bootstrap = ref
       .read(authControllerProvider.notifier)
-      .restoreSession(ref.read(onboardingApiProvider));
+      .restoreSession(ref.read(onboardingApiProvider))
+      .timeout(const Duration(seconds: 5), onTimeout: () {});
 
   @override
   void dispose() {

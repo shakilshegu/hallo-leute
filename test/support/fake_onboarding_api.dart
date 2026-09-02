@@ -4,12 +4,20 @@ import 'package:poppylo/services/onboarding_api.dart';
 /// Records every onboarding API call so widget tests can assert the flow
 /// hit the backend with the right, mapped payloads — without a real server.
 class FakeOnboardingApi implements OnboardingApi {
-  FakeOnboardingApi({this.onboardingCompleted = false, this.failWith});
+  FakeOnboardingApi({
+    this.onboardingCompleted = false,
+    this.failWith,
+    this.failWithRaw,
+  });
 
   bool onboardingCompleted;
 
   /// When set, every method throws it (simulates an offline / server error).
   ApiException? failWith;
+
+  /// When set, `syncUser` throws this non-[ApiException] error (simulates
+  /// e.g. Firebase failing to refresh the ID token on a cold start).
+  Object? failWithRaw;
 
   final List<String> calls = [];
   Map<String, Object?>? profile;
@@ -22,6 +30,7 @@ class FakeOnboardingApi implements OnboardingApi {
   @override
   Future<SyncResult> syncUser() async {
     calls.add('syncUser');
+    if (failWithRaw != null) throw failWithRaw!;
     if (failWith != null) throw failWith!;
     return SyncResult(
       isNewUser: !onboardingCompleted,

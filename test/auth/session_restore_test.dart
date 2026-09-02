@@ -101,6 +101,18 @@ void main() {
     expect(auth.state.onboardingStep, OnboardingStep.done);
   });
 
+  test('sync throws a non-ApiException (token refresh failed) → still let in',
+      () async {
+    final auth = AuthController(_FakeFirebaseAuth(_FakeUser()));
+
+    await auth.restoreSession(
+      FakeOnboardingApi(failWithRaw: Exception('token refresh failed')),
+    );
+
+    expect(auth.state.isSignedIn, isTrue);
+    expect(auth.state.onboardingStep, OnboardingStep.done);
+  });
+
   test('signOut revokes server-side then clears local state', () async {
     final fb = _FakeFirebaseAuth(_FakeUser());
     final auth = AuthController(fb)..debugSignIn(isNewUser: false);

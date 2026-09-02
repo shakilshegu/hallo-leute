@@ -71,13 +71,26 @@ class ApiClient {
 
   /// Runs the request and returns the full decoded envelope, throwing
   /// [ApiException] for any non-2xx or `{ "success": false }` response.
+  /// Fetches the auth token, turning any failure (e.g. Firebase can't refresh
+  /// the ID token because the network is flaky on a cold start) into a normal
+  /// network [ApiException] instead of an unrelated exception type that
+  /// callers like session-restore wouldn't catch.
+  Future<String?> _token() async {
+    try {
+      return await tokenProvider();
+    } catch (_) {
+      throw ApiException(
+          0, "Couldn't reach Coffee Meet. Check your connection.");
+    }
+  }
+
   Future<Map<String, dynamic>> _sendRaw(
     String method,
     String path, {
     Object? body,
   }) async {
     final uri = Uri.parse('$baseUrl$path');
-    final token = await tokenProvider();
+    final token = await _token();
     final headers = <String, String>{
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -110,7 +123,7 @@ class ApiClient {
     required String fieldName,
     required String filePath,
   }) async {
-    final token = await tokenProvider();
+    final token = await _token();
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
       ..files.add(await http.MultipartFile.fromPath(
         fieldName,

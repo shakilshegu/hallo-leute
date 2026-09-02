@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../state/auth_controller.dart';
 import 'routes.dart';
 import 'guards.dart';
 import 'transitions.dart';
@@ -64,10 +65,18 @@ final routerProvider = Provider<GoRouter>((ref) {
   final feedbackGuard = ref.watch(feedbackGuardProvider);
   final staleMatchGuard = ref.watch(staleMatchGuardProvider);
 
+  // Re-run the guards whenever auth state changes — e.g. when the cold-start
+  // session restore finishes after the router has already mounted, so the
+  // user moves off the splash to the right screen instead of being stranded.
+  final refresh = ValueNotifier<int>(0);
+  ref.onDispose(refresh.dispose);
+  ref.listen(authControllerProvider, (_, __) => refresh.value++);
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refresh,
     observers: [RouteLoggerObserver()],
     redirect: (context, state) {
       return authGuard(context, state) ??
