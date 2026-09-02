@@ -100,6 +100,22 @@ void main() {
   });
 
   testWidgets(
+      'meeting guard does NOT bounce an unknown meeting into the café flow',
+      (tester) async {
+    final container = await pumpApp(tester);
+    signInAndCompleteOnboarding(container);
+
+    // A meeting the repository has never seen (e.g. tapped straight from the
+    // Meetings list on a fresh launch). The screen fetches it; the guard must
+    // not redirect on the synchronous placeholder.
+    container.read(routerProvider).go(AppRoutes.meetingPath('unseen-meeting'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(currentLocation(container), AppRoutes.meetingPath('unseen-meeting'));
+  });
+
+  testWidgets(
       'cafe guard redirects to match details when the match is accepted but not confirmed',
       (tester) async {
     final container = await pumpApp(tester);

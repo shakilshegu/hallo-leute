@@ -151,6 +151,33 @@ void main() {
     await t.pumpWidget(const SizedBox());
   });
 
+  testWidgets('tapping a failed message retries the send', (t) async {
+    final chat = FakeChatApi(messages: [])
+      ..sendError = ApiException(0, 'offline');
+    await _pump(t, initial: '/chat/m1', chat: chat);
+
+    await t.enterText(find.byType(TextField), 'retry me');
+    await t.pump();
+    await t.tap(find.byIcon(Icons.arrow_upward));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(find.textContaining('Not sent'), findsOneWidget);
+
+    // Clear the field so the only "retry me" left is the failed bubble.
+    await t.enterText(find.byType(TextField), '');
+    await t.pump();
+
+    // Recover, then tap the failed bubble → it re-sends and is accepted.
+    chat.sendError = null;
+    await t.tap(find.text('retry me'));
+    await t.pump(const Duration(milliseconds: 50));
+
+    expect(find.textContaining('Not sent'), findsNothing);
+    expect(find.text('retry me'), findsOneWidget);
+    expect(tester_takeException(t), isNull);
+
+    await t.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Chats tab lists conversations and opens one', (t) async {
     final chat = FakeChatApi(
       chatList: [

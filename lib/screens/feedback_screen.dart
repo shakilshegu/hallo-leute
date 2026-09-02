@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poppylo/models/feedback_models.dart';
 import 'package:poppylo/services/api_client.dart' show ApiException;
 import 'package:poppylo/state/cafe_controller.dart'
-    show meetingDetailsProvider, upcomingMeetingsProvider;
+    show allMeetingsProvider, meetingDetailsProvider, upcomingMeetingsProvider;
 import 'package:poppylo/state/feedback_controller.dart';
 import 'package:poppylo/state/meeting_controller.dart';
 
@@ -53,8 +53,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
       ref.read(meetingRepositoryProvider.notifier).submitFeedback(
             widget.meetingId,
           );
-      ref.invalidate(feedbackStatusProvider(widget.meetingId));
-      ref.invalidate(upcomingMeetingsProvider);
+      _invalidateMeetingCaches();
 
       if (!mounted) return;
       _goNext(result.mutualConnectionCreated, result.connectionId);
@@ -66,7 +65,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         ref.read(meetingRepositoryProvider.notifier).submitFeedback(
               widget.meetingId,
             );
-        ref.invalidate(feedbackStatusProvider(widget.meetingId));
+        _invalidateMeetingCaches();
         _goNext(false, null);
         return;
       }
@@ -75,6 +74,15 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         SnackBar(content: Text(feedbackErrorMessage(e))),
       );
     }
+  }
+
+  /// After feedback the meeting is COMPLETED server-side — refresh every
+  /// surface that shows its status.
+  void _invalidateMeetingCaches() {
+    ref.invalidate(feedbackStatusProvider(widget.meetingId));
+    ref.invalidate(meetingDetailsProvider(widget.meetingId));
+    ref.invalidate(upcomingMeetingsProvider);
+    ref.invalidate(allMeetingsProvider);
   }
 
   void _goNext(bool mutualConnectionCreated, String? connectionId) {

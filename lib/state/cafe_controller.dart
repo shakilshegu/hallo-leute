@@ -213,8 +213,8 @@ final cafeSuggestionProvider =
 /// A confirmed meeting (`GET /meetings/:id`). Loading it also refreshes the
 /// synchronous [meetingRepositoryProvider] cache the route guards read, so
 /// the meeting guard stops sending the user back into the café flow.
-final meetingDetailsProvider =
-    FutureProvider.family<MeetingDetails, String>((ref, meetingId) async {
+final meetingDetailsProvider = FutureProvider.autoDispose
+    .family<MeetingDetails, String>((ref, meetingId) async {
   final meeting = await ref.watch(cafeApiProvider).meeting(meetingId);
   ref
       .read(meetingRepositoryProvider.notifier)
@@ -223,9 +223,30 @@ final meetingDetailsProvider =
 });
 
 final upcomingMeetingsProvider =
-    FutureProvider.autoDispose<List<MeetingDetails>>((ref) {
-  return ref.watch(cafeApiProvider).upcomingMeetings();
+    FutureProvider.autoDispose<List<MeetingDetails>>((ref) async {
+  final meetings = await ref.watch(cafeApiProvider).upcomingMeetings();
+  _cacheForGuards(ref, meetings);
+  return meetings;
 });
+
+/// Every meeting the caller is part of (`GET /meetings`), for the Meetings
+/// screen's Upcoming / Past tabs.
+final allMeetingsProvider =
+    FutureProvider.autoDispose<List<MeetingDetails>>((ref) async {
+  final meetings = await ref.watch(cafeApiProvider).allMeetings();
+  _cacheForGuards(ref, meetings);
+  return meetings;
+});
+
+/// Seed the synchronous [meetingRepositoryProvider] the route guards read, so
+/// tapping a meeting straight from a list (fresh launch, no detail fetch yet)
+/// doesn't trip the "café not agreed" guard into a bogus redirect.
+void _cacheForGuards(Ref ref, List<MeetingDetails> meetings) {
+  final repo = ref.read(meetingRepositoryProvider.notifier);
+  for (final m in meetings) {
+    repo.upsert(meetingFromDetails(m));
+  }
+}
 
 /// Maps the backend `MeetingView` onto the guard-facing [Meeting] model.
 Meeting meetingFromDetails(MeetingDetails d) {

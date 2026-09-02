@@ -74,9 +74,15 @@ final chatGuardProvider = Provider<GuardFn>((ref) {
     final meetingId = state.pathParameters['meetingId'];
     if (meetingId == null) return null;
 
-    final meeting = ref.read(meetingProvider(meetingId));
-    final match = ref.read(matchProvider(meeting.matchId));
-    if (!match.status.isAtLeast(MatchStatus.accepted)) {
+    // Unknown meeting → let the screen load it; don't bounce on a placeholder.
+    final meeting = ref.read(meetingRepositoryProvider)[meetingId];
+    if (meeting == null) return null;
+
+    // A backend Meeting row only exists once the match is CONFIRMED, so if we
+    // don't have the match cached we trust that and let chat open. Only bounce
+    // when we positively know the match isn't accepted yet.
+    final match = ref.read(matchRepositoryProvider)[meeting.matchId];
+    if (match != null && !match.status.isAtLeast(MatchStatus.accepted)) {
       return AppRoutes.matchDetailsPath(meeting.matchId);
     }
     return null;
@@ -103,6 +109,11 @@ final cafeGuardProvider = Provider<GuardFn>((ref) {
 
 /// 4. Meeting guard: any /meeting/:meetingId route requires a café to
 /// already be agreed; otherwise send the user back into the café flow.
+///
+/// A real `Meeting` row only exists on the backend *after* a café is agreed,
+/// so an id the repository hasn't seen yet is assumed valid — the screen
+/// fetches it and renders its own loading / error state. We only bounce when
+/// we positively know (from a cached copy) that the café is still missing.
 final meetingGuardProvider = Provider<GuardFn>((ref) {
   return (context, state) {
     final meetingId = state.pathParameters['meetingId'];
@@ -110,8 +121,8 @@ final meetingGuardProvider = Provider<GuardFn>((ref) {
       return null;
     }
 
-    final meeting = ref.read(meetingProvider(meetingId));
-    if (meeting.cafeName == null) {
+    final meeting = ref.read(meetingRepositoryProvider)[meetingId];
+    if (meeting != null && meeting.cafeName == null) {
       return AppRoutes.chooseCafePath(meeting.matchId);
     }
     return null;
@@ -131,8 +142,8 @@ final feedbackGuardProvider = Provider<GuardFn>((ref) {
     final meetingId = state.pathParameters['meetingId'];
     if (meetingId == null) return null;
 
-    final meeting = ref.read(meetingProvider(meetingId));
-    if (meeting.feedbackSubmitted) {
+    final meeting = ref.read(meetingRepositoryProvider)[meetingId];
+    if (meeting != null && meeting.feedbackSubmitted) {
       return AppRoutes.feedbackSentPath(meetingId);
     }
     return null;

@@ -274,8 +274,7 @@ void _meetingDetailsTests() {
     expect(find.text('Leave feedback'), findsNothing);
   });
 
-  testWidgets('Meeting Details shows "Leave feedback" when canSubmit',
-      (t) async {
+  testWidgets('Meeting Details prompts for feedback when canSubmit', (t) async {
     await _pumpScreen(
       t,
       const MeetingDetailsScreen(meetingId: 'demo-meeting'),
@@ -290,7 +289,27 @@ void _meetingDetailsTests() {
         connectionApiProvider.overrideWithValue(FakeConnectionApi()),
       ],
     );
-    expect(find.text('Leave feedback'), findsOneWidget);
+    expect(find.textContaining('Leave feedback'), findsOneWidget);
+    expect(find.textContaining('How was your coffee'), findsOneWidget);
+  });
+
+  testWidgets('Meeting Details confirms once feedback is submitted', (t) async {
+    await _pumpScreen(
+      t,
+      const MeetingDetailsScreen(meetingId: 'demo-meeting'),
+      overrides: [
+        feedbackApiProvider.overrideWithValue(
+          FakeFeedbackApi(
+            statusResult:
+                const FeedbackStatus(canSubmit: false, submitted: true),
+          ),
+        ),
+        cafeApiProvider.overrideWithValue(FakeCafeApi()),
+        connectionApiProvider.overrideWithValue(FakeConnectionApi()),
+      ],
+    );
+    expect(find.text('Thanks for your feedback'), findsOneWidget);
+    expect(find.textContaining('Leave feedback'), findsNothing);
   });
 
   testWidgets('Connections screen lists people and shows the empty state',

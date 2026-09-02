@@ -203,6 +203,12 @@ class FakeCafeApi implements CafeApi {
     if (error != null) throw error!;
     return meetingDetail == null ? const [] : [meetingDetail!];
   }
+
+  @override
+  Future<List<MeetingDetails>> allMeetings() async {
+    if (error != null) throw error!;
+    return meetingDetail == null ? const [] : [meetingDetail!];
+  }
 }
 
 class FakeLocationService implements LocationService {

@@ -69,6 +69,19 @@ class ChatController extends StateNotifier<ChatState> {
   ChatApi get _api => _ref.read(chatApiProvider);
   String get _myUserId => _ref.read(meProvider).valueOrNull?.id ?? '';
 
+  /// Same as [_myUserId] but waits for the profile to load if it hasn't yet —
+  /// so an optimistic message is never tagged with an empty sender id (which
+  /// would render it on the wrong side of the thread).
+  Future<String> _resolveMyUserId() async {
+    final cached = _myUserId;
+    if (cached.isNotEmpty) return cached;
+    try {
+      return (await _ref.read(meProvider.future)).id;
+    } catch (_) {
+      return '';
+    }
+  }
+
   Future<void> load() async {
     if (state.messages.isEmpty) {
       state = state.copyWith(phase: ChatPhase.loading, errorMessage: null);
@@ -112,10 +125,11 @@ class ChatController extends StateNotifier<ChatState> {
     final text = rawText.trim();
     if (text.isEmpty || state.sending) return false;
 
+    final myId = await _resolveMyUserId();
     final tempId = 'local-${DateTime.now().microsecondsSinceEpoch}';
     final optimistic = ChatMessage(
       id: tempId,
-      senderId: _myUserId,
+      senderId: myId,
       text: text,
       createdAt: DateTime.now(),
       readAt: null,
@@ -149,6 +163,16 @@ class ChatController extends StateNotifier<ChatState> {
     }
   }
 
+  /// Re-send a message that previously failed: drop the failed bubble and
+  /// push its text back through [send].
+  Future<bool> retry(ChatMessage failed) async {
+    if (!failed.failed) return false;
+    state = state.copyWith(
+      messages: state.messages.where((m) => m.id != failed.id).toList(),
+    );
+    return send(failed.text);
+  }
+
   Future<void> _safeMarkRead() async {
     try {
       await _api.markRead(_matchId);
@@ -164,9 +188,8 @@ class ChatController extends StateNotifier<ChatState> {
   }
 }
 
-final chatControllerProvider =
-    StateNotifierProvider.family<ChatController, ChatState, String>(
-        (ref, matchId) {
+final chatControllerProvider = StateNotifierProvider.autoDispose
+    .family<ChatController, ChatState, String>((ref, matchId) {
   return ChatController(ref, matchId);
 });
 

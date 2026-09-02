@@ -1,437 +1,300 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poppylo/models/cafe_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/state/cafe_controller.dart';
 
-class MeetingsScreen extends StatefulWidget {
+const _bg = Color(0xFFF8F9F8);
+const _ink = Color(0xFF1B3B2B);
+
+const _weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const _months = [
+  'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', //
+  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+];
+
+class MeetingsScreen extends ConsumerStatefulWidget {
   const MeetingsScreen({super.key});
 
   @override
-  State<MeetingsScreen> createState() => _MeetingsScreenState();
+  ConsumerState<MeetingsScreen> createState() => _MeetingsScreenState();
 }
 
-class _MeetingsScreenState extends State<MeetingsScreen> {
-  int _selectedTabIndex = 0; // 0 for Upcoming, 1 for Past
-  bool _isEmpty = false; // Set to true to show empty state
+class _MeetingsScreenState extends ConsumerState<MeetingsScreen> {
+  int _tab = 0; // 0 = Upcoming, 1 = Past
+
+  bool _isUpcoming(MeetingDetails m) {
+    if (m.status != MeetingLifecycle.confirmed) return false;
+    final ends = m.endsAt;
+    return ends == null || ends.isAfter(DateTime.now());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final meetings = ref.watch(allMeetingsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9F8),
+      backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundImage: const NetworkImage(
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop'), // User avatar mock
-            ),
-          ),
-        ],
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: _ink),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(
+          'Meetings',
+          style: textTheme.titleMedium
+              ?.copyWith(color: _ink, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Tab row on left
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
             child: Row(
               children: [
-                _buildTabHeader('UPCOMING', _selectedTabIndex == 0,
-                    colorScheme.primary, textTheme, () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _selectedTabIndex = 0);
-                }),
+                _tabHeader(
+                    'UPCOMING', _tab == 0, () => setState(() => _tab = 0)),
                 const SizedBox(width: 24),
-                _buildTabHeader('PAST', _selectedTabIndex == 1,
-                    colorScheme.primary, textTheme, () {
-                  HapticFeedback.selectionClick();
-                  setState(() => _selectedTabIndex = 1);
-                }),
+                _tabHeader('PAST', _tab == 1, () => setState(() => _tab = 1)),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-
-          // Content
+          const SizedBox(height: 20),
           Expanded(
-            child: _isEmpty
-                ? _buildEmptyState(context)
-                : ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    children: _selectedTabIndex == 0
-                        ? [
-                            // UPCOMING MEETINGS
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.02),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Image with badge
-                                  Stack(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                                top: Radius.circular(24)),
-                                        child: Image.network(
-                                          'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=600&auto=format&fit=crop', // Cafe image
-                                          height: 160,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 16,
-                                        right: 16,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withOpacity(0.9),
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                          ),
-                                          child: Text(
-                                            'CONFIRMED',
-                                            style:
-                                                textTheme.labelSmall?.copyWith(
-                                              color: colorScheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 1.0,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  Padding(
-                                    padding: const EdgeInsets.all(20.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'SAT 5:00 PM • BREW LAB • 45 MIN',
-                                          style: textTheme.labelSmall?.copyWith(
-                                            color: colorScheme.primary
-                                                .withOpacity(0.5),
-                                            letterSpacing: 1.2,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            const CircleAvatar(
-                                              radius: 20,
-                                              backgroundImage: NetworkImage(
-                                                  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'), // Sarah
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    'Sarah',
-                                                    style: textTheme.titleMedium
-                                                        ?.copyWith(
-                                                      color:
-                                                          colorScheme.primary,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'Coffee enthusiast & designer',
-                                                    style: textTheme.bodySmall
-                                                        ?.copyWith(
-                                                      color: colorScheme.primary
-                                                          .withOpacity(0.7),
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                HapticFeedback.lightImpact();
-                                                context.push(
-                                                    AppRoutes.meetingPath(
-                                                        'demo-meeting'));
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(
-                                                    0xFF1B3B2B), // Dark green
-                                                foregroundColor: Colors.white,
-                                                elevation: 0,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 20,
-                                                        vertical: 8),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                ),
-                                              ),
-                                              child: Text(
-                                                'View',
-                                                style: textTheme.labelSmall
-                                                    ?.copyWith(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                          ]
-                        : [
-                            // PAST MEETINGS
-                            Text(
-                              'PEOPLE YOU\'VE MET',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.primary.withOpacity(0.5),
-                                letterSpacing: 1.5,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            _buildPastMeetingRow(
-                              context: context,
-                              name: 'Sarah Jenkins',
-                              dateLocation: 'MET 12 AUG • BREW LAB',
-                              stars: 5,
-                              imageUrl:
-                                  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop',
-                            ),
-                            _buildDivider(colorScheme.primary),
-                            _buildPastMeetingRow(
-                              context: context,
-                              name: 'Marcus Chen',
-                              dateLocation: 'MET 05 AUG • ORIGIN COFFEE',
-                              stars: 4,
-                              imageUrl:
-                                  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
-                              hasBackground: true,
-                            ),
-                            _buildDivider(colorScheme.primary),
-                            _buildPastMeetingRow(
-                              context: context,
-                              name: 'Elena Rodriguez',
-                              dateLocation: 'MET 28 JUL • THE ROASTERY',
-                              stars: 2,
-                              imageUrl:
-                                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
-                            ),
-                            _buildDivider(colorScheme.primary),
-                            _buildPastMeetingRow(
-                              context: context,
-                              name: 'Anonymous User',
-                              dateLocation: 'MET 15 JUL • ESPRESSO RO...',
-                              stars: 0,
-                              imageUrl:
-                                  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=150&auto=format&fit=crop', // generic
-                              isFaded: true,
-                            ),
-                            const SizedBox(
-                                height: 24), // padding for bottom nav
-                          ],
+            child: meetings.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator(color: _ink)),
+              error: (e, _) => _message(
+                cafeErrorMessage(e),
+                onRetry: () => ref.invalidate(allMeetingsProvider),
+              ),
+              data: (all) {
+                final list = all
+                    .where(
+                      _tab == 0 ? _isUpcoming : (m) => !_isUpcoming(m),
+                    )
+                    .toList();
+                if (list.isEmpty) {
+                  return _message(
+                    _tab == 0
+                        ? 'No coffee planned yet'
+                        : "No past meetings yet",
+                    subtitle: _tab == 0
+                        ? "Pick a time and we'll find someone."
+                        : null,
+                  );
+                }
+                return RefreshIndicator(
+                  color: _ink,
+                  onRefresh: () async =>
+                      ref.refresh(allMeetingsProvider.future),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 14),
+                    itemBuilder: (_, i) => _MeetingCard(meeting: list[i]),
                   ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _tabHeader(String label, bool selected, VoidCallback onTap) {
     final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE6EBE6),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 4),
-            ),
-            child: Icon(Icons.event_outlined,
-                color: colorScheme.primary, size: 32),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'STATUS • EMPTY • AWAITING INPUT',
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary.withOpacity(0.4),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No coffee planned yet',
-            textAlign: TextAlign.center,
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Pick a time and we'll find someone.",
-            textAlign: TextAlign.center,
-            style: textTheme.bodyLarge?.copyWith(
-              color: colorScheme.primary.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 64),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabHeader(String label, bool isSelected, Color primaryColor,
-      TextTheme textTheme, VoidCallback onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Column(
         children: [
           Text(
             label,
             style: textTheme.bodySmall?.copyWith(
-              color: isSelected ? primaryColor : primaryColor.withOpacity(0.5),
+              color: selected ? _ink : _ink.withOpacity(0.4),
               fontWeight: FontWeight.bold,
               letterSpacing: 1.0,
             ),
           ),
           const SizedBox(height: 4),
-          if (isSelected)
-            Container(
-              height: 2,
-              width: label.length * 7.0,
-              color: primaryColor,
-            )
-          else
-            const SizedBox(height: 2),
+          Container(
+            height: 2,
+            width: label.length * 7.0,
+            color: selected ? _ink : Colors.transparent,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPastMeetingRow({
-    required BuildContext context,
-    required String name,
-    required String dateLocation,
-    required int stars,
-    required String imageUrl,
-    bool hasBackground = false,
-    bool isFaded = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _message(String title, {String? subtitle, VoidCallback? onRetry}) {
     final textTheme = Theme.of(context).textTheme;
+    return ListView(
+      // ListView so pull-to-refresh still works on the error state
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const SizedBox(height: 80),
+        Center(
+          child: Container(
+            width: 76,
+            height: 76,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE6EBE6),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.event_outlined, color: _ink, size: 30),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: textTheme.titleMedium
+              ?.copyWith(color: _ink, fontWeight: FontWeight.bold),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: textTheme.bodyMedium?.copyWith(color: _ink.withOpacity(0.6)),
+          ),
+        ],
+        if (onRetry != null) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: OutlinedButton(
+              onPressed: onRetry,
+              child: const Text('Try again'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Opacity(
-        opacity: isFaded ? 0.3 : 1.0,
-        child: Row(
+class _MeetingCard extends StatelessWidget {
+  const _MeetingCard({required this.meeting});
+
+  final MeetingDetails meeting;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final start = meeting.startsAt;
+    final when = start == null
+        ? '${meeting.date} · ${meeting.startTime}'
+        : '${_weekdays[start.weekday - 1]} '
+            '${_months[start.month - 1]} ${start.day} · '
+            '${_clock(start)}';
+    final img = meeting.partner.profileImage;
+    final hasImg = img != null && img.isNotEmpty;
+
+    final ended = meeting.endsAt?.isBefore(DateTime.now()) ?? false;
+    final (badge, badgeColor) = switch (meeting.status) {
+      MeetingLifecycle.confirmed when ended => (
+          'AWAITING FEEDBACK',
+          const Color(0xFFB07A00)
+        ),
+      MeetingLifecycle.confirmed => ('CONFIRMED', const Color(0xFF2E7D32)),
+      MeetingLifecycle.completed => ('COMPLETED', _ink.withOpacity(0.5)),
+      MeetingLifecycle.cancelled => ('CANCELLED', const Color(0xFFB03A2E)),
+      _ => ('', Colors.transparent),
+    };
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push(AppRoutes.meetingPath(meeting.id));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor:
-                  isFaded ? Colors.grey.withOpacity(0.2) : Colors.transparent,
-              backgroundImage: isFaded ? null : NetworkImage(imageUrl),
-              child: isFaded
-                  ? Icon(Icons.person,
-                      color: colorScheme.primary.withOpacity(0.2))
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dateLocation,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$when  ·  ${meeting.durationMinutes} MIN',
                     style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.primary.withOpacity(0.5),
-                      fontSize: 9,
+                      color: _ink.withOpacity(0.5),
+                      letterSpacing: 1.1,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
                     ),
                   ),
-                ],
-              ),
+                ),
+                if (badge.isNotEmpty)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: badgeColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            Container(
-              padding: hasBackground
-                  ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
-                  : EdgeInsets.zero,
-              decoration: hasBackground
-                  ? BoxDecoration(
-                      color: const Color(0xFFE0A008).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    )
-                  : null,
-              child: Row(
-                children: List.generate(5, (index) {
-                  return Icon(
-                    index < stars ? Icons.star : Icons.star_border,
-                    color: isFaded
-                        ? Colors.grey.withOpacity(0.5)
-                        : const Color(0xFFE0A008),
-                    size: 14,
-                  );
-                }),
-              ),
+            const SizedBox(height: 10),
+            Text(
+              meeting.cafe.name,
+              style: textTheme.titleMedium
+                  ?.copyWith(color: _ink, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: _ink.withOpacity(0.08),
+                  backgroundImage: hasImg ? NetworkImage(img) : null,
+                  child: hasImg
+                      ? null
+                      : const Icon(Icons.person, color: _ink, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'with ${meeting.partner.name}',
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: _ink.withOpacity(0.8)),
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: _ink.withOpacity(0.3)),
+              ],
             ),
           ],
         ),
@@ -439,11 +302,9 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     );
   }
 
-  Widget _buildDivider(Color primaryColor) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: primaryColor.withOpacity(0.05),
-    );
+  String _clock(DateTime t) {
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m ${t.hour < 12 ? 'AM' : 'PM'}';
   }
 }

@@ -58,6 +58,8 @@ class MeProfile {
     required this.latitude,
     required this.longitude,
     required this.locationName,
+    this.averageRating,
+    this.ratingCount = 0,
   });
 
   final String firstName;
@@ -68,6 +70,10 @@ class MeProfile {
   final double? latitude;
   final double? longitude;
   final String? locationName;
+
+  /// Mean of the ratings other people left after meetings — null until rated.
+  final double? averageRating;
+  final int ratingCount;
 
   bool get hasLocation => latitude != null && longitude != null;
 
@@ -81,6 +87,8 @@ class MeProfile {
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       locationName: json['locationName'] as String?,
+      averageRating: (json['averageRating'] as num?)?.toDouble(),
+      ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
     );
   }
 }

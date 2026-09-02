@@ -141,6 +141,15 @@ class CafeApi {
         .map(MeetingDetails.fromJson)
         .toList();
   }
+
+  /// `GET /meetings` — every meeting the caller is part of, any status.
+  Future<List<MeetingDetails>> allMeetings() async {
+    final rows = await _client.getList('/meetings');
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(MeetingDetails.fromJson)
+        .toList();
+  }
 }
 
 final cafeApiProvider = Provider<CafeApi>((ref) {

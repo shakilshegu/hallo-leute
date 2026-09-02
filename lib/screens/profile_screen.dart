@@ -3,10 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:poppylo/models/cafe_models.dart' show MeetingLifecycle;
 import 'package:poppylo/models/profile_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/services/auth_api.dart';
 import 'package:poppylo/state/auth_controller.dart';
+import 'package:poppylo/state/cafe_controller.dart' show allMeetingsProvider;
+import 'package:poppylo/state/connection_controller.dart'
+    show connectionsProvider;
 import 'package:poppylo/state/profile_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -99,7 +103,7 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-class _Content extends StatelessWidget {
+class _Content extends ConsumerWidget {
   const _Content({
     required this.me,
     required this.onLogout,
@@ -113,8 +117,18 @@ class _Content extends StatelessWidget {
   static const _primary = ProfileScreen._primary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final meetingsCount = ref.watch(allMeetingsProvider).maybeWhen(
+          data: (list) =>
+              list.where((m) => m.status != MeetingLifecycle.cancelled).length,
+          orElse: () => null,
+        );
+    final connectionsCount = ref.watch(connectionsProvider).maybeWhen(
+          data: (list) => list.length,
+          orElse: () => null,
+        );
+    final rating = me.profile?.averageRating;
     final profile = me.profile;
     final prefs = me.preferences;
     final purposeLabel = purposeLabelFromApi(me.purpose);
@@ -215,7 +229,7 @@ class _Content extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        // --- Stats (static placeholders — no backend yet) ---
+        // --- Stats (live from the backend) ---
         Container(
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           decoration: BoxDecoration(
@@ -224,7 +238,13 @@ class _Content extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(child: _stat('12', 'COFFEE MEETS', textTheme)),
+              Expanded(
+                child: _stat(
+                  meetingsCount?.toString() ?? '—',
+                  'COFFEE MEETS',
+                  textTheme,
+                ),
+              ),
               _vDivider(),
               Expanded(
                 child: GestureDetector(
@@ -233,11 +253,21 @@ class _Content extends StatelessWidget {
                     HapticFeedback.lightImpact();
                     context.push(AppRoutes.connections);
                   },
-                  child: _stat('5', 'CONNECTIONS', textTheme),
+                  child: _stat(
+                    connectionsCount?.toString() ?? '—',
+                    'CONNECTIONS',
+                    textTheme,
+                  ),
                 ),
               ),
               _vDivider(),
-              Expanded(child: _stat('4.9', 'AVG RATING', textTheme)),
+              Expanded(
+                child: _stat(
+                  rating == null ? '—' : rating.toStringAsFixed(1),
+                  'AVG RATING',
+                  textTheme,
+                ),
+              ),
             ],
           ),
         ),

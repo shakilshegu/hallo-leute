@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/cafe_models.dart';
 import 'package:poppylo/router/routes.dart';
+import 'package:poppylo/services/calendar_launcher.dart';
+import 'package:poppylo/services/maps_launcher.dart';
 import 'package:poppylo/state/cafe_controller.dart';
+import 'package:poppylo/widgets/cancel_meeting_sheet.dart';
 
 class MeetingConfirmedScreen extends ConsumerWidget {
   final String meetingId;
@@ -224,7 +227,7 @@ class MeetingConfirmedScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: ElevatedButton.icon(
-                      onPressed: () => HapticFeedback.lightImpact(),
+                      onPressed: () => _openDirections(context, meeting.cafe),
                       icon: const Icon(Icons.directions, size: 18),
                       label: const Text('Get directions'),
                       style: ElevatedButton.styleFrom(
@@ -245,7 +248,7 @@ class MeetingConfirmedScreen extends ConsumerWidget {
 
             _outlineButton(
               'Add to calendar',
-              onPressed: () => HapticFeedback.lightImpact(),
+              onPressed: () => _addToCalendar(context, meeting),
             ),
             const SizedBox(height: 12),
             _outlineButton(
@@ -265,10 +268,7 @@ class MeetingConfirmedScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                context.go(AppRoutes.home);
-              },
+              onPressed: () => _cancelMeeting(context, ref, meeting),
               style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
               child: const Text('Cancel Meeting'),
             ),
@@ -278,6 +278,69 @@ class MeetingConfirmedScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openDirections(BuildContext context, CoffeeShop cafe) async {
+    HapticFeedback.lightImpact();
+    final ok = await openCafeInMaps(
+      latitude: cafe.latitude,
+      longitude: cafe.longitude,
+      name: cafe.name,
+    );
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't open Maps on this device.")),
+      );
+    }
+  }
+
+  Future<void> _addToCalendar(
+    BuildContext context,
+    MeetingDetails meeting,
+  ) async {
+    HapticFeedback.lightImpact();
+    final start = meeting.startsAt;
+    if (start == null) return;
+    final ok = await addMeetingToCalendar(
+      title: 'Coffee with ${meeting.partner.name}',
+      start: start,
+      durationMinutes: meeting.durationMinutes,
+      location: meeting.cafe.address.isNotEmpty
+          ? '${meeting.cafe.name}, ${meeting.cafe.address}'
+          : meeting.cafe.name,
+      details: 'Coffee Meet at ${meeting.cafe.name}.',
+    );
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't open your calendar app.")),
+      );
+    }
+  }
+
+  Future<void> _cancelMeeting(
+    BuildContext context,
+    WidgetRef ref,
+    MeetingDetails meeting,
+  ) async {
+    HapticFeedback.lightImpact();
+    final cancelled = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CancelMeetingSheet(
+        meetingId: meeting.id,
+        partnerName: meeting.partner.name,
+      ),
+    );
+    if (cancelled == true && context.mounted) {
+      ref.invalidate(upcomingMeetingsProvider);
+      ref.invalidate(allMeetingsProvider);
+      ref.invalidate(meetingDetailsProvider(meeting.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coffee Meet cancelled.')),
+      );
+      context.go(AppRoutes.home);
+    }
   }
 
   Widget _outlineButton(String label, {required VoidCallback? onPressed}) {

@@ -44,7 +44,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _input.addListener(() => setState(() {}));
     _poll = Timer.periodic(const Duration(seconds: 4), (_) {
       final id = _resolvedMatchId();
       if (id != null) {
@@ -128,7 +127,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _build(BuildContext context, String matchId) {
     final chat = ref.watch(chatControllerProvider(matchId));
-    final myId = ref.watch(meProvider).valueOrNull?.id;
+    final meAsync = ref.watch(meProvider);
+    final myId = meAsync.valueOrNull?.id;
+    // Only block bubble rendering while we're genuinely still waiting for the
+    // profile — never on an error (that would strand the thread on a spinner).
+    final myIdPending = myId == null && meAsync.isLoading;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -207,7 +210,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const SizedBox(height: 16),
           if (widget.meetingId != null) _meetingPill(),
           const SizedBox(height: 16),
-          Expanded(child: _bodyFor(context, chat, myId)),
+          Expanded(child: _bodyFor(context, chat, myId, myIdPending, matchId)),
           _inputBar(context, matchId, chat.sending),
         ],
       ),
@@ -218,20 +221,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final meeting =
         ref.watch(meetingDetailsProvider(widget.meetingId!)).valueOrNull;
     if (meeting == null) return const SizedBox.shrink();
-    final when = _pillDate(meeting);
+    final day = _pillDate(meeting).substring(0, 3).toUpperCase();
+    final time = prettyClock(meeting.startTime).replaceAll(':00', '');
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width - 48,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: const Color(0xFFE6EBE6),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Text(
-          '☕ $when · ${prettyClock(meeting.startTime)} · ${meeting.cafe.name}',
+          'COFFEE · $day $time · ${meeting.cafe.name}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: _ink.withOpacity(0.7),
                 fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
+                letterSpacing: 0.8,
               ),
         ),
       ),
@@ -253,7 +262,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return days[dt.weekday - 1];
   }
 
-  Widget _bodyFor(BuildContext context, ChatState chat, String? myId) {
+  Widget _bodyFor(BuildContext context, ChatState chat, String? myId,
+      bool myIdPending, String matchId) {
     switch (chat.phase) {
       case ChatPhase.loading:
         return const _CenterSpinner();
@@ -283,104 +293,162 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           onBack: () => context.pop(),
         );
       case ChatPhase.ready:
+        // Wait for our own id before drawing bubbles — otherwise every message
+        // (including the ones we just sent) briefly renders on the wrong side.
+        if (myIdPending) return const _CenterSpinner();
         if (chat.messages.isEmpty) return const _EmptyChat();
+        final msgs = chat.messages;
         return ListView.builder(
           controller: _scroll,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          itemCount: chat.messages.length,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          itemCount: msgs.length,
           itemBuilder: (context, i) {
-            final m = chat.messages[i];
-            final mine = myId != null && m.senderId == myId;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: mine
-                  ? _outgoing(context, m)
-                  : _incoming(context, m, chat.conversation?.participant),
+            final m = msgs[i];
+            // A message is "mine" if the server says so, or if it's still a
+            // local optimistic / failed bubble (which are always ours).
+            final mine =
+                (myId != null && m.senderId == myId) || m.pending || m.failed;
+            final prev = i > 0 ? msgs[i - 1] : null;
+            final newDay =
+                prev == null || !_sameDay(prev.createdAt, m.createdAt);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (newDay) _daySeparator(context, m.createdAt),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: mine
+                      ? _outgoing(context, m, matchId)
+                      : _incoming(context, m),
+                ),
+              ],
             );
           },
         );
     }
   }
 
-  // --- message bubbles (existing design) ---------------------------
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
-  Widget _incoming(BuildContext context, ChatMessage m, ChatParticipant? who) {
+  Widget _daySeparator(BuildContext context, DateTime when) {
+    final now = DateTime.now();
+    final label = _sameDay(when, now)
+        ? 'TODAY'
+        : _sameDay(when, now.subtract(const Duration(days: 1)))
+            ? 'YESTERDAY'
+            : '${_dayName(when)}, ${when.day}/${when.month}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: _ink.withOpacity(0.4),
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+        ),
+      ),
+    );
+  }
+
+  String _dayName(DateTime d) => const [
+        'Mon',
+        'Tue',
+        'Wed',
+        'Thu',
+        'Fri',
+        'Sat',
+        'Sun',
+      ][d.weekday - 1];
+
+  // --- message bubbles --------------------------------------------
+
+  Widget _incoming(BuildContext context, ChatMessage m) {
     final textTheme = Theme.of(context).textTheme;
-    final photo = who?.profileImage;
+    final maxW = MediaQuery.sizeOf(context).width * 0.72;
+    // 1:1 thread — the header already names who this is, so no per-bubble avatar.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        if (photo != null && photo.isNotEmpty)
-          CircleAvatar(radius: 16, backgroundImage: NetworkImage(photo))
-        else
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: Color(0xFFE6EBE6),
-            child: Icon(Icons.person, size: 16, color: _ink),
-          ),
-        const SizedBox(width: 12),
         Flexible(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE6EBE6),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(20),
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE9EDE9),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      topRight: Radius.circular(18),
+                      bottomLeft: Radius.circular(18),
+                      bottomRight: Radius.circular(18),
+                    ),
                   ),
-                ),
-                child: Text(
-                  m.text,
-                  style:
-                      textTheme.bodyMedium?.copyWith(color: _ink, height: 1.4),
+                  child: Text(
+                    m.text,
+                    style: textTheme.bodyMedium
+                        ?.copyWith(color: _ink, height: 1.35),
+                  ),
                 ),
               ),
               _stamp(context, m, alignEnd: false),
             ],
           ),
         ),
-        const SizedBox(width: 32),
       ],
     );
   }
 
-  Widget _outgoing(BuildContext context, ChatMessage m) {
+  Widget _outgoing(BuildContext context, ChatMessage m, String matchId) {
     final theme = Theme.of(context);
+    final maxW = MediaQuery.sizeOf(context).width * 0.72;
+    final bubble = Opacity(
+      opacity: m.pending ? 0.6 : 1,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: m.failed ? Colors.redAccent : theme.colorScheme.primary,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(18),
+            topRight: Radius.circular(4),
+            bottomLeft: Radius.circular(18),
+            bottomRight: Radius.circular(18),
+          ),
+        ),
+        child: Text(
+          m.text,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onPrimary,
+            height: 1.35,
+          ),
+        ),
+      ),
+    );
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        const SizedBox(width: 48),
         Flexible(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Opacity(
-                opacity: m.pending ? 0.6 : 1,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color:
-                        m.failed ? Colors.redAccent : theme.colorScheme.primary,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(4),
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Text(
-                    m.text,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW),
+                child: m.failed
+                    ? GestureDetector(
+                        onTap: () => ref
+                            .read(chatControllerProvider(matchId).notifier)
+                            .retry(m),
+                        child: bubble,
+                      )
+                    : bubble,
               ),
               _stamp(context, m, alignEnd: true),
             ],
@@ -396,7 +464,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           fontSize: 10,
         );
     final label = m.failed
-        ? 'Not sent · tap send to retry'
+        ? 'Not sent · tap to retry'
         : m.pending
             ? 'Sending…'
             : formatChatTime(m.createdAt);
@@ -415,7 +483,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _inputBar(BuildContext context, String matchId, bool sending) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    final canSend = _input.text.trim().isNotEmpty && !sending;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -451,7 +518,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) {
-                    if (canSend) _send(matchId);
+                    if (_input.text.trim().isNotEmpty && !sending) {
+                      _send(matchId);
+                    }
                   },
                   decoration: InputDecoration(
                     hintText: 'Write a message...',
@@ -465,26 +534,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              GestureDetector(
-                onTap: canSend ? () => _send(matchId) : null,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: canSend
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.primary.withOpacity(0.35),
-                    shape: BoxShape.circle,
-                  ),
-                  child: sending
-                      ? const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : Icon(Icons.arrow_upward,
-                          color: theme.colorScheme.onPrimary, size: 20),
-                ),
+              // Only this rebuilds as you type — not the whole message list.
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _input,
+                builder: (context, value, _) {
+                  final canSend = value.text.trim().isNotEmpty && !sending;
+                  return GestureDetector(
+                    onTap: canSend ? () => _send(matchId) : null,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: canSend
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.primary.withOpacity(0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      child: sending
+                          ? const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : Icon(Icons.arrow_upward,
+                              color: theme.colorScheme.onPrimary, size: 20),
+                    ),
+                  );
+                },
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:poppylo/screens/splash_screen.dart';
@@ -8,9 +9,15 @@ import 'package:poppylo/theme/app_theme.dart';
 import 'package:poppylo/router/app_router.dart';
 import 'package:poppylo/router/deep_link_handler.dart';
 
+import 'package:poppylo/services/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+  // Register background handler early
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   runApp(
     const ProviderScope(
       child: MyApp(),

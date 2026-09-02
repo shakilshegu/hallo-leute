@@ -7,11 +7,13 @@ import 'package:poppylo/models/discover_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/services/api_client.dart';
 import 'package:poppylo/services/location_service.dart';
+import 'package:poppylo/services/onboarding_api.dart' show apiClientProvider;
 import 'package:poppylo/services/profile_api.dart';
 import 'package:poppylo/state/discover_controller.dart';
 import 'package:poppylo/state/profile_controller.dart';
 import 'package:poppylo/widgets/coffee_meet_card.dart';
 import 'package:poppylo/widgets/nearby_person_card.dart';
+import 'package:poppylo/services/notification_service.dart';
 
 const _green = Color(0xFF1B3B2B);
 const _bg = Color(0xFFF3F1EB);
@@ -30,6 +32,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   DateTime? _lastBackPress;
   bool _hasUnreadNotifications = true;
   bool _savingLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Push notifications are best-effort — never let a plugin/Firebase
+      // hiccup (or a test environment) break the home screen.
+      try {
+        final apiClient = ref.read(apiClientProvider);
+        final ns = NotificationService();
+        await ns.initialize(apiClient);
+        await ns.requestPermissionAndSyncToken();
+      } catch (_) {}
+    });
+  }
 
   // Coarse coordinates so a manual city pick still gives the backend a point
   // to sort distance by (a device fix from "Use my location" is exact).
@@ -287,6 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   photoUrl: photoUrl,
                   hasUnread: _hasUnreadNotifications,
                   onBell: () => setState(() => _hasUnreadNotifications = false),
+                  onMeetings: () => context.push(AppRoutes.meetings),
                 ),
                 const SizedBox(height: 14),
                 _LocationRow(
@@ -374,12 +392,14 @@ class _Header extends StatelessWidget {
     required this.photoUrl,
     required this.hasUnread,
     required this.onBell,
+    required this.onMeetings,
   });
 
   final String greeting;
   final String? photoUrl;
   final bool hasUnread;
   final VoidCallback onBell;
+  final VoidCallback onMeetings;
 
   @override
   Widget build(BuildContext context) {
@@ -410,6 +430,11 @@ class _Header extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
+        IconButton(
+          onPressed: onMeetings,
+          tooltip: 'Your coffee meetings',
+          icon: const Icon(Icons.calendar_today_outlined, color: _green),
+        ),
         Stack(
           children: [
             IconButton(
