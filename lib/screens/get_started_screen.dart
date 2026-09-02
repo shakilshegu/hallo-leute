@@ -86,8 +86,18 @@ class _GetStartedScreenState extends ConsumerState<GetStartedScreen> {
     final auth = ref.read(authControllerProvider.notifier);
     try {
       final sync = await ref.read(onboardingApiProvider).syncUser();
+      final notice = postAuthNotice(
+        intendedSignup: ref.read(authControllerProvider).isNewUser,
+        isNewUser: sync.isNewUser,
+        onboardingCompleted: sync.onboardingCompleted,
+      );
       auth.applyBackendSync(onboardingCompleted: sync.onboardingCompleted);
       if (!mounted) return;
+      if (notice != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(notice)));
+      }
       if (sync.onboardingCompleted) {
         context.go(AppRoutes.home);
       } else {

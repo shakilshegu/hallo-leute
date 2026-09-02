@@ -169,3 +169,27 @@ final authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
   return AuthController();
 });
+
+/// A one-line note to show right after phone verification when the path the
+/// user picked on the welcome screen (Log in vs Get started) doesn't match
+/// what the backend actually found. Both cases still continue normally — the
+/// message is just so the user isn't confused about where they landed.
+///
+///  - picked "Log in" but no account existed  -> one was just created for them
+///  - picked "Get started" but a finished account was already there -> logged in
+///
+/// [intendedSignup] is `AuthState.isNewUser` as set from the welcome screen
+/// (read it BEFORE `applyBackendSync`, which overwrites it).
+String? postAuthNotice({
+  required bool intendedSignup,
+  required bool isNewUser,
+  required bool onboardingCompleted,
+}) {
+  if (!intendedSignup && isNewUser) {
+    return "You don't have an account yet — let's set one up.";
+  }
+  if (intendedSignup && onboardingCompleted) {
+    return 'You already have an account — welcome back.';
+  }
+  return null;
+}
