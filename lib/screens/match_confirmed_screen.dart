@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poppylo/models/matching_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/matching_controller.dart';
+import 'package:poppylo/state/profile_controller.dart';
 import 'package:poppylo/widgets/match_slot_format.dart';
 
 /// Shown once both people have accepted the match (status confirmed) — the
@@ -36,7 +37,13 @@ class MatchConfirmedScreen extends ConsumerWidget {
                 child: CircularProgressIndicator(color: Color(0xFF1B3B2B)),
               ),
               error: (_, __) => _fallback(context, textTheme, colorScheme),
-              data: (match) => _body(context, match, textTheme, colorScheme),
+              data: (match) => _body(
+                context,
+                match,
+                textTheme,
+                colorScheme,
+                ref.watch(meProvider).valueOrNull?.profile?.photoUrl,
+              ),
             ),
           ),
         ),
@@ -85,6 +92,7 @@ class MatchConfirmedScreen extends ConsumerWidget {
     MatchDetails match,
     TextTheme textTheme,
     ColorScheme colorScheme,
+    String? myPhotoUrl,
   ) {
     final photoUrl = match.user.photoUrl;
     return Column(
@@ -115,7 +123,7 @@ class MatchConfirmedScreen extends ConsumerWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              const Positioned(left: 0, child: _AvatarRing(imageUrl: null)),
+              Positioned(left: 0, child: _AvatarRing(imageUrl: myPhotoUrl)),
               Positioned(
                 right: 0,
                 child: _AvatarRing(imageUrl: photoUrl),

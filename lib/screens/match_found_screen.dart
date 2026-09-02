@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:poppylo/models/matching_models.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/matching_controller.dart';
+import 'package:poppylo/state/profile_controller.dart';
 import 'package:poppylo/widgets/match_slot_format.dart';
 
 class MatchFoundScreen extends ConsumerStatefulWidget {
@@ -112,6 +113,7 @@ class _MatchFoundScreenState extends ConsumerState<MatchFoundScreen> {
     TextTheme textTheme,
     ColorScheme colorScheme,
   ) {
+    final myPhotoUrl = ref.watch(meProvider).valueOrNull?.profile?.photoUrl;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -140,9 +142,9 @@ class _MatchFoundScreenState extends ConsumerState<MatchFoundScreen> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              const Positioned(
+              Positioned(
                 left: 0,
-                child: _AvatarRing(imageUrl: null),
+                child: _AvatarRing(imageUrl: myPhotoUrl),
               ),
               Positioned(
                 right: 0,

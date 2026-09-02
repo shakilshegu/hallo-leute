@@ -48,17 +48,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  // Coarse coordinates so a manual city pick still gives the backend a point
-  // to sort distance by (a device fix from "Use my location" is exact).
-  static const _cities = <String, (double, double)>{
-    'Kochi, India': (9.9312, 76.2673),
-    'Bengaluru, India': (12.9716, 77.5946),
-    'Mumbai, India': (19.076, 72.8777),
-    'Chennai, India': (13.0827, 80.2707),
-    'Hyderabad, India': (17.385, 78.4867),
-    'Pune, India': (18.5204, 73.8567),
-  };
-
   String get _partOfDay {
     final h = DateTime.now().hour;
     if (h < 12) return 'Good morning';
@@ -89,57 +78,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _changeLocation() async {
     HapticFeedback.selectionClick();
+    final searchController = TextEditingController();
     final choice = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: _bg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const Icon(Icons.my_location, color: _green),
-                title: const Text('Use my current location'),
-                onTap: () => Navigator.pop(ctx, '__gps__'),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'OR PICK A CITY',
-                    style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
-                          color: _green.withOpacity(0.5),
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.bold,
-                        ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.my_location, color: _green),
+                  title: const Text('Use my current location'),
+                  onTap: () => Navigator.pop(ctx, '__gps__'),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'OR ENTER A CITY OR AREA',
+                      style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                            color: _green.withOpacity(0.5),
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
                   ),
                 ),
-              ),
-              for (final c in _cities.keys)
-                ListTile(
-                  leading:
-                      const Icon(Icons.location_on_outlined, color: _green),
-                  title: Text(c),
-                  onTap: () => Navigator.pop(ctx, c),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: TextField(
+                    controller: searchController,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (v) {
+                      final q = v.trim();
+                      if (q.isNotEmpty) Navigator.pop(ctx, '__q__:$q');
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Kochi, or MG Road Bengaluru',
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.arrow_forward, color: _green),
+                        onPressed: () {
+                          final q = searchController.text.trim();
+                          if (q.isNotEmpty) Navigator.pop(ctx, '__q__:$q');
+                        },
+                      ),
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 8),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+    searchController.dispose();
     if (choice == null) return;
     if (choice == '__gps__') {
       await _useDeviceLocation();
-    } else {
-      final coords = _cities[choice]!;
-      await _saveLocation(coords.$1, coords.$2, choice);
+    } else if (choice.startsWith('__q__:')) {
+      await _useTypedLocation(choice.substring('__q__:'.length));
     }
   }
 
@@ -152,6 +164,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) _snack(e.message);
     } catch (_) {
       if (mounted) _snack("Couldn't get your location. Try again.");
+    } finally {
+      if (mounted) setState(() => _savingLocation = false);
+    }
+  }
+
+  Future<void> _useTypedLocation(String query) async {
+    setState(() => _savingLocation = true);
+    try {
+      final place =
+          await ref.read(locationServiceProvider).placeFromQuery(query);
+      await _saveLocation(place.latitude, place.longitude, place.name);
+    } on LocationDenied catch (e) {
+      if (mounted) _snack(e.message);
+    } catch (_) {
+      if (mounted) _snack("Couldn't find that place. Try a nearby city.");
     } finally {
       if (mounted) setState(() => _savingLocation = false);
     }

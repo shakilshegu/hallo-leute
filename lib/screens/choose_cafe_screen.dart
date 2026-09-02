@@ -227,10 +227,7 @@ class _ChooseCafeScreenState extends ConsumerState<ChooseCafeScreen> {
       children: [
         status,
         const SizedBox(height: 8),
-        _LocationFallback(
-          onSearch: controller.useTypedLocation,
-          onCity: controller.useCoords,
-        ),
+        _LocationFallback(onSearch: controller.useTypedLocation),
       ],
     );
   }
@@ -319,15 +316,9 @@ class _LocationChip extends StatelessWidget {
 
 /// Manual "search by area" fallback shown when the device can't give a fix.
 class _LocationFallback extends StatefulWidget {
-  const _LocationFallback({required this.onSearch, required this.onCity});
+  const _LocationFallback({required this.onSearch});
 
   final ValueChanged<String> onSearch;
-  final void Function(double lat, double lng, String name) onCity;
-
-  static const _demoCities = <String, (double, double)>{
-    'Berlin': (52.5200, 13.4050),
-    'Munich': (48.1374, 11.5755),
-  };
 
   @override
   State<_LocationFallback> createState() => _LocationFallbackState();
@@ -391,27 +382,6 @@ class _LocationFallbackState extends State<_LocationFallback> {
               style: IconButton.styleFrom(backgroundColor: _ink),
               icon: const Icon(Icons.arrow_forward, size: 18),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          children: [
-            for (final entry in _LocationFallback._demoCities.entries)
-              ActionChip(
-                label: Text(entry.key),
-                onPressed: () => widget.onCity(
-                  entry.value.$1,
-                  entry.value.$2,
-                  entry.key,
-                ),
-                backgroundColor: Colors.white,
-                side: BorderSide(color: _ink.withOpacity(0.12)),
-                labelStyle: TextStyle(
-                  color: _ink,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
           ],
         ),
       ],

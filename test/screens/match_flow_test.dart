@@ -6,11 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:poppylo/models/matching_models.dart';
+import 'package:poppylo/models/profile_models.dart';
 import 'package:poppylo/screens/match_confirmed_screen.dart';
 import 'package:poppylo/screens/match_detail_screen.dart';
 import 'package:poppylo/screens/match_found_screen.dart';
 import 'package:poppylo/screens/waiting_screen.dart';
 import 'package:poppylo/services/matching_api.dart';
+import 'package:poppylo/state/profile_controller.dart';
 
 import '../support/fake_matching_api.dart';
 import '../support/mock_network_images.dart';
@@ -49,16 +51,40 @@ GoRouter _router({String initialLocation = '/match/m1'}) => GoRouter(
       ],
     );
 
-Future<void> _pump(WidgetTester t, FakeMatchingApi api) async {
+UserMe _me({String? photoUrl}) => UserMe.fromJson({
+      'id': 'me-1',
+      'phone': '+15550000000',
+      'onboardingCompleted': true,
+      'profile': {'firstName': 'Sam', 'age': 30, 'photoUrl': photoUrl},
+      'interests': const [],
+      'preferences': null,
+      'purpose': 'networking',
+    });
+
+Future<void> _pump(
+  WidgetTester t,
+  FakeMatchingApi api, {
+  String? myPhotoUrl,
+}) async {
   await t.pumpWidget(
     ProviderScope(
-      overrides: [matchingApiProvider.overrideWithValue(api)],
+      overrides: [
+        matchingApiProvider.overrideWithValue(api),
+        meProvider.overrideWith((ref) async => _me(photoUrl: myPhotoUrl)),
+      ],
       child: MaterialApp.router(routerConfig: _router()),
     ),
   );
   await t.pump();
   await t.pump(const Duration(milliseconds: 50));
 }
+
+List<String> _circleAvatarImageUrls(WidgetTester t) => t
+    .widgetList<CircleAvatar>(find.byType(CircleAvatar))
+    .map((a) => a.backgroundImage)
+    .whereType<NetworkImage>()
+    .map((i) => i.url)
+    .toList();
 
 void main() {
   setUpAll(() => HttpOverrides.global = MockNetworkImagesHttpOverrides());
@@ -80,6 +106,29 @@ void main() {
     expect(find.text('Ben'), findsWidgets);
     expect(find.text('Why you matched'), findsOneWidget);
     expect(find.textContaining('You both like Travel'), findsOneWidget);
+  });
+
+  testWidgets('Match Found shows my photo and the match photo side by side',
+      (t) async {
+    final api = FakeMatchingApi(
+      matchDetail: sampleMatch(
+        id: 'm1',
+        user: const MatchProfile(
+          id: 'user-2',
+          name: 'Ben',
+          age: 29,
+          photoUrl: 'https://cdn.example.com/ben.jpg',
+          job: 'Barista',
+          bio: 'Flat white enthusiast.',
+          interests: ['Travel'],
+        ),
+      ),
+    );
+    await _pump(t, api, myPhotoUrl: 'https://cdn.example.com/me.jpg');
+
+    final avatars = _circleAvatarImageUrls(t);
+    expect(avatars, contains('https://cdn.example.com/me.jpg'));
+    expect(avatars, contains('https://cdn.example.com/ben.jpg'));
   });
 
   testWidgets('Pass on Match Found calls the API and goes home', (t) async {
@@ -140,6 +189,46 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.text('Choose a café'), findsOneWidget);
+  });
+
+  testWidgets('Match Confirmed shows my photo and the match photo', (t) async {
+    final api = FakeMatchingApi(
+      matchDetail: sampleMatch(
+        id: 'm1',
+        status: MatchLifecycle.confirmed,
+        myResponse: MatchResponseStatus.accepted,
+        otherResponse: MatchResponseStatus.accepted,
+        user: const MatchProfile(
+          id: 'user-2',
+          name: 'Ben',
+          age: 29,
+          photoUrl: 'https://cdn.example.com/ben.jpg',
+          job: 'Barista',
+          bio: 'Flat white enthusiast.',
+          interests: ['Travel'],
+        ),
+      ),
+    );
+    await t.pumpWidget(
+      ProviderScope(
+        overrides: [
+          matchingApiProvider.overrideWithValue(api),
+          meProvider.overrideWith(
+            (ref) async => _me(photoUrl: 'https://cdn.example.com/me.jpg'),
+          ),
+        ],
+        child: MaterialApp.router(
+          routerConfig: _router(initialLocation: '/match/m1/confirmed'),
+        ),
+      ),
+    );
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Choose a café'), findsOneWidget);
+    final avatars = _circleAvatarImageUrls(t);
+    expect(avatars, contains('https://cdn.example.com/me.jpg'));
+    expect(avatars, contains('https://cdn.example.com/ben.jpg'));
   });
 
   testWidgets('Waiting screen advances to Confirmed when both have accepted',

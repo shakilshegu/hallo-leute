@@ -99,8 +99,10 @@ final cafeGuardProvider = Provider<GuardFn>((ref) {
     final matchId = state.pathParameters['matchId'];
     if (matchId == null) return null;
 
-    final match = ref.read(matchProvider(matchId));
-    if (match.status != MatchStatus.confirmed) {
+    // No cached match (opened cold / deep link) or one that isn't confirmed
+    // yet → send the user to match details, which loads the real status.
+    final match = ref.read(matchRepositoryProvider)[matchId];
+    if (match == null || match.status != MatchStatus.confirmed) {
       return AppRoutes.matchDetailsPath(matchId);
     }
     return null;
@@ -158,8 +160,9 @@ final staleMatchGuardProvider = Provider<GuardFn>((ref) {
     final matchId = state.pathParameters['matchId'];
     if (matchId == null) return null;
 
-    final match = ref.read(matchProvider(matchId));
-    if (!match.status.isTerminal) return null;
+    // Only act on a match we've actually loaded and know to be terminal.
+    final match = ref.read(matchRepositoryProvider)[matchId];
+    if (match == null || !match.status.isTerminal) return null;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;

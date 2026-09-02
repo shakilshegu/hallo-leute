@@ -91,7 +91,9 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      final token = await _fcm.getToken();
+      final token = await _fcm.getToken(
+        vapidKey: 'BNpETbm6ef_JxtFJmYharfylC7DQTV_l7XG3j_nOAzX6e0F9Fu4eCKuCBpkEygJf5pbEBYzVowXW5ZyysE6KFHo',
+      );
       if (token != null) {
         await _syncToken(token);
       }

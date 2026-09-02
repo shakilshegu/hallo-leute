@@ -162,8 +162,9 @@ void main() {
     expect(find.text('Location needed'), findsOneWidget);
     expect(find.text('Enable location'), findsOneWidget);
 
-    // manual fallback: tapping the Berlin demo chip searches there
-    await t.tap(find.widgetWithText(ActionChip, 'Berlin'));
+    // manual fallback: typing an area and submitting searches there
+    await t.enterText(find.byType(TextField).last, 'Berlin');
+    await t.testTextInput.receiveAction(TextInputAction.search);
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
     expect(cafe.nearbyRadii.isNotEmpty, isTrue);

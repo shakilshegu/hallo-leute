@@ -135,20 +135,6 @@ class NearbyCafesController extends StateNotifier<NearbyCafesState> {
     }
   }
 
-  /// Manual fallback with exact coordinates (e.g. a demo city button).
-  Future<void> useCoords(double latitude, double longitude, String name) async {
-    state = state.copyWith(
-      origin: ResolvedPlace(
-        latitude: latitude,
-        longitude: longitude,
-        name: name,
-      ),
-      radiusMeters: 5000,
-      clearMessage: true,
-    );
-    await _fetch();
-  }
-
   Future<void> _fetch() async {
     final origin = state.origin;
     if (origin == null) return load();

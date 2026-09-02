@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:poppylo/models/auth_models.dart';
 import 'package:poppylo/models/match_models.dart';
+import 'package:poppylo/models/meeting_models.dart';
 import 'package:poppylo/router/app_router.dart';
 import 'package:poppylo/router/routes.dart';
 import 'package:poppylo/state/auth_controller.dart';
@@ -81,16 +82,24 @@ void main() {
 
     const matchId = 'guard-test-match';
     const meetingId = 'guard-test-meeting';
-    container.read(matchRepositoryProvider.notifier).setStatus(
-          matchId,
-          MatchStatus.proposed, // not yet accepted
+    final now = DateTime.now();
+    container.read(matchRepositoryProvider.notifier).upsert(
+          Match(
+            id: matchId,
+            partnerName: 'Test Partner',
+            status: MatchStatus.proposed, // not yet accepted
+            proposedTime: now.add(const Duration(hours: 3)),
+          ),
         );
-    container.read(meetingRepositoryProvider.notifier).confirm(
-          meetingId,
-          matchId,
-          cafeName: 'Brew Lab',
-          partnerName: 'Sarah',
-          startTime: DateTime.now(),
+    container.read(meetingRepositoryProvider.notifier).upsert(
+          Meeting(
+            id: meetingId,
+            matchId: matchId,
+            partnerName: 'Test Partner',
+            cafeName: 'Brew Lab',
+            startTime: now,
+            endTime: now.add(const Duration(minutes: 45)),
+          ),
         );
 
     container.read(routerProvider).go(AppRoutes.chatPath(meetingId));
@@ -122,9 +131,13 @@ void main() {
     signInAndCompleteOnboarding(container);
 
     const matchId = 'guard-test-match-2';
-    container.read(matchRepositoryProvider.notifier).setStatus(
-          matchId,
-          MatchStatus.accepted, // one step short of confirmed
+    container.read(matchRepositoryProvider.notifier).upsert(
+          Match(
+            id: matchId,
+            partnerName: 'Test Partner',
+            status: MatchStatus.accepted, // one step short of confirmed
+            proposedTime: DateTime.now().add(const Duration(hours: 3)),
+          ),
         );
 
     container.read(routerProvider).go(AppRoutes.chooseCafePath(matchId));
