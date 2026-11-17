@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hallo Leute Admin</title>
+<style>
+  :root {
+    --navy-950: #0B1830; --navy: #13294B; --navy-800: #1B355D; --navy-700: #25436F;
+    --line: #34558A; --cream: #F5ECD7; --muted: #BFC3C9; --mustard: #F2B544; --coral: #E88A7A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--cream);
+    background: radial-gradient(1200px 600px at 50% -10%, var(--navy-800), var(--navy) 55%, var(--navy-950));
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 16px 64px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+  h1 { font-size: 26px; margin: 0; }
+  h1 small { display: block; font-size: 13px; color: var(--mustard); letter-spacing: .12em; font-weight: 800; }
+  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 32px 0 12px; }
+  .card { background: rgba(27,53,93,.7); border: 1px solid rgba(52,85,138,.55); border-radius: 18px; padding: 18px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi b { display: block; font-size: 28px; line-height: 1.1; }
+  .kpi span { color: var(--muted); font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 700; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid rgba(52,85,138,.6); }
+  td { padding: 10px; border-bottom: 1px solid rgba(52,85,138,.3); vertical-align: top; }
+  tr.click { cursor: pointer; }
+  tr.click:hover td { background: rgba(245,236,215,.04); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 100px; font-size: 12px; font-weight: 800; }
+  .tag.guest { background: rgba(191,195,201,.15); color: var(--muted); }
+  .tag.saved { background: rgba(242,181,68,.16); color: var(--mustard); }
+  .tag.mastered { background: var(--mustard); color: var(--navy); }
+  .tag.learning { background: rgba(242,181,68,.16); color: var(--mustard); }
+  .tag.seen { background: rgba(191,195,201,.15); color: var(--muted); }
+  .scroll { overflow-x: auto; }
+  input, button { font: inherit; }
+  input {
+    width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--navy-800); color: var(--cream);
+  }
+  input:focus { outline: 2px solid var(--mustard); border-color: transparent; }
+  button {
+    padding: 12px 18px; border-radius: 12px; border: 0; cursor: pointer;
+    background: var(--cream); color: var(--navy); font-weight: 800;
+  }
+  button.ghost { background: transparent; color: var(--cream); border: 1px solid rgba(245,236,215,.25); }
+  button:disabled { opacity: .5; cursor: default; }
+  .login { max-width: 380px; margin: 12vh auto 0; }
+  .login .card { display: grid; gap: 12px; }
+  .muted { color: var(--muted); }
+  .error { color: var(--coral); min-height: 1.2em; font-size: 14px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding-top: 8px; }
+  .bar { flex: 1; background: var(--mustard); border-radius: 4px 4px 0 0; min-height: 2px; position: relative; }
+  .bar:hover::after {
+    content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: var(--navy-950); color: var(--cream); padding: 4px 8px; border-radius: 8px; white-space: nowrap; font-size: 12px; margin-bottom: 4px;
+  }
+  .axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 6px; }
+  .drawer {
+    position: fixed; inset: 0 0 0 auto; width: min(560px, 100%); background: var(--navy-950);
+    border-left: 1px solid var(--line); padding: 20px 16px; overflow-y: auto; transform: translateX(100%);
+    transition: transform .2s ease; z-index: 10;
+  }
+  .drawer.open { transform: none; }
+  .drawer header { margin-bottom: 12px; }
+  .search { max-width: 280px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <!-- Login -->
+  <section id="login" class="login hidden">
+    <h1><small>HALLO LEUTE</small>Admin dashboard</h1>
+    <p class="muted">Sign in with your admin account.</p>
+    <form class="card" id="loginForm">
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+      <button id="loginBtn" type="submit">Sign in</button>
+      <div class="error" id="loginError"></div>
+    </form>
+  </section>
+
+  <!-- Not an admin -->
+  <section id="notAdmin" class="login hidden">
+    <h1><small>HALLO LEUTE</small>Not an admin yet</h1>
+    <div class="card">
+      <p>You are signed in, but this account isn't on the admin list. In
+      Supabase → SQL Editor, run:</p>
+      <pre id="grantSql" style="white-space:pre-wrap;background:var(--navy-800);padding:12px;border-radius:12px"></pre>
+      <p class="muted">Then reload this page.</p>
+      <button class="ghost" onclick="signOut()">Sign out</button>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dash" class="hidden">
+    <header>
+      <h1><small>HALLO LEUTE</small>Learners</h1>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" onclick="loadAll()">Refresh</button>
+        <button class="ghost" onclick="signOut()">Sign out</button>
+      </div>
+    </header>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid2">
+      <div>
+        <h2>Activity · last 30 days</h2>
+        <div class="card">
+          <div class="bars" id="bars"></div>
+          <div class="axis"><span id="axisStart"></span><span>active learners per day</span><span id="axisEnd"></span></div>
+        </div>
+      </div>
+      <div>
+        <h2>Practice modes · 30 days</h2>
+        <div class="card scroll"><table id="modes"></table></div>
+      </div>
+    </div>
+
+    <h2 style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <span>All learners</span>
+      <input class="search" id="search" placeholder="Search name or email" oninput="renderLearners()">
+    </h2>
+    <div class="card scroll"><table id="learners"></table></div>
+
+    <h2>Hardest words</h2>
+    <div class="card scroll"><table id="hardest"></table></div>
+  </section>
+</main>
+
+<aside class="drawer" id="drawer" aria-live="polite">
+  <header>
+    <div><h1 id="drawerTitle" style="font-size:22px"></h1><div class="muted" id="drawerSub"></div></div>
+    <button class="ghost" onclick="closeDrawer()">Close</button>
+  </header>
+  <div class="scroll"><table id="words"></table></div>
+</aside>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" integrity="sha384-GFr3yTh5lJznCbZfpTtXnwboFsxqtTQoeTZCRHhE0579KrRmlCzen5AA8ohaB5ug" crossorigin="anonymous"></script>
+<script>
+  const cfg = window.HALLO_ADMIN_CONFIG || {};
+  const db = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_PUBLISHABLE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const show = (id) => ['login', 'notAdmin', 'dash'].forEach(s => $(s).classList.toggle('hidden', s !== id));
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtDate = (v) => v ? new Date(v).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  const ago = (v) => {
+    if (!v) return 'never';
+    const m = Math.round((Date.now() - new Date(v)) / 60000);
+    if (m < 60) return `${m} min ago`;
+    if (m < 1440) return `${Math.round(m / 60)} h ago`;
+    return `${Math.round(m / 1440)} days ago`;
+  };
+  let learners = [];
+
+  async function start() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) return show('login');
+    const { data: isAdmin, error } = await db.rpc('is_admin');
+    if (error || !isAdmin) {
+      $('grantSql').textContent =
+        `insert into public.admins (user_id)\nselect id from auth.users where email = '${session.user.email}';`;
+      return show('notAdmin');
+    }
+    show('dash');
+    loadAll();
+  }
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('loginBtn').disabled = true; $('loginError').textContent = '';
+    const { error } = await db.auth.signInWithPassword({
+      email: $('email').value.trim(), password: $('password').value,
+    });
+    $('loginBtn').disabled = false;
+    if (error) { $('loginError').textContent = error.message; return; }
+    start();
+  });
+
+  async function signOut() { await db.auth.signOut(); show('login'); }
+
+  async function loadAll() {
+    const [o, d, l, h, m] = await Promise.all([
+      db.rpc('admin_overview'), db.rpc('admin_daily', { days: 30 }),
+      db.rpc('admin_learners'), db.rpc('admin_hardest', { lim: 30 }), db.rpc('admin_modes'),
+    ]);
+    const err = [o, d, l, h, m].find(r => r.error);
+    if (err) { alert(err.error.message); return; }
+    renderKpis(o.data); renderDaily(d.data); learners = l.data; renderLearners();
+    renderHardest(h.data); renderModes(m.data);
+  }
+
+  function renderKpis(k) {
+    const items = [
+      ['Learners', k.learners], ['Saved accounts', k.saved_accounts], ['Guests', k.guests],
+      ['Active today', k.active_today], ['Active · 7 days', k.active_7d],
+      ['Words learned', k.words_learned], ['Words mastered', k.words_mastered], ['Answers · 7 days', k.answers_7d],
+    ];
+    $('kpis').innerHTML = items.map(([label, v]) =>
+      `<div class="card kpi"><b>${Number(v || 0).toLocaleString()}</b><span>${label}</span></div>`).join('');
+  }
+
+  function renderDaily(rows) {
+    const byDay = Object.fromEntries(rows.map(r => [r.day, r]));
+    const days = [...Array(30)].map((_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - 29 + i);
+      return d.toISOString().slice(0, 10);
+    });
+    const max = Math.max(1, ...rows.map(r => r.active_learners));
+    $('bars').innerHTML = days.map(day => {
+      const r = byDay[day] || { active_learners: 0, new_words: 0, reviews: 0, misses: 0 };
+      const h = (r.active_learners / max) * 100;
+      const tip = `${fmtDate(day)}: ${r.active_learners} learners, ${r.new_words} new words, ${r.reviews} reviews`;
+      return `<div class="bar" style="height:${h}%" data-tip="${esc(tip)}"></div>`;
+    }).join('');
+    $('axisStart').textContent = fmtDate(days[0]); $('axisEnd').textContent = 'today';
+  }
+
+  function renderLearners() {
+    const q = $('search').value.trim().toLowerCase();
+    const rows = learners.filter(r => !q || (r.name || '').toLowerCase().includes(q) || (r.email || '').toLowerCase().includes(q));
+    $('learners').innerHTML = `<tr><th>Learner</th><th>Account</th><th>Level</th><th class="num">Learned</th>
+      <th class="num">Mastered</th><th class="num">Answers</th><th>Last active</th><th>Joined</th></tr>` +
+      (rows.length ? rows.map(r => `<tr class="click" onclick="openLearner('${r.user_id}')">
+        <td><b>${esc(r.name || 'Unnamed')}</b><div class="muted">${esc(r.email || '')}</div></td>
+        <td><span class="tag ${r.is_guest ? 'guest' : 'saved'}">${r.is_guest ? 'Guest' : 'Saved'}</span></td>
+        <td>${esc((r.level || '—').toUpperCase())}</td>
+        <td class="num">${r.words_learned}</td><td class="num">${r.words_mastered}</td><td class="num">${r.total_answers}</td>
+        <td>${ago(r.last_active)}</td><td>${fmtDate(r.joined_at)}</td></tr>`).join('')
+      : `<tr><td colspan="8" class="muted">No learners yet.</td></tr>`);
+  }
+
+  async function openLearner(id) {
+    const r = learners.find(x => x.user_id === id);
+    $('drawerTitle').textContent = r.name || 'Unnamed learner';
+    $('drawerSub').textContent = `${r.email || 'Guest'} · ${r.words_learned} learned · ${r.words_mastered} mastered`;
+    $('words').innerHTML = '<tr><td class="muted">Loading…</td></tr>';
+    $('drawer').classList.add('open');
+    const { data, error } = await db.rpc('admin_learner_words', { target: id });
+    if (error) { $('words').innerHTML = `<tr><td>${esc(error.message)}</td></tr>`; return; }
+    $('words').innerHTML = `<tr><th>Word</th><th>Status</th><th>Learned</th><th class="num">Seen</th>
+      <th class="num">✓</th><th class="num">Again</th><th>Next review</th></tr>` +
+      (data.length ? data.map(w => `<tr><td><b>${esc(w.word)}</b></td>
+        <td><span class="tag ${w.status}">${w.status}</span></td><td>${fmtDate(w.learned_on)}</td>
+        <td class="num">${w.times_seen}</td><td class="num">${w.times_correct}</td><td class="num">${w.times_again}</td>
+        <td>${fmtDate(w.next_review)}</td></tr>`).join('')
+      : `<tr><td colspan="7" class="muted">No words yet.</td></tr>`);
+  }
+  function closeDrawer() { $('drawer').classList.remove('open'); }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  function renderHardest(rows) {
+    $('hardest').innerHTML = `<tr><th>Word</th><th class="num">Missed</th><th class="num">Answered</th><th class="num">Miss rate</th></tr>` +
+      (rows.length ? rows.map(r => `<tr><td><b>${esc(r.word)}</b></td><td class="num">${r.times_missed}</td>
+        <td class="num">${r.times_answered}</td><td class="num">${r.miss_rate_pct}%</td></tr>`).join('')
+      : `<tr><td colspan="4" class="muted">Needs at least 5 answers per word.</td></tr>`);
+  }
+
+  function renderModes(rows) {
+    $('modes').innerHTML = `<tr><th>Mode</th><th class="num">Answers</th><th class="num">Correct</th></tr>` +
+      (rows.length ? rows.map(r => `<tr><td>${esc(r.mode)}</td><td class="num">${r.answers}</td>
+        <td class="num">${r.correct_pct}%</td></tr>`).join('')
+      : `<tr><td colspan="3" class="muted">No answers yet.</td></tr>`);
+  }
+
+  if (!cfg.SUPABASE_URL) {
+    document.body.innerHTML = '<main><h1>Missing config.js</h1><p>Copy config.example.js to config.js.</p></main>';
+  } else {
+    start();
+  }
+</script>
+</body>
+</html>

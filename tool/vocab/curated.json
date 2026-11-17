@@ -1,0 +1,386 @@
+[
+ {
+  "topic": "basics",
+  "article": "",
+  "word": "Hallo",
+  "meaning": "hello",
+  "example": "Hallo, wie geht's?",
+  "exampleMeaning": "Hello, how are you?"
+ },
+ {
+  "topic": "basics",
+  "article": "",
+  "word": "Danke",
+  "meaning": "thank you",
+  "example": "Danke für deine Hilfe.",
+  "exampleMeaning": "Thanks for your help."
+ },
+ {
+  "topic": "basics",
+  "article": "",
+  "word": "Bitte",
+  "meaning": "please / you're welcome",
+  "example": "Ein Wasser, bitte.",
+  "exampleMeaning": "A water, please."
+ },
+ {
+  "topic": "basics",
+  "article": "",
+  "word": "Entschuldigung",
+  "meaning": "excuse me / sorry",
+  "example": "Entschuldigung, wo ist der Bahnhof?",
+  "exampleMeaning": "Excuse me, where is the station?"
+ },
+ {
+  "topic": "basics",
+  "article": "",
+  "word": "Tschüss",
+  "meaning": "bye",
+  "example": "Tschüss, bis morgen!",
+  "exampleMeaning": "Bye, see you tomorrow!"
+ },
+ {
+  "topic": "basics",
+  "article": "der",
+  "word": "Name",
+  "meaning": "name",
+  "example": "Mein Name ist Anna.",
+  "exampleMeaning": "My name is Anna."
+ },
+ {
+  "topic": "basics",
+  "article": "die",
+  "word": "Frage",
+  "meaning": "question",
+  "example": "Ich habe eine Frage.",
+  "exampleMeaning": "I have a question."
+ },
+ {
+  "topic": "basics",
+  "article": "der",
+  "word": "Tag",
+  "meaning": "day",
+  "example": "Schönen Tag noch!",
+  "exampleMeaning": "Have a nice day!"
+ },
+ {
+  "topic": "food",
+  "article": "das",
+  "word": "Brötchen",
+  "meaning": "bread roll",
+  "example": "Zwei Brötchen, bitte.",
+  "exampleMeaning": "Two bread rolls, please."
+ },
+ {
+  "topic": "food",
+  "article": "die",
+  "word": "Rechnung",
+  "meaning": "bill",
+  "example": "Die Rechnung, bitte.",
+  "exampleMeaning": "The bill, please."
+ },
+ {
+  "topic": "food",
+  "article": "das",
+  "word": "Wasser",
+  "meaning": "water",
+  "example": "Ein Glas Wasser, bitte.",
+  "exampleMeaning": "A glass of water, please."
+ },
+ {
+  "topic": "food",
+  "article": "der",
+  "word": "Kaffee",
+  "meaning": "coffee",
+  "example": "Ich trinke gern Kaffee.",
+  "exampleMeaning": "I like drinking coffee."
+ },
+ {
+  "topic": "food",
+  "article": "das",
+  "word": "Frühstück",
+  "meaning": "breakfast",
+  "example": "Das Frühstück ist um acht Uhr.",
+  "exampleMeaning": "Breakfast is at eight."
+ },
+ {
+  "topic": "food",
+  "article": "die",
+  "word": "Speisekarte",
+  "meaning": "menu",
+  "example": "Die Speisekarte, bitte.",
+  "exampleMeaning": "The menu, please."
+ },
+ {
+  "topic": "food",
+  "article": "der",
+  "word": "Supermarkt",
+  "meaning": "supermarket",
+  "example": "Der Supermarkt ist um die Ecke.",
+  "exampleMeaning": "The supermarket is around the corner."
+ },
+ {
+  "topic": "food",
+  "article": "das",
+  "word": "Brot",
+  "meaning": "bread",
+  "example": "Das Brot ist frisch.",
+  "exampleMeaning": "The bread is fresh."
+ },
+ {
+  "topic": "travel",
+  "article": "die",
+  "word": "Haltestelle",
+  "meaning": "stop (bus, tram)",
+  "example": "Wo ist die Haltestelle?",
+  "exampleMeaning": "Where is the stop?"
+ },
+ {
+  "topic": "travel",
+  "article": "der",
+  "word": "Bahnhof",
+  "meaning": "train station",
+  "example": "Wie komme ich zum Bahnhof?",
+  "exampleMeaning": "How do I get to the station?"
+ },
+ {
+  "topic": "travel",
+  "article": "der",
+  "word": "Zug",
+  "meaning": "train",
+  "example": "Der Zug hat Verspätung.",
+  "exampleMeaning": "The train is delayed."
+ },
+ {
+  "topic": "travel",
+  "article": "die",
+  "word": "Fahrkarte",
+  "meaning": "ticket",
+  "example": "Ich brauche eine Fahrkarte.",
+  "exampleMeaning": "I need a ticket."
+ },
+ {
+  "topic": "travel",
+  "article": "der",
+  "word": "Flughafen",
+  "meaning": "airport",
+  "example": "Der Flughafen ist weit weg.",
+  "exampleMeaning": "The airport is far away."
+ },
+ {
+  "topic": "travel",
+  "article": "die",
+  "word": "Straße",
+  "meaning": "street",
+  "example": "Ich wohne in dieser Straße.",
+  "exampleMeaning": "I live on this street."
+ },
+ {
+  "topic": "travel",
+  "article": "",
+  "word": "links",
+  "meaning": "left",
+  "example": "Gehen Sie hier links.",
+  "exampleMeaning": "Turn left here."
+ },
+ {
+  "topic": "travel",
+  "article": "",
+  "word": "rechts",
+  "meaning": "right",
+  "example": "Das Hotel ist rechts.",
+  "exampleMeaning": "The hotel is on the right."
+ },
+ {
+  "topic": "home",
+  "article": "die",
+  "word": "Wohnung",
+  "meaning": "apartment",
+  "example": "Ich suche eine Wohnung.",
+  "exampleMeaning": "I'm looking for an apartment."
+ },
+ {
+  "topic": "home",
+  "article": "die",
+  "word": "Miete",
+  "meaning": "rent",
+  "example": "Die Miete ist hoch.",
+  "exampleMeaning": "The rent is high."
+ },
+ {
+  "topic": "home",
+  "article": "der",
+  "word": "Schlüssel",
+  "meaning": "key",
+  "example": "Wo ist mein Schlüssel?",
+  "exampleMeaning": "Where is my key?"
+ },
+ {
+  "topic": "home",
+  "article": "die",
+  "word": "Küche",
+  "meaning": "kitchen",
+  "example": "Die Küche ist klein.",
+  "exampleMeaning": "The kitchen is small."
+ },
+ {
+  "topic": "home",
+  "article": "das",
+  "word": "Zimmer",
+  "meaning": "room",
+  "example": "Das Zimmer ist hell.",
+  "exampleMeaning": "The room is bright."
+ },
+ {
+  "topic": "home",
+  "article": "der",
+  "word": "Nachbar",
+  "meaning": "neighbour",
+  "example": "Mein Nachbar ist sehr nett.",
+  "exampleMeaning": "My neighbour is very nice."
+ },
+ {
+  "topic": "home",
+  "article": "das",
+  "word": "Bett",
+  "meaning": "bed",
+  "example": "Das Bett ist bequem.",
+  "exampleMeaning": "The bed is comfortable."
+ },
+ {
+  "topic": "home",
+  "article": "die",
+  "word": "Tür",
+  "meaning": "door",
+  "example": "Bitte mach die Tür zu.",
+  "exampleMeaning": "Please close the door."
+ },
+ {
+  "topic": "work",
+  "article": "der",
+  "word": "Termin",
+  "meaning": "appointment",
+  "example": "Ich habe morgen einen Termin.",
+  "exampleMeaning": "I have an appointment tomorrow."
+ },
+ {
+  "topic": "work",
+  "article": "der",
+  "word": "Feierabend",
+  "meaning": "end of the workday",
+  "example": "Endlich Feierabend!",
+  "exampleMeaning": "Finally done for the day!"
+ },
+ {
+  "topic": "work",
+  "article": "die",
+  "word": "Besprechung",
+  "meaning": "meeting",
+  "example": "Die Besprechung beginnt um zehn.",
+  "exampleMeaning": "The meeting starts at ten."
+ },
+ {
+  "topic": "work",
+  "article": "der",
+  "word": "Kollege",
+  "meaning": "colleague",
+  "example": "Mein Kollege hilft mir.",
+  "exampleMeaning": "My colleague helps me."
+ },
+ {
+  "topic": "work",
+  "article": "der",
+  "word": "Vertrag",
+  "meaning": "contract",
+  "example": "Ich unterschreibe den Vertrag.",
+  "exampleMeaning": "I'm signing the contract."
+ },
+ {
+  "topic": "work",
+  "article": "das",
+  "word": "Gehalt",
+  "meaning": "salary",
+  "example": "Das Gehalt kommt am Monatsende.",
+  "exampleMeaning": "The salary comes at the end of the month."
+ },
+ {
+  "topic": "work",
+  "article": "der",
+  "word": "Urlaub",
+  "meaning": "holiday / vacation",
+  "example": "Ich habe nächste Woche Urlaub.",
+  "exampleMeaning": "I'm on holiday next week."
+ },
+ {
+  "topic": "work",
+  "article": "die",
+  "word": "Pause",
+  "meaning": "break",
+  "example": "Wir machen eine kurze Pause.",
+  "exampleMeaning": "We're taking a short break."
+ },
+ {
+  "topic": "health",
+  "article": "der",
+  "word": "Arzt",
+  "meaning": "doctor",
+  "example": "Ich muss zum Arzt.",
+  "exampleMeaning": "I have to go to the doctor."
+ },
+ {
+  "topic": "health",
+  "article": "die",
+  "word": "Apotheke",
+  "meaning": "pharmacy",
+  "example": "Die Apotheke ist geschlossen.",
+  "exampleMeaning": "The pharmacy is closed."
+ },
+ {
+  "topic": "health",
+  "article": "das",
+  "word": "Krankenhaus",
+  "meaning": "hospital",
+  "example": "Das Krankenhaus ist in der Nähe.",
+  "exampleMeaning": "The hospital is nearby."
+ },
+ {
+  "topic": "health",
+  "article": "der",
+  "word": "Kopf",
+  "meaning": "head",
+  "example": "Mein Kopf tut weh.",
+  "exampleMeaning": "My head hurts."
+ },
+ {
+  "topic": "health",
+  "article": "das",
+  "word": "Medikament",
+  "meaning": "medicine",
+  "example": "Nimm das Medikament zweimal am Tag.",
+  "exampleMeaning": "Take the medicine twice a day."
+ },
+ {
+  "topic": "health",
+  "article": "die",
+  "word": "Krankenversicherung",
+  "meaning": "health insurance",
+  "example": "Ich habe eine Krankenversicherung.",
+  "exampleMeaning": "I have health insurance."
+ },
+ {
+  "topic": "health",
+  "article": "das",
+  "word": "Fieber",
+  "meaning": "fever",
+  "example": "Das Kind hat Fieber.",
+  "exampleMeaning": "The child has a fever."
+ },
+ {
+  "topic": "health",
+  "article": "der",
+  "word": "Notfall",
+  "meaning": "emergency",
+  "example": "Das ist ein Notfall!",
+  "exampleMeaning": "This is an emergency!"
+ }
+]
