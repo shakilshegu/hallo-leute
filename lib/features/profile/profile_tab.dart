@@ -169,13 +169,13 @@ class ProfileTab extends StatelessWidget {
             const _Credits(),
             const SizedBox(height: 28),
             Text(
-              'Hallo Leute · v1.0.0',
+              'Poppylo · v1.0.0',
               textAlign: TextAlign.center,
               style: AppText.body(12.5, color: AppColors.creamMuted),
             ),
             const SizedBox(height: 2),
             Text(
-              'Nur positiv',
+              'poppylo.com',
               textAlign: TextAlign.center,
               style: AppText.body(
                 12.5,

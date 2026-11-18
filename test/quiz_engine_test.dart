@@ -1,9 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallo_leute/data/progress.dart';
-import 'package:hallo_leute/data/vocabulary.dart';
-import 'package:hallo_leute/features/practice/quiz_engine.dart';
+import 'package:poppylo/data/progress.dart';
+import 'package:poppylo/data/vocabulary.dart';
+import 'package:poppylo/features/practice/quiz_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

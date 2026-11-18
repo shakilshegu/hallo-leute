@@ -9,7 +9,7 @@
 | Example sentences and translations | [Tatoeba](https://tatoeba.org/) | [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/) |
 
 The 48 hand-picked essentials (`tool/vocab/curated.json`) were written for
-Hallo Leute.
+Poppylo.
 
 Because the inputs are CC BY-SA, `words.json` itself is shared under
 **CC BY-SA 4.0**. This applies to the word data only, not to the app's code.

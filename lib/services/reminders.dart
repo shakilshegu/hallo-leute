@@ -70,7 +70,7 @@ const _messages = [
   ('Los geht\'s! 🚀', 'Learn a few new words in about five minutes.'),
   ('Guten Abend 🌙', 'Finish the day with a quick German review.'),
   ('Weiter so! 💪', 'You\'re building a real habit. Keep it going.'),
-  ('Nur positiv ✨', 'Every word counts. Open Hallo Leute for today\'s lesson.'),
+  ('Viel Erfolg! ✨', 'Every word counts. Open Poppylo for today\'s lesson.'),
 ];
 
 /// Plans the next week of reminders. Today is skipped when the learner has

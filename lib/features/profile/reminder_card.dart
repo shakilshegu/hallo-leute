@@ -20,7 +20,7 @@ Future<bool> enableReminders(
     messenger.showSnackBar(
       const SnackBar(
         content: Text(
-          'Notifications are off for Hallo Leute. '
+          'Notifications are off for Poppylo. '
           'Turn them on in your phone settings.',
         ),
       ),

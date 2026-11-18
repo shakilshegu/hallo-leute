@@ -1,8 +1,8 @@
-# Privacy Policy – Hallo Leute
+# Privacy Policy – Poppylo
 
 **Effective date:** 17 November 2026
 
-Hallo Leute ("the app", "we") helps you learn German vocabulary. This policy
+Poppylo ("the app", "we") helps you learn German vocabulary. This policy
 explains what information the app collects, why, and the choices you have.
 
 **In short:** we store your learning progress in your account so it is never
@@ -45,12 +45,12 @@ data, or any advertising ID.
 ## Where it is stored and who can see it
 
 - Your data is stored with **Supabase**, our database provider, in
-  **[DATA REGION, e.g. Mumbai, India]**. It is sent over encrypted
+  **Mumbai, India**. It is sent over encrypted
   connections (HTTPS).
 - Each account can only access its own data. Our small team can see learner
   data in order to run and improve the app.
 - If you use **Google sign-in**, Google confirms your identity to us. Sign-in
-  codes are sent by our email provider, **[EMAIL PROVIDER]**.
+  codes are sent by our email provider, **Resend**.
 - We **never sell** your data and never share it with advertisers.
 
 ## How long we keep it

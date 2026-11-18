@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.halloleute.app"
+    namespace = "com.poppylo.app"
     // 37: required by flutter_local_notifications + androidx.core 1.19.
     // (Build-time only; minSdk/targetSdk below decide which phones run it.)
     compileSdk = 37
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.halloleute.app"
+        applicationId = "com.poppylo.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // From `version:` in pubspec.yaml (1.0.0+1 → name 1.0.0, code 1).

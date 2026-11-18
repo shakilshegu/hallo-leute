@@ -1,11 +1,11 @@
 {
-    "name": "Hallo Leute",
-    "short_name": "Hallo Leute",
+    "name": "Poppylo",
+    "short_name": "Poppylo",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#13294B",
     "theme_color": "#13294B",
-    "description": "German made simple for nurses and IT professionals.",
+    "description": "Learn German vocabulary: flashcards, quizzes and job word packs.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

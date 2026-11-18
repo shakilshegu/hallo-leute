@@ -4,17 +4,17 @@
 // The test font is wider than the real one, so passing here leaves margin.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallo_leute/app.dart';
-import 'package:hallo_leute/data/progress.dart';
-import 'package:hallo_leute/data/vocabulary.dart';
-import 'package:hallo_leute/features/home/home_screen.dart';
-import 'package:hallo_leute/features/lesson/lesson_screen.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_data.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_flow.dart';
-import 'package:hallo_leute/features/practice/quiz_engine.dart';
-import 'package:hallo_leute/features/practice/quiz_screen.dart';
-import 'package:hallo_leute/features/topics/topic_screen.dart';
-import 'package:hallo_leute/theme/app_theme.dart';
+import 'package:poppylo/app.dart';
+import 'package:poppylo/data/progress.dart';
+import 'package:poppylo/data/vocabulary.dart';
+import 'package:poppylo/features/home/home_screen.dart';
+import 'package:poppylo/features/lesson/lesson_screen.dart';
+import 'package:poppylo/features/onboarding/onboarding_data.dart';
+import 'package:poppylo/features/onboarding/onboarding_flow.dart';
+import 'package:poppylo/features/practice/quiz_engine.dart';
+import 'package:poppylo/features/practice/quiz_screen.dart';
+import 'package:poppylo/features/topics/topic_screen.dart';
+import 'package:poppylo/theme/app_theme.dart';
 
 const _sizes = {
   'small 320x568': Size(320, 568),
@@ -79,7 +79,7 @@ void main() {
               size: size.value,
               textScaler: TextScaler.linear(scale),
             ),
-            child: const HalloLeuteApp(),
+            child: const PoppyloApp(),
           ),
         );
         await settle(tester, 2600);

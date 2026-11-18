@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallo_leute/data/progress.dart';
-import 'package:hallo_leute/data/vocabulary.dart';
-import 'package:hallo_leute/features/home/home_content.dart';
-import 'package:hallo_leute/features/home/home_screen.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_data.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_flow.dart';
-import 'package:hallo_leute/theme/app_theme.dart';
+import 'package:poppylo/data/progress.dart';
+import 'package:poppylo/data/vocabulary.dart';
+import 'package:poppylo/features/home/home_content.dart';
+import 'package:poppylo/features/home/home_screen.dart';
+import 'package:poppylo/features/onboarding/onboarding_data.dart';
+import 'package:poppylo/features/onboarding/onboarding_flow.dart';
+import 'package:poppylo/theme/app_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

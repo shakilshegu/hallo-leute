@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_data.dart';
-import 'package:hallo_leute/features/onboarding/onboarding_flow.dart';
-import 'package:hallo_leute/theme/app_theme.dart';
+import 'package:poppylo/features/onboarding/onboarding_data.dart';
+import 'package:poppylo/features/onboarding/onboarding_flow.dart';
+import 'package:poppylo/theme/app_theme.dart';
 
 void main() {
   Future<void> settle(WidgetTester tester) async {

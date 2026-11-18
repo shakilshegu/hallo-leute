@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hallo_leute/data/local_store.dart';
-import 'package:hallo_leute/data/progress.dart';
-import 'package:hallo_leute/data/vocabulary.dart';
+import 'package:poppylo/data/local_store.dart';
+import 'package:poppylo/data/progress.dart';
+import 'package:poppylo/data/vocabulary.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
