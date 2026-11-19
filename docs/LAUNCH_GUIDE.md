@@ -1,12 +1,12 @@
-# Poppylo: launch guide (about 3 weeks)
+# Hallo Leute: launch guide (about 3 weeks)
 
 Five jobs stand between the app and the Play Store. Do them in this order.
 Steps 1–4 take about a week; step 5 includes Google's mandatory 14-day test.
 
 | # | Job | Who | Time | Cost |
 |---|---|---|---|---|
-| 0 | ✅ Domain: `poppylo.com` (Hostinger) | Done | – | – |
-| 1 | ✅ Email sender (Resend, `mail.poppylo.com`) | Done | – | Free |
+| 0 | ✅ Domain: `halloleute.app` | Done | – | – |
+| 1 | Email sender (Resend, `mail.halloleute.app`) | You | 30 min | Free |
 | 2 | Google sign-in | You (setup) + Claude (test) | 1 hour | Free |
 | 3 | Crash reporting | You (account) + Claude (code) | 30 min | Free |
 | 4 | Word list review | Anoop / a German speaker | 2–3 evenings | Free |
@@ -16,18 +16,15 @@ Steps 1–4 take about a week; step 5 includes Google's mandatory 14-day test.
 
 ## 0. Domain ✅
 
-`poppylo.com` (registered at Hostinger). DNS is managed in Hostinger hPanel →
-Domains → poppylo.com → DNS / Nameservers.
+`halloleute.app`: add DNS records at the registrar where it was bought.
 
 ---
 
-## 1. Email sender (SMTP) ✅ done 18 Nov 2026
+## 1. Email sender (SMTP): switch to halloleute.app
 
-Resend sends from `no-reply@mail.poppylo.com` (domain verified, Tokyo region),
-Supabase uses it via custom SMTP, and the email templates show the 6-digit
-code. Tested end to end: guest → email code → saved account.
-
-The original setup steps are kept below for reference.
+Already working with the earlier domain (mail.poppylo.com, tested end to end on
+18 Nov 2026). To switch: add `mail.halloleute.app` in Resend, verify its DNS,
+then change the sender address and email subjects in Supabase. Steps below.
 
 ## 1. Email sender (SMTP), reference
 
@@ -45,8 +42,8 @@ who tap "Continue with email" never get their code.
 
    | Field | Value |
    |---|---|
-   | Sender email | `no-reply@mail.poppylo.com` |
-   | Sender name | `Poppylo` |
+   | Sender email | `no-reply@mail.halloleute.app` |
+   | Sender name | `Hallo Leute` |
    | Host | `smtp.resend.com` |
    | Port | `465` |
    | Username | `resend` |
@@ -55,12 +52,12 @@ who tap "Continue with email" never get their code.
 5. Still in **Authentication → Emails → Templates**, edit **Magic Link**,
    **Confirm signup** and **Change Email Address**. Replace the body with:
    ```html
-   <h2>Your Poppylo code</h2>
+   <h2>Your Hallo Leute code</h2>
    <p>Enter this code in the app:</p>
    <p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
    <p>If you didn't ask for this, you can ignore this email.</p>
    ```
-   Subject: `Your Poppylo code`
+   Subject: `Your Hallo Leute code`
 6. **Authentication → Rate Limits**: raise *emails sent per hour* to about 100.
 7. **Test:** in the app, go to Profile → Continue with email → your address.
    The code should arrive within a minute (check spam the first time).
@@ -74,9 +71,9 @@ who tap "Continue with email" never get their code.
 **Why:** one tap, and almost every Android user in India already has a Google
 account.
 
-1. Go to **console.cloud.google.com**, create a project named `Poppylo`.
+1. Go to **console.cloud.google.com**, create a project named `Hallo Leute`.
 2. **APIs & Services → OAuth consent screen** (Google Auth Platform):
-   - App name `Poppylo`, support email, logo optional;
+   - App name `Hallo Leute`, support email, logo optional;
    - **App domain:** your domain, plus the privacy policy URL (step 5.1);
    - **Audience:** External → **Publish app**;
    - Scopes: only the defaults (email, profile, openid). Keeping to these
@@ -86,8 +83,8 @@ account.
    | Type | Name | Settings |
    |---|---|---|
    | Web application | Supabase | No URIs needed. Copy the **Client ID** and **Client secret** |
-   | Android | Release (upload key) | Package `com.poppylo.app`, SHA-1 `14:6B:BD:99:FF:BE:0D:9F:A4:83:BF:B1:D0:EF:87:D3:DE:82:93:B1` |
-   | Android | Debug | Package `com.poppylo.app`, SHA-1 `F5:2A:32:28:F9:67:91:34:CE:71:6A:B6:4B:68:48:CF:99:1A:50:3B` |
+   | Android | Release (upload key) | Package `com.halloleute.app`, SHA-1 `14:6B:BD:99:FF:BE:0D:9F:A4:83:BF:B1:D0:EF:87:D3:DE:82:93:B1` |
+   | Android | Debug | Package `com.halloleute.app`, SHA-1 `F5:2A:32:28:F9:67:91:34:CE:71:6A:B6:4B:68:48:CF:99:1A:50:3B` |
 
    After your first upload to Play (step 5), add a **fourth** Android client
    with the **Play App Signing** SHA-1 from Play Console → Test and release →
@@ -112,7 +109,7 @@ the same user now shows a Google identity.
 **Use Sentry** (free plan: 5,000 errors a month, no Firebase needed).
 
 1. Sign up at **sentry.io** → **Create project** → platform **Flutter** →
-   name `poppylo`.
+   name `hallo-leute`.
 2. Copy the **DSN** (it looks like `https://abc123@o123.ingest.sentry.io/456`).
 3. Add it to `env.json`: `"SENTRY_DSN": "<your DSN>"`.
 4. **Claude:** adds the `sentry_flutter` package, reports crashes only (no
@@ -153,7 +150,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
    **delete-account** page (Play requires a deletion web link).
 2. Easiest hosting: **app.netlify.com/drop**. Drag the folder with
    `privacy-policy.html` and `delete-account.html` onto the page, then connect
-   your domain (e.g. `poppylo.com/privacy-policy.html`). Free.
+   your domain (e.g. `halloleute.app/privacy-policy.html`). Free.
    (GitHub Pages also works, but needs a paid plan for private repos.)
 
 ### 5.2 Play Console account
@@ -166,7 +163,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 
 ### 5.3 Create the app and fill in "Set up your app"
 
-- **App name:** Poppylo · **Default language:** English · **App** ·
+- **App name:** Hallo Leute · **Default language:** English · **App** ·
   **Free**.
 - **Privacy policy:** your hosted URL.
 - **App access:** "All functionality available without special access".
@@ -190,7 +187,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 1. **Test and release → Testing → Closed testing → Create track**.
 2. Build: `flutter build appbundle --release --dart-define-from-file=env.json`,
    then upload `build/app/outputs/bundle/release/app-release.aab`.
-3. **Testers:** create a Google Group (e.g. `poppylo-beta`), add the group
+3. **Testers:** create a Google Group (e.g. `halloleute-beta`), add the group
    in Play Console, and recruit **at least 15 people** so you stay safely
    above 12. Good sources: nursing institutes, German classes, Kerala
    WhatsApp groups, friends.
@@ -212,8 +209,8 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 
 ## Checklist
 
-- [x] 0 · Domain: poppylo.com
-- [x] 1 · Resend set up, Supabase SMTP and templates updated, code arrives
+- [x] 0 · Domain: halloleute.app
+- [ ] 1 · Resend switched to mail.halloleute.app, Supabase sender + templates updated, code arrives
 - [ ] 2 · Google OAuth clients made, Supabase Google provider on, `env.json` updated, works
 - [ ] 3 · Sentry project made, DSN in `env.json`, Claude integrated it
 - [ ] 4 · Review sheet exported, reviewed, fixes applied

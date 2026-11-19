@@ -34,7 +34,7 @@ This is what lets every learner be tracked from their first launch.
    **Magic Link**, **Confirm signup** and **Change Email Address**, add the
    code so learners can type it in the app:
    ```html
-   <h2>Your Poppylo code</h2>
+   <h2>Your Hallo Leute code</h2>
    <p>Enter this code in the app: <strong>{{ .Token }}</strong></p>
    ```
 3. **Set up your own email sender (SMTP).** ⚠️ Supabase's built-in email only
@@ -47,14 +47,14 @@ This is what lets every learner be tracked from their first launch.
 ## 5. Google sign-in (optional but recommended)
 
 1. Go to **console.cloud.google.com** and create a project called
-   "Poppylo".
+   "Hallo Leute".
 2. Under **APIs & Services → OAuth consent screen**, choose External, set the
-   app name "Poppylo", add your support email and publish it.
+   app name "Hallo Leute", add your support email and publish it.
 3. Under **Credentials → Create credentials → OAuth client ID**:
    - **Web application** (name "Supabase"). Copy its **Client ID** and
      **Client secret**.
    - **Android**, once per signing key, all with package name
-     **`com.poppylo.app`**:
+     **`com.halloleute.app`**:
 
      | Key | SHA-1 |
      |---|---|

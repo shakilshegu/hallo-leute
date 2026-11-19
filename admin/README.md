@@ -1,4 +1,4 @@
-# Poppylo admin dashboard
+# Hallo Leute admin dashboard
 
 A single web page that shows every learner (guests included), their words,
 daily activity, practice modes and the hardest words. It reads from Supabase

@@ -1,8 +1,8 @@
-# Privacy Policy – Poppylo
+# Privacy Policy – Hallo Leute
 
 **Effective date:** 17 November 2026
 
-Poppylo ("the app", "we") helps you learn German vocabulary. This policy
+Hallo Leute ("the app", "we") helps you learn German vocabulary. This policy
 explains what information the app collects, why, and the choices you have.
 
 **In short:** we store your learning progress in your account so it is never

@@ -5,13 +5,13 @@
 //
 // No TestWidgetsFlutterBinding here on purpose: it would block real HTTP.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poppylo/data/local_store.dart';
-import 'package:poppylo/data/progress.dart';
-import 'package:poppylo/data/remote/backend_config.dart';
-import 'package:poppylo/data/remote/progress_remote.dart';
-import 'package:poppylo/data/sync/sync_service.dart';
-import 'package:poppylo/data/vocabulary.dart';
-import 'package:poppylo/features/onboarding/onboarding_data.dart';
+import 'package:hallo_leute/data/local_store.dart';
+import 'package:hallo_leute/data/progress.dart';
+import 'package:hallo_leute/data/remote/backend_config.dart';
+import 'package:hallo_leute/data/remote/progress_remote.dart';
+import 'package:hallo_leute/data/sync/sync_service.dart';
+import 'package:hallo_leute/data/vocabulary.dart';
+import 'package:hallo_leute/features/onboarding/onboarding_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _bahnhof = GermanWord(

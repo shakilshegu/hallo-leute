@@ -8,8 +8,8 @@ import 'features/onboarding/onboarding_data.dart';
 import 'services/reminders.dart';
 import 'theme/app_theme.dart';
 
-class PoppyloApp extends StatefulWidget {
-  const PoppyloApp({
+class HalloLeuteApp extends StatefulWidget {
+  const HalloLeuteApp({
     super.key,
     this.progress,
     this.profile,
@@ -30,10 +30,10 @@ class PoppyloApp extends StatefulWidget {
   final Reminders? reminders;
 
   @override
-  State<PoppyloApp> createState() => _PoppyloAppState();
+  State<HalloLeuteApp> createState() => _HalloLeuteAppState();
 }
 
-class _PoppyloAppState extends State<PoppyloApp> {
+class _HalloLeuteAppState extends State<HalloLeuteApp> {
   late final LearningProgress _progress = widget.progress ?? LearningProgress();
 
   @override
@@ -52,7 +52,7 @@ class _PoppyloAppState extends State<PoppyloApp> {
         child: ProgressScope(
           progress: _progress,
           child: MaterialApp(
-            title: 'Poppylo',
+            title: 'Hallo Leute',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.dark,
             home: profile == null

@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poppylo/app.dart';
+import 'package:hallo_leute/app.dart';
 
 void main() {
   testWidgets('landing shows brand promise and CTA after entrance', (
     tester,
   ) async {
-    await tester.pumpWidget(const PoppyloApp());
+    await tester.pumpWidget(const HalloLeuteApp());
     await tester.pump(const Duration(milliseconds: 2600));
 
     expect(find.text('Deutsch lernen · A1 – B2'), findsOneWidget);
     expect(find.text("Los geht's"), findsOneWidget);
-    expect(find.bySemanticsLabel('Poppylo'), findsOneWidget);
+    expect(find.bySemanticsLabel('Hallo Leute – nur positiv'), findsOneWidget);
   });
 
   testWidgets('CTA opens onboarding', (tester) async {
-    await tester.pumpWidget(const PoppyloApp());
+    await tester.pumpWidget(const HalloLeuteApp());
     await tester.pump(const Duration(milliseconds: 2600));
 
     await tester.ensureVisible(find.text("Los geht's"));
@@ -30,7 +30,7 @@ void main() {
     await tester.pumpWidget(
       const MediaQuery(
         data: MediaQueryData(disableAnimations: true),
-        child: PoppyloApp(),
+        child: HalloLeuteApp(),
       ),
     );
     await tester.pump();
@@ -51,7 +51,7 @@ void main() {
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const PoppyloApp());
+    await tester.pumpWidget(const HalloLeuteApp());
     await tester.pump(const Duration(milliseconds: 2600));
 
     expect(tester.takeException(), isNull);

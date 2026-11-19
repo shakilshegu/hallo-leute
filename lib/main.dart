@@ -36,7 +36,7 @@ Future<void> main() async {
   final reminders = Reminders(store);
   await reminders.load();
   runApp(
-    PoppyloApp(
+    HalloLeuteApp(
       progress: progress,
       profile: profile,
       auth: auth,

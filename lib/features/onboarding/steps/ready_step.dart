@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import '../../../shared/widgets/reveal.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text.dart';
-import '../../../shared/widgets/poppylo_logo.dart';
+import '../../landing/widgets/pan_logo.dart';
 import '../onboarding_data.dart';
 
-/// Final step: the Poppylo flower blooms with a little burst, then a plan summary.
+/// Final step: the pan logo cooks up a little burst, then a plan summary.
 class ReadyStep extends StatefulWidget {
   const ReadyStep({super.key, required this.data});
 
@@ -66,29 +66,36 @@ class _ReadyStepState extends State<ReadyStep> with TickerProviderStateMixin {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final mark = math.min(120.0, (constraints.maxWidth - 40) * 0.4);
+        final diameter = math.min(
+          140.0,
+          (constraints.maxWidth - 40) / PanLogo.widthFactor,
+        );
+        final logoSize = PanLogo.sizeFor(diameter);
 
         return Column(
           children: [
             const SizedBox(height: 8),
             SizedBox(
-              width: mark,
-              height: PoppyloLogo.heightFor(mark, wordmark: false),
+              width: logoSize.width,
+              height: logoSize.height,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Positioned.fill(
+                  Positioned(
+                    left: 0,
+                    top: diameter * PanLogo.headroomFactor,
+                    width: diameter,
+                    height: diameter,
                     child: IgnorePointer(
                       child: CustomPaint(
                         painter: _BurstPainter(_interval(0.45, 1.0)),
                       ),
                     ),
                   ),
-                  PoppyloLogo(
-                    size: mark,
+                  PanLogo(
+                    diameter: diameter,
                     entrance: _entrance,
                     ambient: _ambient,
-                    wordmark: false,
                   ),
                 ],
               ),
@@ -110,7 +117,7 @@ class _ReadyStepState extends State<ReadyStep> with TickerProviderStateMixin {
             Reveal(
               animation: _interval(0.56, 0.8),
               child: Text(
-                "Your plan is ready. Let's grow your first words!",
+                "Your plan is ready. Let's cook up your first words!",
                 textAlign: TextAlign.center,
                 style: AppText.body(
                   15,

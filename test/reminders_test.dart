@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poppylo/services/reminders.dart';
+import 'package:hallo_leute/services/reminders.dart';
 
 void main() {
   const on = ReminderSettings(enabled: true, hour: 19, minute: 30);

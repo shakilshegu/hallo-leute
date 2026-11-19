@@ -1,4 +1,4 @@
--- Handy queries for the Poppylo team.
+-- Handy queries for the Hallo Leute team.
 -- Paste into Supabase → SQL Editor. Replace the example values.
 
 -- 1. Every learner with their totals (guests included), most active first.

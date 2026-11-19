@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:poppylo/app.dart';
-import 'package:poppylo/data/local_store.dart';
-import 'package:poppylo/data/progress.dart';
-import 'package:poppylo/data/vocabulary.dart';
-import 'package:poppylo/features/home/home_screen.dart';
-import 'package:poppylo/features/onboarding/onboarding_data.dart';
-import 'package:poppylo/theme/app_theme.dart';
+import 'package:hallo_leute/app.dart';
+import 'package:hallo_leute/data/local_store.dart';
+import 'package:hallo_leute/data/progress.dart';
+import 'package:hallo_leute/data/vocabulary.dart';
+import 'package:hallo_leute/features/home/home_screen.dart';
+import 'package:hallo_leute/features/onboarding/onboarding_data.dart';
+import 'package:hallo_leute/theme/app_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -159,7 +159,7 @@ void main() {
 
     testWidgets('a returning learner opens straight on Home', (tester) async {
       final profile = OnboardingData()..name = 'Mia';
-      await tester.pumpWidget(PoppyloApp(profile: profile));
+      await tester.pumpWidget(HalloLeuteApp(profile: profile));
       await settle(tester, 1600);
       expect(find.byType(HomeScreen), findsOneWidget);
     });

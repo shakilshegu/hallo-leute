@@ -1,11 +1,11 @@
-# Releasing Poppylo
+# Releasing Hallo Leute
 
 ## App identity (do not change after the first upload)
 
 | | Value |
 |---|---|
-| Android application ID | `com.poppylo.app` |
-| iOS bundle ID | `com.poppylo.app` |
+| Android application ID | `com.halloleute.app` |
+| iOS bundle ID | `com.halloleute.app` |
 | Version | set `version:` in `pubspec.yaml`, e.g. `1.0.0+1` → name 1.0.0, code 1 |
 
 **Every new upload needs a higher build number**: `1.0.0+1` → `1.0.1+2` → `1.1.0+3`…

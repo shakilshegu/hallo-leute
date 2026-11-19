@@ -3,13 +3,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/app_background.dart';
-import '../../shared/widgets/poppylo_logo.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/reveal.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../onboarding/onboarding_flow.dart';
 import 'widgets/floating_words.dart';
+import 'widgets/pan_logo.dart';
 
 /// First screen of the app: brand, promise and a single CTA.
 class LandingScreen extends StatefulWidget {
@@ -99,10 +99,9 @@ class _LandingScreenState extends State<LandingScreen>
   }
 
   Widget _content(BoxConstraints constraints) {
-    // Mark size: fits small phones, never huge on tablets.
-    final logo = math.min(
-      (constraints.maxWidth - 48) * 0.55,
-      math.min(constraints.maxHeight * 0.24, 200.0),
+    final diameter = math.min(
+      (constraints.maxWidth - 48) / PanLogo.widthFactor,
+      math.min(constraints.maxHeight * 0.27, 250.0),
     );
 
     return Padding(
@@ -112,7 +111,7 @@ class _LandingScreenState extends State<LandingScreen>
           const SizedBox(height: 16),
           Reveal(animation: _interval(0.0, 0.3), child: const _LevelPill()),
           const Spacer(flex: 2),
-          PoppyloLogo(size: logo, entrance: _entrance, ambient: _ambient),
+          PanLogo(diameter: diameter, entrance: _entrance, ambient: _ambient),
           const Spacer(flex: 2),
           Reveal(
             animation: _interval(0.52, 0.8),

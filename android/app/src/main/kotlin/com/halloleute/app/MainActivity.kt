@@ -1,4 +1,4 @@
-package com.poppylo.app
+package com.halloleute.app
 
 import io.flutter.embedding.android.FlutterActivity
 

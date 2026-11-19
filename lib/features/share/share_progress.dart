@@ -10,7 +10,7 @@ import '../../data/progress.dart';
 import '../../shared/widgets/primary_button.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
-import '../../shared/widgets/poppylo_logo.dart';
+import '../landing/widgets/pan_logo.dart';
 
 /// Shows a preview of the progress card, then shares it as an image
 /// (WhatsApp, Instagram, anywhere) with a short message.
@@ -45,11 +45,11 @@ class _ShareSheetState extends State<_ShareSheet> {
       final image = await boundary.toImage(pixelRatio: 3);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/poppylo_progress.png');
+      final file = File('${dir.path}/hallo_leute_progress.png');
       await file.writeAsBytes(bytes!.buffer.asUint8List());
       final text = learned == 0
-          ? "I'm learning German with Poppylo! 🇩🇪"
-          : "I've learned $learned German words with Poppylo! 🇩🇪 "
+          ? "I'm learning German with Hallo Leute! 🇩🇪"
+          : "I've learned $learned German words with Hallo Leute! 🇩🇪 "
                 'Learn with me, a few minutes a day.';
       await SharePlus.instance.share(
         ShareParams(
@@ -143,10 +143,10 @@ class ShareCard extends StatelessWidget {
             Expanded(
               flex: 5,
               child: FittedBox(
-                child: PoppyloLogo(
-                  size: 110,
+                child: PanLogo(
+                  diameter: 120,
                   entrance: const AlwaysStoppedAnimation(1),
-                  ambient: const AlwaysStoppedAnimation(0),
+                  ambient: const AlwaysStoppedAnimation(0.1),
                 ),
               ),
             ),
@@ -179,11 +179,11 @@ class ShareCard extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              'Learning German with Poppylo',
+              'Learning German with Hallo Leute',
               style: AppText.body(12, color: AppColors.creamMuted),
             ),
             Text(
-              'poppylo.com',
+              'Nur positiv',
               style: AppText.body(
                 11.5,
                 weight: FontWeight.w800,
