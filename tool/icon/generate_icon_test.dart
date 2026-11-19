@@ -26,7 +26,7 @@ Future<void> _loadFont(String family, String path) async {
   )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
 }
 
-/// The pan with a diagonal handle and the HALLO / LEUTE wordmark.
+/// The round Hallo Leute badge: ring, HALLO / LEUTE wordmark and smile.
 class _IconPainter extends CustomPainter {
   _IconPainter({required this.background, required this.scale});
 
@@ -49,55 +49,12 @@ class _IconPainter extends CustomPainter {
     canvas.save();
     canvas.translate((size.width - art) / 2, (size.height - art) / 2);
 
-    final d = art * 0.68; // pan diameter
+    final d = art * 0.94; // badge diameter
     final r = d / 2;
-    // Pan sits up-left so the diagonal handle balances the composition.
-    final c = Offset(art * 0.43, art * 0.43);
+    final c = Offset(art / 2, art / 2);
     final stroke = d * 0.05;
 
-    // Handle, pointing to the bottom-right.
-    canvas.save();
-    canvas.translate(c.dx, c.dy);
-    canvas.rotate(math.pi / 4);
-    final handle = Path()
-      ..moveTo(r * 0.85, -0.17 * d)
-      ..cubicTo(
-        r + 0.04 * d,
-        -0.15 * d,
-        r + 0.07 * d,
-        -0.065 * d,
-        r + 0.17 * d,
-        -0.06 * d,
-      )
-      ..lineTo(r + 0.42 * d, -0.075 * d)
-      ..arcToPoint(
-        Offset(r + 0.42 * d, 0.075 * d),
-        radius: Radius.circular(0.075 * d),
-      )
-      ..lineTo(r + 0.17 * d, 0.06 * d)
-      ..cubicTo(
-        r + 0.07 * d,
-        0.065 * d,
-        r + 0.04 * d,
-        0.15 * d,
-        r * 0.85,
-        0.17 * d,
-      )
-      ..close();
-    canvas.drawPath(handle, Paint()..color = _ink);
-    canvas.drawRRect(
-      RRect.fromLTRBR(
-        r + 0.30 * d,
-        -0.026 * d,
-        r + 0.44 * d,
-        0.026 * d,
-        Radius.circular(0.026 * d),
-      ),
-      Paint()..color = _bg,
-    );
-    canvas.restore();
-
-    // Pan interior + ring.
+    // Badge interior + ring.
     canvas.drawCircle(c, r - stroke / 2, Paint()..color = _bg);
     canvas.drawCircle(
       c,

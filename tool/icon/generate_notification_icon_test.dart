@@ -18,24 +18,10 @@ const _densities = {
 
 void _paintPan(Canvas canvas, double s) {
   final white = Paint()..color = Colors.white;
-  final d = s * 0.62;
+  final d = s * 0.9;
   final r = d / 2;
-  final c = Offset(s * 0.42, s * 0.42);
-  // Handle (diagonal), then a ring with a hollow centre and a smile.
-  canvas.save();
-  canvas.translate(c.dx, c.dy);
-  canvas.rotate(math.pi / 4);
-  canvas.drawRRect(
-    RRect.fromLTRBR(
-      r * 0.7,
-      -d * 0.09,
-      r + d * 0.5,
-      d * 0.09,
-      Radius.circular(d * 0.09),
-    ),
-    white,
-  );
-  canvas.restore();
+  final c = Offset(s / 2, s / 2);
+  // A ring with a hollow centre and a smile (the badge, no handle).
   canvas.drawCircle(c, r, white);
   canvas.drawCircle(c, r * 0.72, Paint()..blendMode = BlendMode.clear);
   canvas.drawArc(

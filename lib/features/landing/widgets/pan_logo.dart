@@ -7,7 +7,7 @@ import '../../../theme/app_text.dart';
 
 /// The Hallo Leute frying-pan mark, drawn in code so it can animate.
 ///
-/// [entrance] runs 0 → 1 once (ring draws, handle slides in, letters pop,
+/// [entrance] runs 0 → 1 once (ring draws, letters pop,
 /// "NUR POSITIV" appears). [ambient] loops 0 → 1 forever and drives the
 /// steam wisps and twinkling dots.
 class PanLogo extends StatelessWidget {
@@ -22,8 +22,9 @@ class PanLogo extends StatelessWidget {
   final Animation<double> entrance;
   final Animation<double> ambient;
 
-  /// Total width relative to the pan diameter (pan + handle).
-  static const widthFactor = 1.58;
+  /// Total width relative to the badge diameter (just the circle; the
+  /// frying-pan handle was removed).
+  static const widthFactor = 1.0;
 
   /// Space above the pan reserved for steam, relative to the diameter.
   static const headroomFactor = 0.24;
@@ -214,20 +215,16 @@ class _PanPainter extends CustomPainter {
     final a = ambient.value;
 
     final ring = _phase(e, 0.0, 0.45, Curves.easeInOutCubic);
-    final handle = _phase(e, 0.22, 0.56);
     final caption = _phase(e, 0.62, 0.86);
     final extras = _phase(e, 0.72, 1.0);
     final stroke = d * 0.04;
 
-    if (handle > 0) _paintHandle(canvas, c, d, handle);
-
-    // Pan interior (also hides the handle's neck under the ring). Fades in
-    // with the handle so no dark disk shows before the ring is drawn.
-    if (handle > 0) {
+    // Badge interior: a slightly deeper navy, fading in with the ring.
+    if (ring > 0) {
       canvas.drawCircle(
         c,
         r - stroke / 2,
-        Paint()..color = _bg.withValues(alpha: handle),
+        Paint()..color = _bg.withValues(alpha: ring),
       );
     }
 
@@ -255,53 +252,6 @@ class _PanPainter extends CustomPainter {
       _paintSmile(canvas, c, d, caption);
       _paintCurvedCaption(canvas, c, d, caption);
     }
-  }
-
-  void _paintHandle(Canvas canvas, Offset c, double d, double t) {
-    final r = d / 2;
-    canvas.save();
-    canvas.translate(c.dx - (1 - t) * d * 0.14, c.dy);
-    canvas.rotate(-0.06);
-
-    final path = Path()
-      ..moveTo(r * 0.85, -0.17 * d)
-      ..cubicTo(
-        r + 0.04 * d,
-        -0.15 * d,
-        r + 0.07 * d,
-        -0.06 * d,
-        r + 0.17 * d,
-        -0.05 * d,
-      )
-      ..lineTo(r + 0.50 * d, -0.066 * d)
-      ..arcToPoint(
-        Offset(r + 0.50 * d, 0.066 * d),
-        radius: Radius.circular(0.066 * d),
-      )
-      ..lineTo(r + 0.17 * d, 0.05 * d)
-      ..cubicTo(
-        r + 0.07 * d,
-        0.06 * d,
-        r + 0.04 * d,
-        0.15 * d,
-        r * 0.85,
-        0.17 * d,
-      )
-      ..close();
-    canvas.drawPath(path, Paint()..color = _ink.withValues(alpha: t));
-
-    // Hanging slot.
-    canvas.drawRRect(
-      RRect.fromLTRBR(
-        r + 0.36 * d,
-        -0.022 * d,
-        r + 0.52 * d,
-        0.022 * d,
-        Radius.circular(0.022 * d),
-      ),
-      Paint()..color = _bg,
-    );
-    canvas.restore();
   }
 
   void _paintInnerArcs(Canvas canvas, Offset c, double d, double t) {
