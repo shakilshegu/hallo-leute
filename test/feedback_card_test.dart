@@ -135,4 +135,36 @@ void main() {
     expect(find.text('Rate on Google Play'), findsNothing);
     expect(find.text('Send feedback'), findsOneWidget);
   });
+
+  testWidgets('closing the sheet keeps the draft for next time', (
+    tester,
+  ) async {
+    final remote = _FakeRemote();
+    await _pump(tester, remote);
+    await _openSheet(tester);
+
+    await tester.tap(find.bySemanticsLabel('3 stars'));
+    await tester.enterText(
+      find.widgetWithText(TextField, 'What could be better?'),
+      'ggg',
+    );
+    await tester.pump();
+
+    // Tap the dimmed area above the sheet: the sheet closes.
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.text('How do you like Hallo Leute?'), findsNothing);
+
+    await _openSheet(tester);
+    expect(find.text('ggg'), findsOneWidget);
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    expect(remote.sent.single.rating, 3);
+    expect(remote.sent.single.improve, 'ggg');
+
+    // After a successful send the next sheet starts empty.
+    await _openSheet(tester);
+    expect(find.text('ggg'), findsNothing);
+  });
 }

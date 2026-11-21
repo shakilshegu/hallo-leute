@@ -20,10 +20,29 @@ Future<bool> _launchExternal(Uri uri) async {
   }
 }
 
+/// What the learner has entered so far. Kept by the card, not the sheet, so
+/// closing the sheet by accident (tap outside, swipe down, back) keeps it.
+class _Draft {
+  final improve = TextEditingController();
+  final likes = TextEditingController();
+  int rating = 0;
+
+  void clear() {
+    improve.clear();
+    likes.clear();
+    rating = 0;
+  }
+
+  void dispose() {
+    improve.dispose();
+    likes.dispose();
+  }
+}
+
 /// Profile card: rate the app and send suggestions (private, to the owner),
 /// and a "Rate on Google Play" button. The Play button is shown to everyone
 /// and is never tied to the stars: Google Play forbids "review gating".
-class FeedbackCard extends StatelessWidget {
+class FeedbackCard extends StatefulWidget {
   const FeedbackCard({
     super.key,
     required this.remote,
@@ -39,8 +58,21 @@ class FeedbackCard extends StatelessWidget {
   /// Defaults to Android only.
   final bool? showPlayButton;
 
+  @override
+  State<FeedbackCard> createState() => _FeedbackCardState();
+}
+
+class _FeedbackCardState extends State<FeedbackCard> {
+  final _draft = _Draft();
+
+  @override
+  void dispose() {
+    _draft.dispose();
+    super.dispose();
+  }
+
   Future<void> _openPlay() async {
-    final open = openUrl ?? _launchExternal;
+    final open = widget.openUrl ?? _launchExternal;
     if (!await open(_playApp)) await open(_playWeb);
   }
 
@@ -52,14 +84,15 @@ class FeedbackCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => _FeedbackSheet(remote: remote),
+      builder: (_) => _FeedbackSheet(remote: widget.remote, draft: _draft),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final play =
-        showPlayButton ?? defaultTargetPlatform == TargetPlatform.android;
+        widget.showPlayButton ??
+        defaultTargetPlatform == TargetPlatform.android;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -115,27 +148,21 @@ class FeedbackCard extends StatelessWidget {
 }
 
 class _FeedbackSheet extends StatefulWidget {
-  const _FeedbackSheet({required this.remote});
+  const _FeedbackSheet({required this.remote, required this.draft});
 
   final FeedbackRemote remote;
+  final _Draft draft;
 
   @override
   State<_FeedbackSheet> createState() => _FeedbackSheetState();
 }
 
 class _FeedbackSheetState extends State<_FeedbackSheet> {
-  final _improve = TextEditingController();
-  final _likes = TextEditingController();
-  int _rating = 0;
   bool _busy = false;
   String? _error;
 
-  @override
-  void dispose() {
-    _improve.dispose();
-    _likes.dispose();
-    super.dispose();
-  }
+  _Draft get _draft => widget.draft;
+  int get _rating => _draft.rating;
 
   Future<void> _send() async {
     if (_rating == 0 || _busy) return;
@@ -147,10 +174,12 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
       await widget.remote.send(
         FeedbackEntry(
           rating: _rating,
-          improve: _improve.text,
-          likes: _likes.text,
+          improve: _draft.improve.text,
+          likes: _draft.likes.text,
         ),
       );
+      // Sent: start fresh next time, even if the sheet was closed meanwhile.
+      _draft.clear();
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       Navigator.of(context).pop();
@@ -201,12 +230,17 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
               const SizedBox(height: 14),
               _Stars(
                 rating: _rating,
-                onChanged: _busy ? null : (r) => setState(() => _rating = r),
+                onChanged: _busy
+                    ? null
+                    : (r) => setState(() => _draft.rating = r),
               ),
               const SizedBox(height: 18),
-              _TextBox(controller: _improve, label: 'What could be better?'),
+              _TextBox(
+                controller: _draft.improve,
+                label: 'What could be better?',
+              ),
               const SizedBox(height: 12),
-              _TextBox(controller: _likes, label: 'What do you like?'),
+              _TextBox(controller: _draft.likes, label: 'What do you like?'),
               if (_error != null) ...[
                 const SizedBox(height: 10),
                 Text(
