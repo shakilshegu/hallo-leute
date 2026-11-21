@@ -249,4 +249,79 @@ void main() {
       );
     });
   });
+
+  group('review anytime', () {
+    test('reviewAnytime returns learned words weakest first, capped', () {
+      final p = LearningProgress(clock: clock);
+      final strong = vocabulary[300];
+      final weak = vocabulary[301];
+      final plain = vocabulary[302];
+      for (final w in [strong, weak, plain]) {
+        p.recordAnswer(w, knewIt: true);
+      }
+      now = day(17);
+      p.recordAnswer(strong, knewIt: true); // box 2: stronger
+      p.recordAnswer(weak, knewIt: false); // missed once: weaker
+      p.recordAnswer(vocabulary[303], knewIt: false); // never learned
+
+      final list = p.reviewAnytime();
+      expect(list, [weak, plain, strong]);
+      expect(p.reviewAnytime(limit: 2), [weak, plain]);
+      expect(list, isNot(contains(vocabulary[303])));
+    });
+
+    test('early I know it keeps the schedule', () {
+      final p = LearningProgress(clock: clock);
+      final w = vocabulary[310];
+      p.recordAnswer(w, knewIt: true); // box 1, due day 17
+      p.recordAnswer(w, knewIt: true); // same day, not due yet
+      p.recordAnswer(w, knewIt: true);
+
+      final wp = p.progressOf(w)!;
+      expect(wp.box, 1);
+      expect(wp.due, DateTime(2026, 11, 17));
+    });
+
+    test('early I know it counts as a review', () {
+      final p = LearningProgress(clock: clock);
+      final w = vocabulary[311];
+      p.recordAnswer(w, knewIt: true);
+      p.recordAnswer(w, knewIt: true);
+
+      expect(p.activity[p.today]!.newWords, 1);
+      expect(p.activity[p.today]!.reviews, 1);
+      expect(p.progressOf(w)!.timesCorrect, 2);
+    });
+
+    test('early not yet resets to due today', () {
+      final p = LearningProgress(clock: clock);
+      final w = vocabulary[312];
+      p.recordAnswer(w, knewIt: true);
+      now = day(17);
+      p.recordAnswer(w, knewIt: true); // box 2, due day 20
+      p.recordAnswer(w, knewIt: false); // forgot it early
+
+      final wp = p.progressOf(w)!;
+      expect(wp.box, 1);
+      expect(wp.due, DateTime(2026, 11, 17));
+      expect(p.dueForReview(), contains(w));
+    });
+
+    test('mastered word reviewed early stays mastered', () {
+      final p = LearningProgress(clock: clock);
+      final w = vocabulary[313];
+      p.recordAnswer(w, knewIt: true);
+      final wp = p.progressOf(w)!;
+      while (wp.box < LearningProgress.masteredBox) {
+        now = wp.due.add(const Duration(hours: 10));
+        p.recordAnswer(w, knewIt: true);
+      }
+      final due = wp.due;
+      now = now.add(const Duration(days: 2)); // before the 30-day review
+      p.recordAnswer(w, knewIt: true);
+
+      expect(p.statusOf(w), WordStatus.mastered);
+      expect(wp.due, due);
+    });
+  });
 }

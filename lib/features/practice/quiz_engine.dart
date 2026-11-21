@@ -48,14 +48,10 @@ class QuizEngine {
     final learned = source
         .where((w) => progress.isLearned(w) && suits(w, mode))
         .toList();
-    int weakness(GermanWord w) {
-      final p = progress.progressOf(w)!;
-      final overdue = progress.today.difference(p.due).inDays;
-      return p.timesAgain * 3 - p.box * 2 + overdue.clamp(0, 30);
-    }
-
     learned.shuffle(_random);
-    learned.sort((a, b) => weakness(b).compareTo(weakness(a)));
+    learned.sort(
+      (a, b) => progress.weaknessOf(b).compareTo(progress.weaknessOf(a)),
+    );
     final picked = learned.take(n).toList();
     if (picked.length < n) {
       picked.addAll(
