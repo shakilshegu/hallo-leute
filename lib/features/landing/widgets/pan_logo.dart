@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_text.dart';
 
-/// The Hallo Leute frying-pan mark, drawn in code so it can animate.
+/// The Hallo Leute round badge, drawn in code so it can animate.
 ///
 /// [entrance] runs 0 → 1 once (ring draws, letters pop,
 /// "NUR POSITIV" appears). [ambient] loops 0 → 1 forever and drives the
-/// steam wisps and twinkling dots.
+/// twinkling dots.
 class PanLogo extends StatelessWidget {
   const PanLogo({
     super.key,
@@ -26,8 +26,9 @@ class PanLogo extends StatelessWidget {
   /// frying-pan handle was removed).
   static const widthFactor = 1.0;
 
-  /// Space above the pan reserved for steam, relative to the diameter.
-  static const headroomFactor = 0.24;
+  /// Space above the badge, relative to the diameter (none since the
+  /// steam was removed).
+  static const headroomFactor = 0.0;
 
   static Size sizeFor(double diameter) =>
       Size(diameter * widthFactor, diameter * (1 + headroomFactor));
@@ -246,7 +247,6 @@ class _PanPainter extends CustomPainter {
     if (extras > 0) {
       _paintInnerArcs(canvas, c, d, extras);
       _paintDots(canvas, c, d, extras, a);
-      _paintSteam(canvas, c, d, extras, a);
     }
     if (caption > 0) {
       _paintSmile(canvas, c, d, caption);
@@ -281,33 +281,6 @@ class _PanPainter extends CustomPainter {
         c + spots[i] * d,
         d * 0.012,
         Paint()..color = _ink.withValues(alpha: t * twinkle),
-      );
-    }
-  }
-
-  void _paintSteam(Canvas canvas, Offset c, double d, double t, double a) {
-    final topY = c.dy - d / 2;
-    for (var i = 0; i < 3; i++) {
-      // 4 full cycles per ambient loop keeps the animation seamless.
-      final p = (a * 4 + i / 3) % 1.0;
-      final x = c.dx + (i - 1) * d * 0.15;
-      final h = d * 0.11;
-      final y = topY - d * 0.035 - p * d * 0.07;
-      final sway =
-          d *
-          0.032 *
-          (i.isOdd ? -1 : 1) *
-          (1 + 0.35 * math.sin(2 * math.pi * p));
-      final path = Path()
-        ..moveTo(x, y)
-        ..cubicTo(x + sway, y - h * 0.33, x - sway, y - h * 0.66, x, y - h);
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = _ink.withValues(alpha: t * 0.75 * math.sin(math.pi * p))
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = d * 0.02
-          ..strokeCap = StrokeCap.round,
       );
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/progress.dart';
+import '../../data/vocabulary.dart';
 import '../../services/reminders.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
@@ -227,6 +228,169 @@ class ReminderOffer extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Profile card: how many word pop-ups per day (Off · 1 · 3 · 5).
+class PopupsCard extends StatelessWidget {
+  const PopupsCard({
+    super.key,
+    required this.reminders,
+    required this.wordsFor,
+  });
+
+  final Reminders reminders;
+  final List<GermanWord> Function(DateTime day) wordsFor;
+
+  Future<void> _choose(BuildContext context, int perDay) async {
+    final progress = ProgressScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    if (perDay > 0 && !await reminders.requestPermission()) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Notifications are off for Hallo Leute. '
+            'Turn them on in your phone settings.',
+          ),
+        ),
+      );
+      return;
+    }
+    await reminders.setPopups(
+      perDay,
+      wordsFor: wordsFor,
+      isLearned: progress.isLearned,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = reminders.popupsPerDay;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: AppColors.navy800.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.navyLine.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.style_outlined,
+                color: AppColors.mustard,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Word pop-ups',
+                      style: AppText.body(
+                        15,
+                        weight: FontWeight.w800,
+                        color: AppColors.cream,
+                      ),
+                    ),
+                    Text(
+                      current == 0
+                          ? 'Off'
+                          : 'Flashcards on your phone · $current a day',
+                      style: AppText.body(13, color: AppColors.creamMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              for (final (n, label) in const [
+                (0, 'Off'),
+                (1, '1'),
+                (3, '3'),
+                (5, '5'),
+              ]) ...[
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: current == n,
+                    label: n == 0 ? 'Pop-ups off' : '$n pop-ups a day',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      onTap: () => _choose(context, n),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: current == n
+                              ? AppColors.mustard
+                              : AppColors.cream.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          label,
+                          style: AppText.body(
+                            14,
+                            weight: FontWeight.w800,
+                            color: current == n
+                                ? AppColors.navy
+                                : AppColors.cream,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (n != 5) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+          if (current > 0)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _sendTest(context),
+                icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                label: const Text('Send a test pop-up'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.mustard,
+                  padding: const EdgeInsets.only(top: 8),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendTest(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final progress = ProgressScope.of(context);
+    final words = wordsFor(DateTime.now());
+    final word = words.firstWhere(
+      (w) => !progress.isLearned(w),
+      orElse: () => words.first,
+    );
+    final ok =
+        await reminders.requestPermission() &&
+        await reminders.showPopupNow(word);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Sent! Pull down your notifications to see it.'
+              : 'Notifications are off for Hallo Leute. '
+                    'Turn them on in your phone settings.',
+        ),
       ),
     );
   }

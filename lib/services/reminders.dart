@@ -1,12 +1,15 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../data/local_store.dart';
+import '../data/progress.dart';
+import '../data/vocabulary.dart';
 
 /// The learner's reminder choice.
 class ReminderSettings {
@@ -105,16 +108,93 @@ List<PlannedReminder> planReminders({
   return plans;
 }
 
+/// One word pop-up: a flashcard-style notification.
+class PlannedPopup {
+  const PlannedPopup(this.id, this.at, this.word);
+
+  final int id;
+  final DateTime at;
+  final GermanWord word;
+}
+
+/// Times of day for [perDay] pop-ups, spread between 10:00 and 20:00.
+List<(int, int)> popupTimes(int perDay) => switch (perDay) {
+  <= 0 => const [],
+  1 => const [(12, 0)],
+  2 => const [(10, 0), (18, 0)],
+  3 => const [(10, 0), (14, 0), (18, 0)],
+  4 => const [(10, 0), (13, 0), (16, 0), (19, 0)],
+  _ => const [(9, 30), (12, 0), (14, 30), (17, 0), (19, 30)],
+};
+
+/// Plans the next week of word pop-ups. Each day shows that day's words
+/// (the same "words of the day" as on Home), skipping words already
+/// learned.
+@visibleForTesting
+List<PlannedPopup> planWordPopups({
+  required DateTime now,
+  required int perDay,
+  required List<GermanWord> Function(DateTime day) wordsFor,
+  required bool Function(GermanWord word) isLearned,
+}) {
+  final times = popupTimes(perDay);
+  final plans = <PlannedPopup>[];
+  for (var offset = 0; offset < 7; offset++) {
+    final day = DateTime(now.year, now.month, now.day + offset);
+    final all = wordsFor(day);
+    final fresh = all.where((w) => !isLearned(w)).toList();
+    final words = fresh.isEmpty ? all : fresh;
+    if (words.isEmpty) continue;
+    for (var i = 0; i < times.length; i++) {
+      final (h, m) = times[i];
+      final at = DateTime(day.year, day.month, day.day, h, m);
+      if (!at.isAfter(now)) continue;
+      plans.add(
+        PlannedPopup(200 + offset * 10 + i, at, words[i % words.length]),
+      );
+    }
+  }
+  return plans;
+}
+
 /// Daily practice reminders (local notifications; no server involved).
 class Reminders extends ChangeNotifier {
   Reminders(this._store);
 
   static const storageKey = 'reminders.v1';
+  static const popupsKey = 'word_popups.v1';
 
   final KeyValueStore _store;
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialised = false;
+
+  /// Key of the word whose pop-up the learner tapped; the app opens its
+  /// flashcard and then clears this back to null.
+  final openedWord = ValueNotifier<String?>(null);
+
+  void _onTap(NotificationResponse r) {
+    final payload = r.payload;
+    if (payload != null && payload.startsWith(_wordPayload)) {
+      openedWord.value = payload.substring(_wordPayload.length);
+    }
+  }
+
+  /// Call once at start: if a word pop-up launched the app, open its card.
+  Future<void> checkLaunch() async {
+    if (!await _init()) return;
+    try {
+      final details = await _plugin.getNotificationAppLaunchDetails();
+      final r = details?.notificationResponse;
+      if ((details?.didNotificationLaunchApp ?? false) && r != null) _onTap(r);
+    } on Object catch (e) {
+      debugPrint('Could not read launch details: $e');
+    }
+  }
+
   ReminderSettings settings = const ReminderSettings();
+
+  /// Word pop-ups per day (0 = off).
+  int popupsPerDay = 0;
 
   static const _details = NotificationDetails(
     android: AndroidNotificationDetails(
@@ -130,6 +210,7 @@ class Reminders extends ChangeNotifier {
   );
 
   Future<void> load() async {
+    popupsPerDay = int.tryParse(await _store.read(popupsKey) ?? '') ?? 0;
     final raw = await _store.read(storageKey);
     if (raw != null) {
       try {
@@ -157,6 +238,7 @@ class Reminders extends ChangeNotifier {
             requestSoundPermission: false,
           ),
         ),
+        onDidReceiveNotificationResponse: _onTap,
       );
       _initialised = true;
       return true;
@@ -228,6 +310,110 @@ class Reminders extends ChangeNotifier {
       debugPrint('Could not schedule reminders: $e');
     }
   }
+}
+
+extension WordPopups on Reminders {
+  /// Saves the pop-up choice and (re)schedules them.
+  Future<void> setPopups(
+    int perDay, {
+    required List<GermanWord> Function(DateTime day) wordsFor,
+    required bool Function(GermanWord word) isLearned,
+  }) async {
+    popupsPerDay = perDay;
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+    notifyListeners();
+    await _store.write(Reminders.popupsKey, '$perDay');
+    await reschedulePopups(wordsFor: wordsFor, isLearned: isLearned);
+  }
+
+  /// Replaces the scheduled word pop-ups (ids 200–269).
+  Future<void> reschedulePopups({
+    required List<GermanWord> Function(DateTime day) wordsFor,
+    required bool Function(GermanWord word) isLearned,
+  }) async {
+    if (!await _init()) return;
+    try {
+      for (var id = 200; id < 270; id++) {
+        await _plugin.cancel(id: id);
+      }
+      final plans = planWordPopups(
+        now: DateTime.now(),
+        perDay: popupsPerDay,
+        wordsFor: wordsFor,
+        isLearned: isLearned,
+      );
+      for (final p in plans) {
+        final (title, body, details) = _popupFor(p.word);
+        await _plugin.zonedSchedule(
+          payload: _wordPayload + LearningProgress.keyOf(p.word),
+          id: p.id,
+          scheduledDate: tz.TZDateTime.from(p.at, tz.local),
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          title: title,
+          body: body,
+        );
+      }
+    } on Object catch (e) {
+      debugPrint('Could not schedule word pop-ups: $e');
+    }
+  }
+}
+
+/// Shows one word pop-up right now, so the learner can see what they
+/// look like (Profile → "Send a test pop-up").
+extension WordPopupPreview on Reminders {
+  Future<bool> showPopupNow(GermanWord word) async {
+    if (!await _init()) return false;
+    try {
+      final (title, body, details) = _popupFor(word);
+      await _plugin.show(
+        payload: _wordPayload + LearningProgress.keyOf(word),
+        id: 270,
+        title: title,
+        body: body,
+        notificationDetails: details,
+      );
+      return true;
+    } on Object catch (e) {
+      debugPrint('Could not show a word pop-up: $e');
+      return false;
+    }
+  }
+}
+
+const _wordPayload = 'word:';
+
+(String, String, NotificationDetails) _popupFor(GermanWord w) {
+  final german = [w.article, w.word].where((s) => s.isNotEmpty).join(' ');
+  final back = [
+    w.meaning,
+    if (w.hasExample) '„${w.example}“',
+    if (w.hasExample) w.exampleMeaning,
+  ].join('\n');
+  return (
+    german,
+    'Swipe down for the meaning · tap for the flashcard',
+    NotificationDetails(
+      android: AndroidNotificationDetails(
+        'word_popups',
+        'Word pop-ups',
+        channelDescription: 'German flashcards during the day',
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+        icon: 'ic_notification',
+        color: const Color(0xFF13294B),
+        // Collapsed: the German word. Swipe down: meaning + example,
+        // like flipping a flashcard.
+        styleInformation: BigTextStyleInformation(
+          back,
+          contentTitle: german,
+          summaryText: 'Word of the day',
+        ),
+      ),
+      iOS: const DarwinNotificationDetails(),
+    ),
+  );
 }
 
 /// Provides [Reminders] to the widget tree (null in tests/previews).

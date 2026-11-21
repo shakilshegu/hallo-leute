@@ -4,41 +4,34 @@ import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
+import '../home/widgets/home_cards.dart';
+import '../topics/topic_screen.dart';
 import 'word_row.dart';
 
-/// The vocabulary library: search, filter by topic, tap a word for an example.
+/// The vocabulary library.
+///
+/// * **All words**: search, filter by All / Learned / To learn, tap a word
+///   for its plural, example and history.
+/// * **Categories**: career packs ("For your job") and every topic.
 class WordsTab extends StatefulWidget {
-  const WordsTab({
-    super.key,
-    required this.topic,
-    required this.onTopicChanged,
-  });
+  const WordsTab({super.key, this.sessionSize = 10});
 
-  /// Active topic filter; null shows every word.
-  final Topic? topic;
-  final ValueChanged<Topic?> onTopicChanged;
+  /// Words per "learn new words" session on a topic page.
+  final int sessionSize;
 
   @override
   State<WordsTab> createState() => _WordsTabState();
 }
+
+enum _Filter { all, learned, toLearn }
 
 class _WordsTabState extends State<WordsTab> {
   final _search = TextEditingController();
   final _scroll = ScrollController();
   String _query = '';
   int? _openIndex;
-
-  /// false = every word, true = only words this learner has learned.
-  bool _mine = false;
-
-  @override
-  void didUpdateWidget(WordsTab old) {
-    super.didUpdateWidget(old);
-    if (old.topic != widget.topic) {
-      _openIndex = null;
-      _toTop();
-    }
-  }
+  bool _categories = false;
+  _Filter _filter = _Filter.all;
 
   /// New filter or search → show results from the top.
   void _toTop() {
@@ -52,26 +45,23 @@ class _WordsTabState extends State<WordsTab> {
     super.dispose();
   }
 
-  void _setMine(bool mine) {
-    if (mine == _mine) return;
+  void _setFilter(_Filter f) {
+    if (f == _filter) return;
     setState(() {
-      _mine = mine;
+      _filter = f;
       _openIndex = null;
     });
     _toTop();
   }
 
+  void _openTopic(Topic t) =>
+      Navigator.of(context)
+          .push(TopicScreen.route(t, sessionSize: widget.sessionSize));
+
   @override
   Widget build(BuildContext context) {
     final progress = ProgressScope.of(context);
-    final learned = progress.learnedWords;
-    final topicWords = widget.topic?.words.toSet();
-    final words = (_mine ? learned : vocabulary)
-        .where((w) => widget.topic == null || topicWords!.contains(w))
-        .where((w) => w.matches(_query))
-        .toList();
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
-
+    final learnedCount = progress.totalLearned;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -83,26 +73,57 @@ class _WordsTabState extends State<WordsTab> {
               Text('Words', style: AppText.display(28, color: AppColors.cream)),
               const SizedBox(height: 14),
               _ScopeSwitch(
-                mine: _mine,
-                allCount: vocabulary.length,
-                mineCount: learned.length,
-                onChanged: _setMine,
-              ),
-              const SizedBox(height: 12),
-              _SearchField(
-                controller: _search,
-                onChanged: (v) {
-                  setState(() {
-                    _query = v;
-                    _openIndex = null;
-                  });
-                  _toTop();
-                },
+                labels: const ['All words', 'Categories'],
+                index: _categories ? 1 : 0,
+                onChanged: (i) => setState(() {
+                  _categories = i == 1;
+                  _openIndex = null;
+                }),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: _categories
+                ? _Categories(
+                    key: const ValueKey('categories'),
+                    onOpen: _openTopic,
+                  )
+                : _allWords(progress, learnedCount),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _allWords(LearningProgress progress, int learnedCount) {
+    final source = switch (_filter) {
+      _Filter.all => vocabulary,
+      _Filter.learned => progress.learnedWords,
+      _Filter.toLearn => vocabulary.where((w) => !progress.isLearned(w)),
+    };
+    final words = source.where((w) => w.matches(_query)).toList();
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Column(
+      key: const ValueKey('all'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          child: _SearchField(
+            controller: _search,
+            onChanged: (v) {
+              setState(() {
+                _query = v;
+                _openIndex = null;
+              });
+              _toTop();
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           height: 38,
           child: ListView(
@@ -110,16 +131,20 @@ class _WordsTabState extends State<WordsTab> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               _TopicChip(
-                label: 'All',
-                selected: widget.topic == null,
-                onTap: () => widget.onTopicChanged(null),
+                label: 'All · ${vocabulary.length}',
+                selected: _filter == _Filter.all,
+                onTap: () => _setFilter(_Filter.all),
               ),
-              for (final t in Topic.values)
-                _TopicChip(
-                  label: t.english,
-                  selected: widget.topic == t,
-                  onTap: () => widget.onTopicChanged(t),
-                ),
+              _TopicChip(
+                label: 'Learned · $learnedCount',
+                selected: _filter == _Filter.learned,
+                onTap: () => _setFilter(_Filter.learned),
+              ),
+              _TopicChip(
+                label: 'To learn · ${vocabulary.length - learnedCount}',
+                selected: _filter == _Filter.toLearn,
+                onTap: () => _setFilter(_Filter.toLearn),
+              ),
             ],
           ),
         ),
@@ -128,7 +153,7 @@ class _WordsTabState extends State<WordsTab> {
           child: words.isEmpty
               ? _EmptyState(
                   query: _query,
-                  noneLearned: _mine && learned.isEmpty,
+                  noneLearned: _filter == _Filter.learned && learnedCount == 0,
                 )
               : ListView.separated(
                   controller: _scroll,
@@ -150,6 +175,125 @@ class _WordsTabState extends State<WordsTab> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// Career packs plus every topic, each with its progress.
+class _Categories extends StatelessWidget {
+  const _Categories({super.key, required this.onOpen});
+
+  final ValueChanged<Topic> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = ProgressScope.of(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return ListView(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, bottomInset + 24),
+      children: [
+        const SectionLabel('For your job'),
+        const SizedBox(height: 12),
+        for (final t in Topic.packs) ...[
+          PackCard(
+            topic: t,
+            learned: progress.learnedIn(t),
+            onTap: () => onOpen(t),
+          ),
+          const SizedBox(height: 10),
+        ],
+        const SizedBox(height: 18),
+        SectionLabel('Topics', trailing: '${Topic.general.length} categories'),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, c) {
+            const gap = 10.0;
+            final w = (c.maxWidth - gap) / 2;
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                for (final t in Topic.general)
+                  SizedBox(
+                    width: w,
+                    child: _CategoryTile(
+                      topic: t,
+                      learned: progress.learnedIn(t),
+                      onTap: () => onOpen(t),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.topic,
+    required this.learned,
+    required this.onTap,
+  });
+
+  final Topic topic;
+  final int learned;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = topic.wordCount;
+    return Pressable(
+      onTap: onTap,
+      semanticLabel: '${topic.english}, ${topic.german}. $learned of $total',
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.navy800.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.navyLine.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(topic.icon, size: 22, color: AppColors.mustard),
+            const SizedBox(height: 10),
+            Text(
+              topic.german,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.body(
+                14.5,
+                weight: FontWeight.w800,
+                color: AppColors.cream,
+              ),
+            ),
+            Text(
+              topic.english,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.body(12.5, color: AppColors.creamMuted),
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: LinearProgressIndicator(
+                value: total == 0 ? 0 : learned / total,
+                minHeight: 4,
+                color: AppColors.mustard,
+                backgroundColor: AppColors.cream.withValues(alpha: 0.08),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '$learned / $total words',
+              style: AppText.body(11.5, color: AppColors.creamMuted),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -325,19 +469,17 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// "All words · 3014 | My words · 25" segmented switch.
+/// Two-way segmented switch with a sliding cream highlight.
 class _ScopeSwitch extends StatelessWidget {
   const _ScopeSwitch({
-    required this.mine,
-    required this.allCount,
-    required this.mineCount,
+    required this.labels,
+    required this.index,
     required this.onChanged,
   });
 
-  final bool mine;
-  final int allCount;
-  final int mineCount;
-  final ValueChanged<bool> onChanged;
+  final List<String> labels;
+  final int index;
+  final ValueChanged<int> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -352,11 +494,13 @@ class _ScopeSwitch extends StatelessWidget {
         builder: (context, c) => Stack(
           children: [
             AnimatedAlign(
-              alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-              duration: const Duration(milliseconds: 260),
+              alignment: index == 0
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              duration: const Duration(milliseconds: 240),
               curve: Curves.easeOutCubic,
               child: Container(
-                width: c.maxWidth / 2,
+                width: c.maxWidth / labels.length,
                 decoration: BoxDecoration(
                   color: AppColors.cream,
                   borderRadius: BorderRadius.circular(11),
@@ -365,47 +509,34 @@ class _ScopeSwitch extends StatelessWidget {
             ),
             Row(
               children: [
-                _segment('All words', allCount, !mine, () => onChanged(false)),
-                _segment('My words', mineCount, mine, () => onChanged(true)),
+                for (var i = 0; i < labels.length; i++)
+                  Expanded(
+                    child: Semantics(
+                      button: true,
+                      selected: i == index,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onChanged(i),
+                        child: Center(
+                          child: Text(
+                            labels[i],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.body(
+                              14,
+                              weight: FontWeight.w800,
+                              color: i == index
+                                  ? AppColors.navy
+                                  : AppColors.cream,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _segment(String label, int count, bool selected, VoidCallback onTap) {
-    final color = selected ? AppColors.navy : AppColors.cream;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Center(
-            child: Text.rich(
-              TextSpan(
-                text: label,
-                style: AppText.body(14, weight: FontWeight.w800, color: color),
-                children: [
-                  TextSpan(
-                    text: '  $count',
-                    style: AppText.body(
-                      13,
-                      weight: FontWeight.w600,
-                      color: selected
-                          ? AppColors.navy700
-                          : AppColors.creamMuted,
-                    ),
-                  ),
-                ],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ),
       ),
     );

@@ -39,7 +39,7 @@ void main() {
     await settle(tester);
 
     // 1. Name — Continue stays disabled until a name is typed.
-    expect(find.text('1/4'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     expect(continueEnabled(tester), isFalse);
     await tester.enterText(find.byType(TextField), 'Anoop');
     await tester.pump();
@@ -68,7 +68,13 @@ void main() {
     await tester.pump();
     await tapContinue(tester);
 
-    // 5. Ready.
+    // 5. Word pop-ups — "A few" (3 a day) is pre-selected.
+    expect(find.text('Learn while you use your phone'), findsOneWidget);
+    await tester.tap(find.text('Lots'));
+    await tester.pump();
+    await tapContinue(tester);
+
+    // 6. Ready.
     await tester.pump(const Duration(milliseconds: 2400));
     expect(find.text('Alles klar, Anoop!'), findsOneWidget);
     expect(find.text('Work, Travel'), findsOneWidget);
@@ -77,6 +83,7 @@ void main() {
 
     await tester.tap(find.text('Start learning'));
     expect(result?.name, 'Anoop');
+    expect(result?.wordPopups, 5);
     expect(result?.goals, {LearningGoal.work, LearningGoal.travel});
     expect(result?.level, GermanLevel.a1);
     expect(result?.dailyGoal, DailyGoal.serious);
@@ -90,11 +97,11 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Mia');
     await tester.pump();
     await tapContinue(tester);
-    expect(find.text('2/4'), findsOneWidget);
+    expect(find.text('2/5'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
     await settle(tester);
-    expect(find.text('1/4'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     expect(find.text('Ich heiße Mia.'), findsOneWidget);
   });
 }

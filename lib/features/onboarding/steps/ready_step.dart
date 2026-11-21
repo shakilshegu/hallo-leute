@@ -117,7 +117,7 @@ class _ReadyStepState extends State<ReadyStep> with TickerProviderStateMixin {
             Reveal(
               animation: _interval(0.56, 0.8),
               child: Text(
-                "Your plan is ready. Let's cook up your first words!",
+                "Your plan is ready. Let's learn your first words!",
                 textAlign: TextAlign.center,
                 style: AppText.body(
                   15,

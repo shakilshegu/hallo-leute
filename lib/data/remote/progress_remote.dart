@@ -101,6 +101,7 @@ class SupabaseProgressRemote implements ProgressRemote {
           'new_words': e.value.newWords,
           'reviews': e.value.reviews,
           'again': e.value.again,
+          'study_seconds': e.value.seconds,
           'updated_at': now,
         },
     ]);
@@ -163,6 +164,7 @@ class SupabaseProgressRemote implements ProgressRemote {
             newWords: r['new_words'] as int,
             reviews: r['reviews'] as int,
             again: r['again'] as int,
+            seconds: r['study_seconds'] as int? ?? 0,
           ),
       },
       profile: profileRow == null

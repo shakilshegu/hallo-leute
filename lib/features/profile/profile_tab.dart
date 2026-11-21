@@ -9,7 +9,9 @@ import '../../theme/app_text.dart';
 import '../onboarding/onboarding_data.dart';
 import '../../services/reminders.dart';
 import '../share/share_progress.dart';
+import '../home/home_content.dart';
 import 'account_card.dart';
+import 'edit_profile_sheet.dart';
 import 'reminder_card.dart';
 
 /// Who's learning and what their plan is.
@@ -88,7 +90,19 @@ class ProfileTab extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 4),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => showEditProfile(context, profile),
+                icon: const Icon(Icons.edit_outlined, size: 17),
+                label: const Text('Edit profile'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.creamMuted,
+                  textStyle: AppText.body(13.5, weight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -139,6 +153,8 @@ class ProfileTab extends StatelessWidget {
             ],
             if (reminders != null) ...[
               ReminderCard(reminders: reminders),
+              const SizedBox(height: 12),
+              PopupsCard(reminders: reminders, wordsFor: wordsForDay),
               const SizedBox(height: 16),
             ],
             _InfoCard(

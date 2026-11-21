@@ -71,10 +71,14 @@ class OnboardingData {
   GermanLevel? level;
   DailyGoal dailyGoal = DailyGoal.regular;
 
+  /// Word pop-ups per day chosen during setup (0 = off).
+  int wordPopups = 3;
+
   Map<String, dynamic> toJson() => {
     'name': name,
     'goals': [for (final g in goals) g.name],
     'level': level?.name,
     'dailyGoal': dailyGoal.name,
+    'wordPopups': wordPopups,
   };
 }

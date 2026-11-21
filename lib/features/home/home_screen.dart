@@ -50,7 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   int _tab = _home;
-  Topic? _wordsTopic;
 
   /// Tabs are built on first visit, then kept alive.
   final _visited = <int>{_home};
@@ -81,10 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenProfile: () => _select(_profile),
       ),
       _practice => PracticeTab(dailyGoal: widget.profile.dailyGoal.words),
-      _words => WordsTab(
-        topic: _wordsTopic,
-        onTopicChanged: (t) => setState(() => _wordsTopic = t),
-      ),
+      _words => WordsTab(sessionSize: widget.profile.dailyGoal.words),
       _ => ProfileTab(profile: widget.profile),
     };
 

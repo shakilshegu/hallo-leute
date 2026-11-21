@@ -154,22 +154,39 @@ class _Back extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Like the sketch: German word, its meaning, then an example.
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  german,
-                  style: AppText.body(
-                    15,
-                    weight: FontWeight.w800,
-                    color: AppColors.navy700,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        if (word.article.isNotEmpty)
+                          TextSpan(
+                            text: '${word.article} ',
+                            style: AppText.display(
+                              32,
+                              color: AppColors.mustardDeep,
+                            ),
+                          ),
+                        TextSpan(
+                          text: word.word,
+                          style: AppText.display(32, color: AppColors.navy),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-              SpeakButton(text: german, size: 36, onLight: true),
+              const SizedBox(width: 8),
+              SpeakButton(text: german, size: 40, onLight: true),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -177,10 +194,11 @@ class _Back extends StatelessWidget {
                 children: [
                   Text(
                     word.meaning,
-                    style: AppText.display(
-                      30,
-                      color: AppColors.navy,
-                      height: 1.15,
+                    style: AppText.body(
+                      20,
+                      weight: FontWeight.w800,
+                      color: AppColors.navy700,
+                      height: 1.25,
                     ),
                   ),
                   if (word.plural.isNotEmpty) ...[

@@ -62,7 +62,7 @@ data, or any advertising ID.
 
 - **In the app:** Profile → **Delete account**. This permanently deletes your
   account and all your learning data from our servers and your phone.
-- **Without the app:** email **[CONTACT EMAIL]** from your account's email
+- **Without the app:** email **support@halloleute.app** from your account's email
   address and we will delete it within 30 days.
 - Uninstalling the app removes the copy on your phone. A guest account's data
   stays on our servers until it is deleted as described above.
@@ -86,4 +86,4 @@ date above, and mention significant changes in the app.
 
 ## Contact
 
-**[DEVELOPER OR COMPANY NAME]** · **[CONTACT EMAIL]**
+**[DEVELOPER OR COMPANY NAME]** · **support@halloleute.app**

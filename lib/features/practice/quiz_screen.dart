@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
 import '../../services/speech.dart';
+import '../../shared/study_timer.dart';
 import '../../shared/widgets/app_background.dart';
 import '../../shared/widgets/fill_or_scroll.dart';
 import '../../shared/widgets/primary_button.dart';
@@ -67,7 +68,8 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> {
+class _QuizScreenState extends State<QuizScreen>
+    with WidgetsBindingObserver, StudyTimer {
   int _index = 0;
   int _correct = 0;
 

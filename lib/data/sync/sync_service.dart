@@ -82,6 +82,8 @@ class SyncService {
     final seq = ++_seq;
     if (c.profile) {
       _profile = seq;
+    } else if (c.event == null) {
+      _days[LearningProgress.dayKey(c.day!)] = seq; // study time only
     } else {
       final e = c.event!;
       _words[e.wordKey] = seq;

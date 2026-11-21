@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
+import '../../shared/study_timer.dart';
 import '../../shared/widgets/app_background.dart';
 import '../../shared/widgets/fill_or_scroll.dart';
 import '../../shared/widgets/primary_button.dart';
@@ -54,7 +55,7 @@ class LessonScreen extends StatefulWidget {
 }
 
 class _LessonScreenState extends State<LessonScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver, StudyTimer {
   late final List<GermanWord> _queue = [...widget.words];
   final _missed = <GermanWord>{};
   int _learned = 0;

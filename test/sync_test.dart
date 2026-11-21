@@ -229,4 +229,12 @@ void main() {
     expect(remote.profile?.name, 'Late');
     expect(sync.hasPending, isFalse);
   });
+
+  test('study time is uploaded with the day totals', () async {
+    final (p, sync, remote, _) = await setup();
+    p.addStudyTime(const Duration(minutes: 9));
+    await sync.flush();
+    expect(remote.days[DateTime(2026, 11, 17)]!.seconds, 9 * 60);
+    expect(remote.answers, isEmpty);
+  });
 }

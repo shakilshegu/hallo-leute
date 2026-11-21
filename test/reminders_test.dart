@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hallo_leute/data/vocabulary.dart';
 import 'package:hallo_leute/services/reminders.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(Vocabulary.load);
+
   const on = ReminderSettings(enabled: true, hour: 19, minute: 30);
 
   test('off means nothing is scheduled', () {
@@ -78,5 +82,55 @@ void main() {
     expect(s.hour, 19);
     expect(s.minute, 30);
     expect(s.offered, isTrue);
+  });
+
+  group('word pop-ups', () {
+    List<GermanWord> words(DateTime d) =>
+        vocabulary.skip(d.day * 10).take(10).toList();
+
+    test('3 a day for a week, at 10:00, 14:00 and 18:00', () {
+      final plans = planWordPopups(
+        now: DateTime(2026, 11, 17, 8),
+        perDay: 3,
+        wordsFor: words,
+        isLearned: (_) => false,
+      );
+      expect(plans, hasLength(21));
+      expect(plans.take(3).map((p) => p.at.hour), [10, 14, 18]);
+      expect(plans.map((p) => p.id).toSet(), hasLength(21));
+    });
+
+    test('skips times already passed today', () {
+      final plans = planWordPopups(
+        now: DateTime(2026, 11, 17, 15),
+        perDay: 3,
+        wordsFor: words,
+        isLearned: (_) => false,
+      );
+      expect(plans.first.at, DateTime(2026, 11, 17, 18));
+    });
+
+    test('prefers words not learned yet; off means none', () {
+      final day = DateTime(2026, 11, 17, 8);
+      final learned = words(day).take(9).toSet();
+      final plans = planWordPopups(
+        now: day,
+        perDay: 3,
+        wordsFor: words,
+        isLearned: learned.contains,
+      );
+      expect(plans.where((p) => p.at.day == 17).map((p) => p.word).toSet(), {
+        words(day).last,
+      });
+      expect(
+        planWordPopups(
+          now: day,
+          perDay: 0,
+          wordsFor: words,
+          isLearned: (_) => false,
+        ),
+        isEmpty,
+      );
+    });
   });
 }

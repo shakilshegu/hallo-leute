@@ -95,6 +95,26 @@ void main() {
     });
   });
 
+  group('study time', () {
+    test('adds up per day, capped per session, ignores tiny bits', () {
+      final p = LearningProgress(clock: clock);
+      p.addStudyTime(const Duration(minutes: 12));
+      p.addStudyTime(const Duration(hours: 5)); // capped at 1 hour
+      p.addStudyTime(const Duration(seconds: 1)); // ignored
+      expect(p.secondsOn(day(16)), 12 * 60 + 3600);
+      expect(p.secondsOn(day(15)), 0);
+    });
+
+    test('study time survives a restart', () async {
+      final store = MemoryStore();
+      final p = await LearningProgress.load(store, clock: clock);
+      p.addStudyTime(const Duration(minutes: 7));
+      await pumpEventQueue();
+      final again = await LearningProgress.load(store, clock: clock);
+      expect(again.secondsOn(day(16)), 7 * 60);
+    });
+  });
+
   group('saved on the device', () {
     test('progress survives a restart', () async {
       final store = MemoryStore();
@@ -191,7 +211,7 @@ void main() {
       expect(find.text('0/2'), findsOneWidget);
     });
 
-    testWidgets('My words lists learned words with their status', (
+    testWidgets('Learned filter lists learned words with their status', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(400 * 3, 900 * 3);
@@ -214,7 +234,7 @@ void main() {
       await settle(tester, 1600);
       await tester.tap(find.bySemanticsLabel('Words'));
       await settle(tester, 600);
-      await tester.tap(find.text('My words  1', findRichText: true));
+      await tester.tap(find.text('Learned · 1'));
       await settle(tester, 400);
 
       expect(find.text('der Bahnhof'), findsOneWidget);

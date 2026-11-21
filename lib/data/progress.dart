@@ -90,21 +90,35 @@ class WordProgress {
 
 /// Answers given on one day.
 class DayActivity {
-  DayActivity({this.newWords = 0, this.reviews = 0, this.again = 0});
+  DayActivity({
+    this.newWords = 0,
+    this.reviews = 0,
+    this.again = 0,
+    this.seconds = 0,
+  });
 
   factory DayActivity.fromJson(Map<String, dynamic> j) => DayActivity(
     newWords: j['n'] as int? ?? 0,
     reviews: j['r'] as int? ?? 0,
     again: j['a'] as int? ?? 0,
+    seconds: j['s'] as int? ?? 0,
   );
 
   int newWords;
   int reviews;
   int again;
 
+  /// Time spent in lessons and practice that day.
+  int seconds;
+
   int get answers => newWords + reviews + again;
 
-  Map<String, dynamic> toJson() => {'n': newWords, 'r': reviews, 'a': again};
+  Map<String, dynamic> toJson() => {
+    'n': newWords,
+    'r': reviews,
+    'a': again,
+    if (seconds > 0) 's': seconds,
+  };
 }
 
 /// Ways of practising a word.
@@ -179,6 +193,9 @@ class ProgressChange {
   const ProgressChange.answer(AnswerEvent this.event, DateTime this.day)
     : profile = false;
   const ProgressChange.profile() : event = null, day = null, profile = true;
+
+  /// Only the day's totals changed (e.g. study time).
+  const ProgressChange.day(DateTime this.day) : event = null, profile = false;
 
   final AnswerEvent? event;
   final DateTime? day;
@@ -278,6 +295,7 @@ class LearningProgress extends ChangeNotifier {
 
   Future<void> saveProfile(OnboardingData profile) async {
     await store?.write(profileKey, jsonEncode(profile.toJson()));
+    notifyListeners();
     if (!_changes.isClosed) _changes.add(const ProgressChange.profile());
   }
 
@@ -426,7 +444,8 @@ class LearningProgress extends ChangeNotifier {
       d
         ..newWords += o.newWords
         ..reviews += o.reviews
-        ..again += o.again;
+        ..again += o.again
+        ..seconds += o.seconds;
     });
     notifyListeners();
     _save();
@@ -434,6 +453,22 @@ class LearningProgress extends ChangeNotifier {
 
   /// Day key in storage format (yyyy-mm-dd).
   static String dayKey(DateTime d) => WordProgress._fmt(d);
+
+  /// Adds time spent learning today (lessons, practice). Sessions are capped
+  /// at an hour so a forgotten open screen doesn't inflate the numbers.
+  void addStudyTime(Duration time) {
+    final seconds = time.inSeconds.clamp(0, 3600);
+    if (seconds < 3) return;
+    final now = today;
+    activity.putIfAbsent(now, DayActivity.new).seconds += seconds;
+    notifyListeners();
+    _save();
+    if (!_changes.isClosed) _changes.add(ProgressChange.day(now));
+  }
+
+  int secondsOn(DateTime day) => activity[_day(day)]?.seconds ?? 0;
+
+  int wordsLearnedOn(DateTime day) => activity[_day(day)]?.newWords ?? 0;
 
   /// Shortcut used by tests and previews.
   void markLearned(GermanWord w) {

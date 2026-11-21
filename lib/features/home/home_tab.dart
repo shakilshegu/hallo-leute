@@ -9,8 +9,10 @@ import '../lesson/lesson_screen.dart';
 import '../onboarding/onboarding_data.dart';
 import 'home_content.dart';
 import 'widgets/home_cards.dart';
+import 'widgets/week_section.dart';
+import 'widgets/words_of_day.dart';
 
-/// Daily hub: greeting, today's goal, word of the day, week, topics.
+/// Daily hub: greeting, today's goal, words of the day, week, topics.
 class HomeTab extends StatelessWidget {
   const HomeTab({
     super.key,
@@ -34,6 +36,7 @@ class HomeTab extends StatelessWidget {
     final progress = ProgressScope.of(context);
     final streak = progress.streak;
     final dueCount = progress.dueCount;
+    final todaysWords = wordsForDay(today);
 
     return ListView(
       padding: EdgeInsets.fromLTRB(0, 20, 0, bottomInset + 24),
@@ -87,31 +90,21 @@ class HomeTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            _padded(const SectionLabel('Word of the day')),
+            _padded(
+              SectionLabel(
+                'Words of the day',
+                trailing:
+                    '${todaysWords.where(progress.isLearned).length}'
+                    '/${todaysWords.length} known',
+              ),
+            ),
             const SizedBox(height: 12),
-            _padded(WordOfDayCard(word: wordForDay(today))),
+            WordsOfDay(words: todaysWords),
             const SizedBox(height: 28),
             _padded(SectionLabel('This week', trailing: '$streak-day streak')),
             const SizedBox(height: 14),
             _padded(
-              WeekStrip(today: today, practised: progress.practisedThisWeek),
-            ),
-            const SizedBox(height: 32),
-            _padded(const SectionLabel('For your job')),
-            const SizedBox(height: 12),
-            _padded(
-              Column(
-                children: [
-                  for (final t in Topic.packs) ...[
-                    PackCard(
-                      topic: t,
-                      learned: progress.learnedIn(t),
-                      onTap: () => onOpenTopic(t),
-                    ),
-                    if (t != Topic.packs.last) const SizedBox(height: 10),
-                  ],
-                ],
-              ),
+              WeekSection(today: today, name: name, dailyGoal: daily.words),
             ),
             const SizedBox(height: 28),
             _padded(const SectionLabel('Topics')),

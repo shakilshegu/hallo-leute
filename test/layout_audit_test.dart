@@ -97,6 +97,10 @@ void main() {
         for (final tab in ['Practice', 'Words', 'Profile', 'Home']) {
           await tester.tap(find.bySemanticsLabel(tab));
           await settle(tester, 800);
+          if (tab == 'Words') {
+            await tester.tap(find.text('Categories'));
+            await settle(tester, 500);
+          }
         }
       });
 

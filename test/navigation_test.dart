@@ -51,10 +51,7 @@ void main() {
 
     await tester.tap(navItem('Words'));
     await settle(tester);
-    expect(
-      find.text('All words  ${vocabulary.length}', findRichText: true),
-      findsOneWidget,
-    );
+    expect(find.text('All · ${vocabulary.length}'), findsOneWidget);
 
     await tester.tap(navItem('Profile'));
     await settle(tester);
@@ -82,10 +79,16 @@ void main() {
     expect(find.textContaining('new words'), findsOneWidget);
   });
 
-  testWidgets('career packs open from Home', (tester) async {
+  testWidgets('Words → Categories shows job packs and topics', (tester) async {
     await pumpHome(tester);
-    await tester.ensureVisible(find.text('Pflege'));
-    await tester.tap(find.text('Pflege'));
+    expect(find.text('FOR YOUR JOB'), findsNothing); // moved off Home
+    await tester.tap(navItem('Words'));
+    await settle(tester);
+    await tester.tap(find.text('Categories'));
+    await settle(tester);
+    expect(find.text('FOR YOUR JOB'), findsOneWidget);
+    expect(find.text('Grundlagen').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Pflege').hitTestable());
     await settle(tester);
     expect(find.text('CAREER PACK'), findsOneWidget);
     expect(find.text('der Patient'), findsOneWidget);

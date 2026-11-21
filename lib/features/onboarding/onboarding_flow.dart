@@ -7,12 +7,15 @@ import '../../shared/widgets/primary_button.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../../data/progress.dart';
+import '../../services/reminders.dart';
+import '../home/home_content.dart';
 import '../home/home_screen.dart';
 import 'onboarding_data.dart';
 import 'steps/daily_goal_step.dart';
 import 'steps/goal_step.dart';
 import 'steps/level_step.dart';
 import 'steps/name_step.dart';
+import 'steps/popups_step.dart';
 import 'steps/ready_step.dart';
 
 /// Name → goals → level → daily goal → "Alles klar!".
@@ -51,8 +54,9 @@ class OnboardingFlow extends StatefulWidget {
 }
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
-  static const _questionCount = 4;
-  static const _readyIndex = 4;
+  static const _questionCount = 5;
+  static const _popupsIndex = 4;
+  static const _readyIndex = 5;
 
   final _pages = PageController();
   final _nameController = TextEditingController();
@@ -94,9 +98,25 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     if (!_canContinue) return;
     if (_isReady) {
       _finish();
-    } else {
-      _goTo(_step + 1);
+      return;
     }
+    if (_step == _popupsIndex) _applyPopups();
+    _goTo(_step + 1);
+  }
+
+  /// Asks for notification permission (only if pop-ups are on) and
+  /// schedules the chosen number of word pop-ups.
+  Future<void> _applyPopups() async {
+    final reminders = RemindersScope.maybeOf(context);
+    if (reminders == null) return;
+    final progress = ProgressScope.of(context);
+    var perDay = _data.wordPopups;
+    if (perDay > 0 && !await reminders.requestPermission()) perDay = 0;
+    await reminders.setPopups(
+      perDay,
+      wordsFor: wordsForDay,
+      isLearned: progress.isLearned,
+    );
   }
 
   void _back() {
@@ -140,6 +160,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       DailyGoalStep(
         selected: _data.dailyGoal,
         onSelect: (d) => setState(() => _data.dailyGoal = d),
+      ),
+      PopupsStep(
+        selected: _data.wordPopups,
+        onSelect: (n) => setState(() => _data.wordPopups = n),
       ),
       ReadyStep(data: _data),
     ];
