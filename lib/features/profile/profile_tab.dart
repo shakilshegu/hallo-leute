@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../app_info.dart';
 import '../../data/auth/auth_service.dart';
 import '../../data/progress.dart';
+import '../../data/remote/feedback_remote.dart';
 import '../../data/vocabulary.dart';
 import '../../shared/widgets/reveal.dart';
 import '../../theme/app_colors.dart';
@@ -11,6 +13,7 @@ import '../../services/reminders.dart';
 import '../share/share_progress.dart';
 import '../home/home_content.dart';
 import 'account_card.dart';
+import 'feedback_card.dart';
 import 'edit_profile_sheet.dart';
 import 'reminder_card.dart';
 
@@ -157,6 +160,15 @@ class ProfileTab extends StatelessWidget {
               PopupsCard(reminders: reminders, wordsFor: wordsForDay),
               const SizedBox(height: 16),
             ],
+            if (auth != null) ...[
+              FeedbackCard(
+                remote: SupabaseFeedbackRemote(
+                  auth.client,
+                  ensureSession: auth.ensureGuest,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             _InfoCard(
               rows: [
                 (
@@ -185,7 +197,7 @@ class ProfileTab extends StatelessWidget {
             const _Credits(),
             const SizedBox(height: 28),
             Text(
-              'Hallo Leute · v1.0.0',
+              'Hallo Leute · v${AppInfo.version}',
               textAlign: TextAlign.center,
               style: AppText.body(12.5, color: AppColors.creamMuted),
             ),
