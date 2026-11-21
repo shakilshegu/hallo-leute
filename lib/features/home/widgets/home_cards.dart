@@ -224,16 +224,77 @@ class ReviewCard extends StatelessWidget {
   final VoidCallback onStart;
 
   @override
+  Widget build(BuildContext context) => _ReviewTile(
+    title: 'Review',
+    body: due == 1
+        ? '1 word is ready to refresh'
+        : '$due words are ready to refresh',
+    semanticLabel: 'Review $due words',
+    icon: Icons.replay_rounded,
+    highlighted: true,
+    onTap: onStart,
+  );
+}
+
+/// Flashcards of learned words on demand, weakest first. Early answers don't
+/// change the review schedule (see LearningProgress.recordAnswer).
+class ReviewAnytimeCard extends StatelessWidget {
+  const ReviewAnytimeCard({
+    super.key,
+    required this.learned,
+    required this.onStart,
+  });
+
+  final int learned;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) => _ReviewTile(
+    title: 'Review my words',
+    body:
+        'Flip through the $learned ${learned == 1 ? 'word' : 'words'} '
+        'you learned. Weakest first.',
+    semanticLabel: 'Review my $learned learned words',
+    icon: Icons.style_outlined,
+    highlighted: false,
+    onTap: onStart,
+  );
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile({
+    required this.title,
+    required this.body,
+    required this.semanticLabel,
+    required this.icon,
+    required this.highlighted,
+    required this.onTap,
+  });
+
+  final String title;
+  final String body;
+  final String semanticLabel;
+  final IconData icon;
+
+  /// Mustard border for due reviews; quieter for optional ones.
+  final bool highlighted;
+  final VoidCallback onTap;
+
+  @override
   Widget build(BuildContext context) {
     return Pressable(
-      onTap: onStart,
-      semanticLabel: 'Review $due words',
+      onTap: onTap,
+      semanticLabel: semanticLabel,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
           color: AppColors.navy800.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.mustard.withValues(alpha: 0.45)),
+          border: Border.all(
+            color: highlighted
+                ? AppColors.mustard.withValues(alpha: 0.45)
+                : AppColors.navyLine.withValues(alpha: 0.5),
+          ),
         ),
         child: Row(
           children: [
@@ -244,11 +305,7 @@ class ReviewCard extends StatelessWidget {
                 color: AppColors.mustard.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(13),
               ),
-              child: const Icon(
-                Icons.replay_rounded,
-                size: 22,
-                color: AppColors.mustard,
-              ),
+              child: Icon(icon, size: 22, color: AppColors.mustard),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -256,7 +313,7 @@ class ReviewCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Review',
+                    title,
                     style: AppText.body(
                       15.5,
                       weight: FontWeight.w800,
@@ -264,9 +321,7 @@ class ReviewCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    due == 1
-                        ? '1 word is ready to refresh'
-                        : '$due words are ready to refresh',
+                    body,
                     style: AppText.body(13.5, color: AppColors.creamMuted),
                   ),
                 ],

@@ -332,8 +332,13 @@ class LearningProgress extends ChangeNotifier {
       } else {
         day.reviews += 1;
       }
-      p.box = (p.box + 1).clamp(1, masteredBox);
-      p.due = _addDays(now, reviewIntervals[p.box]);
+      // Reviewing before the word is due ("Review my words") must not push
+      // it up the ladder: flipping it five times today isn't mastery.
+      final early = wasLearned && p.due.isAfter(now);
+      if (!early) {
+        p.box = (p.box + 1).clamp(1, masteredBox);
+        p.due = _addDays(now, reviewIntervals[p.box]);
+      }
     } else {
       p.timesAgain += 1;
       day.again += 1;
@@ -506,6 +511,27 @@ class LearningProgress extends ChangeNotifier {
   }
 
   int get dueCount => dueForReview().length;
+
+  /// How much a learned word needs practice: missed often, low on the
+  /// ladder or overdue scores higher. Shared by quizzes and reviews.
+  int weaknessOf(GermanWord w) {
+    final p = progressOf(w)!;
+    final overdue = today.difference(p.due).inDays;
+    return p.timesAgain * 3 - p.box * 2 + overdue.clamp(0, 30);
+  }
+
+  /// Learned words for an on-demand review, weakest first (ties: the one
+  /// due soonest). Optionally only one [topic].
+  List<GermanWord> reviewAnytime({Topic? topic, int limit = 20}) {
+    final learned = (topic?.words ?? vocabulary).where(isLearned).toList()
+      ..sort((a, b) {
+        final byWeakness = weaknessOf(b).compareTo(weaknessOf(a));
+        return byWeakness != 0
+            ? byWeakness
+            : progressOf(a)!.due.compareTo(progressOf(b)!.due);
+      });
+    return learned.take(limit).toList();
+  }
 
   /// The next [count] words not learned yet, most useful first.
   /// Words answered "Again" but never learned come back here first.

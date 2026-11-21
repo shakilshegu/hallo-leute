@@ -67,15 +67,15 @@ class HomeTab extends StatelessWidget {
                 },
               ),
             ),
-            // Always present (keeps the staggered entrance stable); it only
-            // takes space when words are due for review.
+            // Always present (keeps the staggered entrance stable). Due
+            // words get the Review card; otherwise learned words can be
+            // reviewed any time.
             _padded(
               AnimatedSize(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutCubic,
-                child: dueCount == 0
-                    ? const SizedBox(width: double.infinity)
-                    : Padding(
+                child: dueCount > 0
+                    ? Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: ReviewCard(
                           due: dueCount,
@@ -86,7 +86,21 @@ class HomeTab extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ),
+                      )
+                    : progress.totalLearned > 0
+                    ? Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: ReviewAnytimeCard(
+                          learned: progress.totalLearned,
+                          onStart: () => Navigator.of(context).push(
+                            LessonScreen.route(
+                              progress.reviewAnytime(),
+                              review: true,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
             ),
             const SizedBox(height: 28),
