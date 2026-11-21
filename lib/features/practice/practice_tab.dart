@@ -36,6 +36,9 @@ class _PracticeTabState extends State<PracticeTab> {
     final due = progress.dueCount;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final newWords = progress.nextNewWords(widget.dailyGoal, topic: _topic);
+    final learnedHere = (_topic?.words ?? vocabulary)
+        .where(progress.isLearned)
+        .length;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(0, 20, 0, bottomInset + 24),
@@ -86,6 +89,20 @@ class _PracticeTabState extends State<PracticeTab> {
                   onStart: () => Navigator.of(context).push(
                     LessonScreen.route(
                       progress.dueForReview(limit: 20),
+                      review: true,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (learnedHere > 0) ...[
+              _pad(
+                ReviewAnytimeCard(
+                  learned: learnedHere,
+                  onStart: () => Navigator.of(context).push(
+                    LessonScreen.route(
+                      progress.reviewAnytime(topic: _topic),
                       review: true,
                     ),
                   ),
