@@ -66,7 +66,7 @@ who tap "Continue with email" never get their code.
 
 ---
 
-## 2. Google sign-in
+## 2. Google sign-in ✅
 
 **Why:** one tap, and almost every Android user in India already has a Google
 account.
@@ -211,7 +211,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 
 - [x] 0 · Domain: halloleute.app
 - [x] 1 · Resend switched to mail.halloleute.app, Supabase sender + templates updated, code arrives
-- [ ] 2 · Google OAuth clients made, Supabase Google provider on, `env.json` updated, works
+- [x] 2 · Google OAuth clients made, Supabase Google provider on, `env.json` updated, works
 - [ ] 3 · Sentry project made, DSN in `env.json`, Claude integrated it
 - [ ] 4 · Review sheet exported, reviewed, fixes applied
 - [ ] 5.1 · Privacy policy and delete-account page live on your domain
