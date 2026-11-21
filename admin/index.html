@@ -131,6 +131,12 @@
     </h2>
     <div class="card scroll"><table id="learners"></table></div>
 
+    <h2 style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <span>Feedback</span>
+      <span class="muted" id="feedbackSummary" style="font-size:14px"></span>
+    </h2>
+    <div class="card scroll"><table id="feedback"></table></div>
+
     <h2>Hardest words</h2>
     <div class="card scroll"><table id="hardest"></table></div>
   </section>
@@ -189,14 +195,37 @@
   async function signOut() { await db.auth.signOut(); show('login'); }
 
   async function loadAll() {
-    const [o, d, l, h, m] = await Promise.all([
+    const [o, d, l, h, m, f] = await Promise.all([
       db.rpc('admin_overview'), db.rpc('admin_daily', { days: 30 }),
       db.rpc('admin_learners'), db.rpc('admin_hardest', { lim: 30 }), db.rpc('admin_modes'),
+      db.rpc('admin_feedback'),
     ]);
-    const err = [o, d, l, h, m].find(r => r.error);
+    const err = [o, d, l, h, m, f].find(r => r.error);
     if (err) { alert(err.error.message); return; }
     renderKpis(o.data); renderDaily(d.data); learners = l.data; renderLearners();
-    renderHardest(h.data); renderModes(m.data);
+    renderHardest(h.data); renderModes(m.data); renderFeedback(f.data);
+  }
+
+  function renderFeedback(rows) {
+    if (!rows.length) {
+      $('feedbackSummary').textContent = '';
+      $('feedback').innerHTML = '<tr><td class="muted">No feedback yet.</td></tr>';
+      return;
+    }
+    const avg = rows.reduce((sum, r) => sum + r.rating, 0) / rows.length;
+    $('feedbackSummary').textContent =
+      `★ ${avg.toFixed(1)} · ${rows.length} ${rows.length === 1 ? 'message' : 'messages'}`;
+    $('feedback').innerHTML = `<tr><th>Date</th><th>Stars</th><th>What could be better</th>
+      <th>What they like</th><th>Learner</th></tr>` +
+      rows.map(r => {
+        const known = learners.some(x => x.user_id === r.user_id);
+        return `<tr${known ? ` class="click" onclick="openLearner('${r.user_id}')"` : ''}>
+          <td>${fmtDate(r.created_at)}</td>
+          <td style="color:var(--mustard);white-space:nowrap">${'★'.repeat(r.rating)}<span class="muted">${'★'.repeat(5 - r.rating)}</span></td>
+          <td>${esc(r.improve || '—')}</td><td>${esc(r.likes || '—')}</td>
+          <td><b>${esc(r.name || 'Unnamed')}</b> ${r.is_guest ? '<span class="tag guest">Guest</span>' : ''}
+            <div class="muted">${esc(r.email || '')}</div></td></tr>`;
+      }).join('');
   }
 
   function renderKpis(k) {
