@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app_info.dart';
+
 import '../../data/auth/auth_service.dart';
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
@@ -185,7 +187,7 @@ class ProfileTab extends StatelessWidget {
             const _Credits(),
             const SizedBox(height: 28),
             Text(
-              'Hallo Leute · v1.0.0',
+              'Hallo Leute · v${AppInfo.version}',
               textAlign: TextAlign.center,
               style: AppText.body(12.5, color: AppColors.creamMuted),
             ),
