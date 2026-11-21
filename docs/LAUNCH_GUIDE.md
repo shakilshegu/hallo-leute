@@ -20,11 +20,11 @@ Steps 1–4 take about a week; step 5 includes Google's mandatory 14-day test.
 
 ---
 
-## 1. Email sender (SMTP): switch to halloleute.app
+## 1. Email sender (SMTP) ✅
 
-Already working with the earlier domain (mail.poppylo.com, tested end to end on
-18 Nov 2026). To switch: add `mail.halloleute.app` in Resend, verify its DNS,
-then change the sender address and email subjects in Supabase. Steps below.
+Done (21 Nov 2026): Resend sends from `no-reply@mail.halloleute.app`, Supabase
+SMTP and templates updated, "Continue with email" codes arrive. Steps kept below
+for reference.
 
 ## 1. Email sender (SMTP), reference
 
@@ -210,7 +210,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 ## Checklist
 
 - [x] 0 · Domain: halloleute.app
-- [ ] 1 · Resend switched to mail.halloleute.app, Supabase sender + templates updated, code arrives
+- [x] 1 · Resend switched to mail.halloleute.app, Supabase sender + templates updated, code arrives
 - [ ] 2 · Google OAuth clients made, Supabase Google provider on, `env.json` updated, works
 - [ ] 3 · Sentry project made, DSN in `env.json`, Claude integrated it
 - [ ] 4 · Review sheet exported, reviewed, fixes applied
