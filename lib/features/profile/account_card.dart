@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/auth/auth_service.dart';
+import '../../shared/widgets/google_logo.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../landing/landing_screen.dart';
@@ -79,7 +80,7 @@ class _Guest extends StatelessWidget {
         if (auth.canUseGoogle) ...[
           _AccountButton(
             label: 'Continue with Google',
-            icon: Icons.g_mobiledata_rounded,
+            leading: const _GoogleBadge(),
             filled: true,
             onPressed: () => _google(context),
           ),
@@ -109,8 +110,11 @@ class _SignedIn extends StatelessWidget {
 
   final AuthService auth;
 
-  void _restart(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
+  /// Back to the landing screen. Takes the navigator, not a context: once
+  /// signed out this card is replaced by the guest card, so its context is
+  /// no longer mounted.
+  void _restart(NavigatorState navigator) {
+    navigator.pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LandingScreen()),
       (_) => false,
     );
@@ -126,11 +130,15 @@ class _SignedIn extends StatelessWidget {
       action: 'Sign out',
     );
     if (!ok || !context.mounted) return;
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
     try {
       await auth.signOut();
-      if (context.mounted) _restart(context);
+      _restart(navigator);
     } on Object catch (e) {
-      if (context.mounted) _toast(context, _friendly(e));
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(_friendly(e))));
     }
   }
 
@@ -145,11 +153,15 @@ class _SignedIn extends StatelessWidget {
       destructive: true,
     );
     if (!ok || !context.mounted) return;
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
     try {
       await auth.deleteAccount();
-      if (context.mounted) _restart(context);
+      _restart(navigator);
     } on Object catch (e) {
-      if (context.mounted) _toast(context, _friendly(e));
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(_friendly(e))));
     }
   }
 
@@ -210,10 +222,129 @@ class _SignedIn extends StatelessWidget {
 }
 
 /// Email → 6-digit code → done.
-class _EmailSheet extends StatefulWidget {
-  const _EmailSheet({required this.auth});
+/// "Welcome back" sheet for the landing screen: Google or email code.
+/// Returns true once signed in.
+Future<bool> showSignInSheet(BuildContext context, AuthService auth) async {
+  final signedIn = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.navy,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (_) => _SignInSheet(auth: auth),
+  );
+  return signedIn ?? false;
+}
+
+class _SignInSheet extends StatefulWidget {
+  const _SignInSheet({required this.auth});
 
   final AuthService auth;
+
+  @override
+  State<_SignInSheet> createState() => _SignInSheetState();
+}
+
+class _SignInSheetState extends State<_SignInSheet> {
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _google() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final outcome = await widget.auth.continueWithGoogle();
+      if (!mounted) return;
+      if (outcome != SignInOutcome.cancelled) Navigator.of(context).pop(true);
+    } on Object catch (e) {
+      if (mounted) setState(() => _error = _friendly(e));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _email() async {
+    final outcome = await showModalBottomSheet<SignInOutcome>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.navy,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => _EmailSheet(auth: widget.auth, toast: false),
+    );
+    if (outcome != null && mounted) Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = widget.auth;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.cream.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Welcome back',
+              style: AppText.display(24, color: AppColors.cream),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Sign in to pick up where you left off.',
+              style: AppText.body(14.5, color: AppColors.creamMuted),
+            ),
+            const SizedBox(height: 20),
+            if (auth.canUseGoogle) ...[
+              _AccountButton(
+                label: _busy ? 'Please wait…' : 'Continue with Google',
+                leading: const _GoogleBadge(),
+                filled: true,
+                onPressed: _busy ? null : _google,
+              ),
+              const SizedBox(height: 10),
+            ],
+            _AccountButton(
+              label: 'Continue with email',
+              icon: Icons.mail_outline_rounded,
+              filled: !auth.canUseGoogle,
+              onPressed: _busy ? null : _email,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: AppText.body(13.5, color: AppColors.coral)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmailSheet extends StatefulWidget {
+  const _EmailSheet({required this.auth, this.toast = true});
+
+  final AuthService auth;
+
+  /// Show the "progress saved" message when done (Profile). The landing
+  /// screen opens Home instead.
+  final bool toast;
 
   @override
   State<_EmailSheet> createState() => _EmailSheetState();
@@ -259,8 +390,10 @@ class _EmailSheetState extends State<_EmailSheet> {
     final outcome = await widget.auth.verifyEmailCode(_code.text);
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).pop();
-    messenger.showSnackBar(SnackBar(content: Text(_successText(outcome))));
+    Navigator.of(context).pop(outcome);
+    if (widget.toast) {
+      messenger.showSnackBar(SnackBar(content: Text(_successText(outcome))));
+    }
   });
 
   @override
@@ -419,16 +552,39 @@ class _Field extends StatelessWidget {
   }
 }
 
+/// Google "G" on a white disc, so its colours stay true on the cream button.
+class _GoogleBadge extends StatelessWidget {
+  const _GoogleBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFFFFF),
+        shape: BoxShape.circle,
+      ),
+      child: const GoogleLogo(size: 18),
+    );
+  }
+}
+
 class _AccountButton extends StatelessWidget {
   const _AccountButton({
     required this.label,
-    required this.icon,
     required this.onPressed,
+    this.icon,
+    this.leading,
     this.filled = false,
   });
 
   final String label;
-  final IconData icon;
+  final IconData? icon;
+
+  /// Shown instead of [icon], e.g. the Google logo.
+  final Widget? leading;
   final VoidCallback? onPressed;
   final bool filled;
 
@@ -454,12 +610,13 @@ class _AccountButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: filled ? AppColors.navy : AppColors.cream,
-                ),
-                const SizedBox(width: 8),
+                leading ??
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: filled ? AppColors.navy : AppColors.cream,
+                    ),
+                const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     label,

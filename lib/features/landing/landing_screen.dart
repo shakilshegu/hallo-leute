@@ -7,7 +7,10 @@ import '../../shared/widgets/primary_button.dart';
 import '../../shared/widgets/reveal.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
+import '../../data/auth/auth_service.dart';
+import '../home/home_screen.dart';
 import '../onboarding/onboarding_flow.dart';
+import '../profile/account_card.dart';
 import 'widgets/floating_words.dart';
 import 'widgets/pan_logo.dart';
 
@@ -53,6 +56,21 @@ class _LandingScreenState extends State<LandingScreen>
     _entrance.dispose();
     _ambient.dispose();
     super.dispose();
+  }
+
+  /// Returning learner: sign in, then open Home with the account's
+  /// profile, or onboarding when the account has none yet.
+  Future<void> _signIn() async {
+    final auth = AuthScope.maybeOf(context);
+    if (auth == null) return _comingSoon('Sign in');
+    final navigator = Navigator.of(context);
+    if (!await showSignInSheet(context, auth)) return;
+    final profile = await auth.progress.loadProfile();
+    if (profile != null) {
+      navigator.pushAndRemoveUntil(HomeScreen.route(profile), (_) => false);
+    } else {
+      navigator.push(OnboardingFlow.route());
+    }
   }
 
   void _comingSoon(String what) {
@@ -162,7 +180,7 @@ class _LandingScreenState extends State<LandingScreen>
           Reveal(
             animation: _interval(0.82, 1.0),
             child: TextButton(
-              onPressed: widget.onSignIn ?? () => _comingSoon('Sign in'),
+              onPressed: widget.onSignIn ?? _signIn,
               style: TextButton.styleFrom(foregroundColor: AppColors.cream),
               child: Text.rich(
                 TextSpan(

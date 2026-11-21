@@ -83,7 +83,9 @@ class AuthService extends ChangeNotifier {
     final idToken = account.authentication.idToken;
     if (idToken == null) throw const AuthException('Google gave no ID token');
 
-    await ensureGuest();
+    // A guest links Google to the same account. With no session (signed
+    // out, signing in from the landing screen) sign straight in: creating
+    // a guest first would leave an empty account behind.
     if (hasSession && isGuest) {
       try {
         // Same user id keeps everything the guest has learned.
@@ -111,7 +113,7 @@ class AuthService extends ChangeNotifier {
   /// Sends a 6-digit code to [email].
   Future<void> sendEmailCode(String email) async {
     final address = email.trim().toLowerCase();
-    await ensureGuest();
+    // Same as Google: link a guest, otherwise sign straight in.
     if (hasSession && isGuest) {
       try {
         // Attach the email to the guest account (same user id).
