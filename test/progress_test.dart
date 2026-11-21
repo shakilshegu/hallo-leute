@@ -263,6 +263,7 @@ void main() {
       p.recordAnswer(strong, knewIt: true); // box 2: stronger
       p.recordAnswer(weak, knewIt: false); // missed once: weaker
       p.recordAnswer(vocabulary[303], knewIt: false); // never learned
+      now = day(18); // none seen today: order is by weakness only
 
       final list = p.reviewAnytime();
       expect(list, [weak, plain, strong]);
@@ -322,6 +323,29 @@ void main() {
 
       expect(p.statusOf(w), WordStatus.mastered);
       expect(wp.due, due);
+    });
+
+    test('repeated rounds move on to words not reviewed today', () {
+      final p = LearningProgress(clock: clock);
+      final words = vocabulary.skip(400).take(30).toList();
+      for (final w in words) {
+        p.recordAnswer(w, knewIt: true); // day 16: box 1
+      }
+      now = day(17);
+      for (final w in words) {
+        p.recordAnswer(w, knewIt: true); // due: box 2, due day 20
+      }
+      now = day(18); // nothing due
+
+      final first = p.reviewAnytime();
+      expect(first, hasLength(20));
+      for (final w in first) {
+        p.recordAnswer(w, knewIt: true); // early: schedule unchanged
+      }
+
+      final second = p.reviewAnytime();
+      final rest = words.where((w) => !first.contains(w)).toSet();
+      expect(second.take(10).toSet(), rest);
     });
   });
 }

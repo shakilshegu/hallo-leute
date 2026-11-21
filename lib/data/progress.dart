@@ -514,21 +514,30 @@ class LearningProgress extends ChangeNotifier {
 
   /// How much a learned word needs practice: missed often, low on the
   /// ladder or overdue scores higher. Shared by quizzes and reviews.
+  /// Learned words only (needs a progress entry).
   int weaknessOf(GermanWord w) {
     final p = progressOf(w)!;
     final overdue = today.difference(p.due).inDays;
     return p.timesAgain * 3 - p.box * 2 + overdue.clamp(0, 30);
   }
 
-  /// Learned words for an on-demand review, weakest first (ties: the one
-  /// due soonest). Optionally only one [topic].
+  /// Learned words for an on-demand review, optionally only one [topic].
+  ///
+  /// Words not seen today come first, so each new round moves on to other
+  /// words (early answers don't change a word's weakness). Then weakest
+  /// first, then the one seen longest ago, then the one due soonest.
   List<GermanWord> reviewAnytime({Topic? topic, int limit = 20}) {
+    final now = today;
+    int seenToday(GermanWord w) =>
+        progressOf(w)!.lastSeen.isBefore(now) ? 0 : 1;
     final learned = (topic?.words ?? vocabulary).where(isLearned).toList()
       ..sort((a, b) {
-        final byWeakness = weaknessOf(b).compareTo(weaknessOf(a));
-        return byWeakness != 0
-            ? byWeakness
-            : progressOf(a)!.due.compareTo(progressOf(b)!.due);
+        final pa = progressOf(a)!, pb = progressOf(b)!;
+        var c = seenToday(a).compareTo(seenToday(b));
+        if (c == 0) c = weaknessOf(b).compareTo(weaknessOf(a));
+        if (c == 0) c = pa.lastSeen.compareTo(pb.lastSeen);
+        if (c == 0) c = pa.due.compareTo(pb.due);
+        return c;
       });
     return learned.take(limit).toList();
   }
