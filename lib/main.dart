@@ -13,9 +13,12 @@ import 'data/remote/backend_config.dart';
 import 'data/remote/progress_remote.dart';
 import 'data/sync/sync_service.dart';
 import 'data/vocabulary.dart';
+import 'services/crash_reporting.dart';
 import 'services/reminders.dart';
 
-Future<void> main() async {
+Future<void> main() => CrashReporting.run(_start);
+
+Future<void> _start() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Vocabulary.load();
   _registerFontLicenses();

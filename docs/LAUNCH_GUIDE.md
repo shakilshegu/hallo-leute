@@ -102,7 +102,7 @@ the same user now shows a Google identity.
 
 ---
 
-## 3. Crash reporting
+## 3. Crash reporting ✅
 
 **Why:** if the app crashes on someone's phone, today you never find out.
 
@@ -212,7 +212,7 @@ Priority: **Pflege pack → IT & Büro pack → top 200 → top 500.**
 - [x] 0 · Domain: halloleute.app
 - [x] 1 · Resend switched to mail.halloleute.app, Supabase sender + templates updated, code arrives
 - [x] 2 · Google OAuth clients made, Supabase Google provider on, `env.json` updated, works
-- [ ] 3 · Sentry project made, DSN in `env.json`, Claude integrated it
+- [x] 3 · Sentry project made, DSN in `env.json`, Claude integrated it
 - [ ] 4 · Review sheet exported, reviewed, fixes applied
 - [ ] 5.1 · Privacy policy and delete-account page live on your domain
 - [ ] 5.2 · Play Console account verified
