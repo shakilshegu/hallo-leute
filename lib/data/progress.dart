@@ -295,6 +295,7 @@ class LearningProgress extends ChangeNotifier {
 
   Future<void> saveProfile(OnboardingData profile) async {
     await store?.write(profileKey, jsonEncode(profile.toJson()));
+    studyLevel = profile.effectiveStudyLevel;
     notifyListeners();
     if (!_changes.isClosed) _changes.add(const ProgressChange.profile());
   }
@@ -542,12 +543,49 @@ class LearningProgress extends ChangeNotifier {
     return learned.take(limit).toList();
   }
 
-  /// The next [count] words not learned yet, most useful first.
-  /// Words answered "Again" but never learned come back here first.
-  /// Without a [topic], career-pack-only words are left out (they're
+  // ─────────────────────────── study level ───────────────────────────
+
+  /// The level being studied (A1–B2). New words, quizzes, topics and the
+  /// word lists use only this level; reviews and career packs use all.
+  CefrLevel studyLevel = CefrLevel.a1;
+
+  /// Takes the study level from the learner's [profile].
+  void useProfile(OnboardingData profile) {
+    final level = profile.effectiveStudyLevel;
+    if (level == studyLevel) return;
+    studyLevel = level;
+    notifyListeners();
+  }
+
+  /// Switches level and saves it with the profile (synced to the server).
+  Future<void> setStudyLevel(OnboardingData profile, CefrLevel level) async {
+    profile.studyLevel = level;
+    await saveProfile(profile);
+  }
+
+  /// Words for lessons and lists: a career pack in full, otherwise the
+  /// general words (of [topic], if given) at the study level.
+  Iterable<GermanWord> wordsFor(Topic? topic) {
+    if (topic != null && topic.isPack) return topic.words;
+    final source = topic?.words ?? vocabulary.where((w) => !w.topic.isPack);
+    return source.where((w) => w.level == studyLevel);
+  }
+
+  /// Words at the study level (career packs not included).
+  int get levelTotal => wordsFor(null).length;
+
+  /// How many of them are learned.
+  int get learnedAtLevel => wordsFor(null).where(isLearned).length;
+
+  /// Words in [topic] at the study level (all of a career pack).
+  int topicTotal(Topic topic) => wordsFor(topic).length;
+
+  /// The next [count] words not learned yet, most useful first, at the
+  /// study level. Words answered "Again" but never learned come back here
+  /// first. Without a [topic], career-pack-only words are left out (they're
   /// learned from their pack page).
   List<GermanWord> nextNewWords(int count, {Topic? topic}) =>
-      (topic == null ? vocabulary.where((w) => !w.topic.isPack) : topic.words)
+      wordsFor(topic)
           .where((w) => !isLearned(w))
           .take(count)
           .toList(growable: false);
@@ -565,7 +603,8 @@ class LearningProgress extends ChangeNotifier {
     return list;
   }
 
-  int learnedIn(Topic topic) => topic.words.where(isLearned).length;
+  /// Learned words in [topic] at the study level (all of a career pack).
+  int learnedIn(Topic topic) => wordsFor(topic).where(isLearned).length;
 
   /// Weekdays (1 = Monday … 7 = Sunday) practised in the current week.
   Set<int> get practisedThisWeek {

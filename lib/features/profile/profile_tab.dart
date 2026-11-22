@@ -157,7 +157,10 @@ class ProfileTab extends StatelessWidget {
             if (reminders != null) ...[
               ReminderCard(reminders: reminders),
               const SizedBox(height: 12),
-              PopupsCard(reminders: reminders, wordsFor: wordsForDay),
+              PopupsCard(
+                reminders: reminders,
+                wordsFor: (day) => wordsForDay(day, level: progress.studyLevel),
+              ),
               const SizedBox(height: 16),
             ],
             if (auth != null) ...[

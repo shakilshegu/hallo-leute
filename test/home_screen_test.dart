@@ -51,9 +51,9 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     final day = DateTime(2026, 11, 16, 15);
-    final words = wordsForDay(day);
-    expect(words, hasLength(10));
     final progress = LearningProgress(clock: () => day);
+    final words = wordsForDay(day, level: progress.studyLevel);
+    expect(words, hasLength(10));
     await tester.pumpWidget(
       ProgressScope(
         progress: progress,

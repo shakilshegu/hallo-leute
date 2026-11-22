@@ -86,7 +86,7 @@ class _HalloLeuteAppState extends State<HalloLeuteApp> {
       streak: _progress.streak,
     );
     reminders.reschedulePopups(
-      wordsFor: wordsForDay,
+      wordsFor: (day) => wordsForDay(day, level: _progress.studyLevel),
       isLearned: _progress.isLearned,
     );
   }

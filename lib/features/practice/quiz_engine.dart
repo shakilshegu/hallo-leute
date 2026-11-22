@@ -44,7 +44,7 @@ class QuizEngine {
   /// the next useful new words so beginners can practise right away.
   List<GermanWord> pool(PracticeMode mode, {Topic? topic, int? count}) {
     final n = count ?? sessionLength;
-    final source = topic?.words ?? vocabulary;
+    final source = progress.wordsFor(topic);
     final learned = source
         .where((w) => progress.isLearned(w) && suits(w, mode))
         .toList();

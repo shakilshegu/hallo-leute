@@ -35,6 +35,7 @@ Future<void> _start() async {
   final store = PrefsStore.create();
   final progress = await LearningProgress.load(store);
   final profile = await progress.loadProfile();
+  if (profile != null) progress.useProfile(profile);
   final auth = await _connectBackend(store, progress);
   final reminders = Reminders(store);
   await reminders.load();

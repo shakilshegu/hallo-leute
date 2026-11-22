@@ -12,10 +12,12 @@ GermanWord wordForDay(DateTime day) {
 
 /// Words of the day: ten useful words with examples, a new set every day.
 /// The same ten stay all day (also used for the word pop-ups).
-List<GermanWord> wordsForDay(DateTime day, {int count = 10}) {
+List<GermanWord> wordsForDay(DateTime day, {int count = 10, CefrLevel? level}) {
   final pool = vocabulary
       .where((w) => w.hasExample && !w.topic.isPack)
-      .where((w) => w.rank == 0 || w.rank <= 2000)
+      .where(
+        (w) => level != null ? w.level == level : w.rank == 0 || w.rank <= 2000,
+      )
       .toList();
   if (pool.isEmpty) return const [];
   final dayIndex = DateTime.utc(

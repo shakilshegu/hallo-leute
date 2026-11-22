@@ -52,6 +52,7 @@ class SupabaseProgressRemote implements ProgressRemote {
       'id': _uid,
       'name': profile.name.trim(),
       'level': profile.level?.name,
+      'study_level': profile.studyLevel?.name,
       'daily_goal': profile.dailyGoal.name,
       'goals': [for (final g in profile.goals) g.name],
       'updated_at': now,
@@ -172,6 +173,7 @@ class SupabaseProgressRemote implements ProgressRemote {
           : OnboardingData.fromJson({
               'name': profileRow['name'],
               'level': profileRow['level'],
+              'studyLevel': profileRow['study_level'],
               'dailyGoal': profileRow['daily_goal'],
               'goals': profileRow['goals'],
             }),

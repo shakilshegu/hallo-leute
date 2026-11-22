@@ -36,7 +36,7 @@ class HomeTab extends StatelessWidget {
     final progress = ProgressScope.of(context);
     final streak = progress.streak;
     final dueCount = progress.dueCount;
-    final todaysWords = wordsForDay(today);
+    final todaysWords = wordsForDay(today, level: progress.studyLevel);
 
     return ListView(
       padding: EdgeInsets.fromLTRB(0, 20, 0, bottomInset + 24),

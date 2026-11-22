@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../data/vocabulary.dart';
+
 /// Why someone is learning German. The German word doubles as a mini lesson.
 enum LearningGoal {
   study('Study', 'das Studium', Icons.school_outlined),
@@ -20,7 +22,8 @@ enum GermanLevel {
   a0('A0', 'Brand new', 'Starting from zero'),
   a1('A1', 'A few words', 'I know basics like Hallo and Danke'),
   a2('A2', 'Simple chats', 'I can introduce myself and order food'),
-  b1('B1', 'Getting there', 'I can handle everyday conversations');
+  b1('B1', 'Getting there', 'I can handle everyday conversations'),
+  b2('B2', 'Confident', 'I can talk about most topics with ease');
 
   const GermanLevel(this.code, this.title, this.description);
 
@@ -57,6 +60,7 @@ class OnboardingData {
     final data = OnboardingData()
       ..name = j['name'] as String? ?? ''
       ..level = byName(GermanLevel.values, j['level'])
+      ..studyLevel = CefrLevel.parse(j['studyLevel'] as String?)
       ..dailyGoal =
           byName(DailyGoal.values, j['dailyGoal']) ?? DailyGoal.regular;
     for (final g in (j['goals'] as List? ?? const [])) {
@@ -69,6 +73,19 @@ class OnboardingData {
   String name = '';
   final Set<LearningGoal> goals = {};
   GermanLevel? level;
+
+  /// The level the learner is studying now (A1–B2). Null until chosen:
+  /// then it follows the setup [level], see [effectiveStudyLevel].
+  CefrLevel? studyLevel;
+
+  CefrLevel get effectiveStudyLevel =>
+      studyLevel ??
+      switch (level) {
+        null || GermanLevel.a0 || GermanLevel.a1 => CefrLevel.a1,
+        GermanLevel.a2 => CefrLevel.a2,
+        GermanLevel.b1 => CefrLevel.b1,
+        GermanLevel.b2 => CefrLevel.b2,
+      };
   DailyGoal dailyGoal = DailyGoal.regular;
 
   /// Word pop-ups per day chosen during setup (0 = off).
@@ -78,6 +95,7 @@ class OnboardingData {
     'name': name,
     'goals': [for (final g in goals) g.name],
     'level': level?.name,
+    'studyLevel': studyLevel?.name,
     'dailyGoal': dailyGoal.name,
     'wordPopups': wordPopups,
   };

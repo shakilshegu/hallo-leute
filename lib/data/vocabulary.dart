@@ -54,6 +54,29 @@ enum Topic {
       Topic.values.firstWhere((t) => t.name == name, orElse: () => everyday);
 }
 
+/// CEFR level of a word, A1 (beginner) to B2 (upper intermediate).
+/// Assigned by `tool/vocab/levels.py`; career-pack-only words have none.
+enum CefrLevel {
+  a1('A1'),
+  a2('A2'),
+  b1('B1'),
+  b2('B2');
+
+  const CefrLevel(this.code);
+
+  final String code;
+
+  /// The level after this one, or null at B2.
+  CefrLevel? get next => index + 1 < values.length ? values[index + 1] : null;
+
+  static CefrLevel? parse(String? name) {
+    for (final l in values) {
+      if (l.name == name) return l;
+    }
+    return null;
+  }
+}
+
 class GermanWord {
   const GermanWord({
     required this.word,
@@ -65,6 +88,7 @@ class GermanWord {
     this.rank = 0,
     this.example = '',
     this.exampleMeaning = '',
+    this.level,
   });
 
   factory GermanWord.fromJson(Map<String, dynamic> j) => GermanWord(
@@ -77,6 +101,7 @@ class GermanWord {
     rank: j['rank'] as int? ?? 0,
     example: j['example'] as String? ?? '',
     exampleMeaning: j['exampleMeaning'] as String? ?? '',
+    level: CefrLevel.parse(j['level'] as String?),
   );
 
   final String word;
@@ -94,6 +119,9 @@ class GermanWord {
   final int rank;
   final String example;
   final String exampleMeaning;
+
+  /// Null for career-pack-only words (packs are learned at any level).
+  final CefrLevel? level;
 
   bool get hasExample => example.isNotEmpty;
 
@@ -185,6 +213,7 @@ class Vocabulary {
                 exampleMeaning: word.exampleMeaning,
                 topic: existing.topic,
                 rank: existing.rank,
+                level: existing.level,
               ),
             );
           } else {
