@@ -41,7 +41,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 
   Future<void> _save() async {
-    final p = widget.profile
+    final p = widget.profile;
+    // A new setup level also moves the study level (picker can override).
+    if (_level != p.level) p.studyLevel = null;
+    p
       ..name = _name.text.trim()
       ..level = _level
       ..dailyGoal = _goal;

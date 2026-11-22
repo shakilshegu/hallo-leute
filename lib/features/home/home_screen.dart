@@ -79,8 +79,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenTopic: _openTopic,
         onOpenProfile: () => _select(_profile),
       ),
-      _practice => PracticeTab(dailyGoal: widget.profile.dailyGoal.words),
-      _words => WordsTab(sessionSize: widget.profile.dailyGoal.words),
+      _practice => PracticeTab(
+        dailyGoal: widget.profile.dailyGoal.words,
+        profile: widget.profile,
+      ),
+      _words => WordsTab(
+        sessionSize: widget.profile.dailyGoal.words,
+        profile: widget.profile,
+      ),
       _ => ProfileTab(profile: widget.profile),
     };
 

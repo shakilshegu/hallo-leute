@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
+import '../../shared/widgets/level_bar.dart';
 import '../../shared/widgets/reveal.dart';
+import '../onboarding/onboarding_data.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../home/widgets/home_cards.dart';
@@ -11,7 +13,10 @@ import 'quiz_screen.dart';
 
 /// All the ways to practise, optionally narrowed to one topic.
 class PracticeTab extends StatefulWidget {
-  const PracticeTab({super.key, required this.dailyGoal});
+  const PracticeTab({super.key, required this.dailyGoal, this.profile});
+
+  /// Learner profile, for the level picker (hidden without one).
+  final OnboardingData? profile;
 
   /// Words per "learn new words" session.
   final int dailyGoal;
@@ -59,6 +64,10 @@ class _PracticeTabState extends State<PracticeTab> {
                 style: AppText.body(14, color: AppColors.creamMuted),
               ),
             ),
+            if (widget.profile case final profile?) ...[
+              const SizedBox(height: 16),
+              _pad(LevelBar(profile: profile)),
+            ],
             const SizedBox(height: 18),
             SizedBox(
               height: 38,

@@ -90,7 +90,7 @@ class _TopicScreenState extends State<TopicScreen> {
   Widget build(BuildContext context) {
     final t = widget.topic;
     final progress = ProgressScope.of(context);
-    final words = t.words;
+    final words = progress.wordsFor(t).toList();
     final learned = progress.learnedIn(t);
     final next = progress.nextNewWords(widget.sessionSize, topic: t);
     final ratio = words.isEmpty ? 0.0 : learned / words.length;

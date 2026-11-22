@@ -657,18 +657,23 @@ class _Day extends StatelessWidget {
 class TopicCard extends StatelessWidget {
   const TopicCard({
     super.key,
+    this.total,
     required this.topic,
     required this.learned,
     required this.onTap,
   });
 
   final Topic topic;
+
+  /// Words in the topic at the study level (defaults to all).
+  final int? total;
   final int learned;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final progress = topic.wordCount == 0 ? 0.0 : learned / topic.wordCount;
+    final total = this.total ?? topic.wordCount;
+    final progress = total == 0 ? 0.0 : learned / total;
     return Pressable(
       onTap: onTap,
       semanticLabel: '${topic.english}, ${topic.german}',
@@ -713,7 +718,7 @@ class TopicCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              '$learned / ${topic.wordCount} words',
+              '$learned / $total words',
               style: AppText.body(11.5, color: AppColors.creamMuted),
             ),
           ],

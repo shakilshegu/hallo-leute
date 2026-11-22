@@ -51,7 +51,11 @@ void main() {
 
     await tester.tap(navItem('Words'));
     await settle(tester);
-    expect(find.text('All · ${vocabulary.length}'), findsOneWidget);
+    // Only the study level's words (A1 for this learner).
+    final a1 = vocabulary
+        .where((w) => !w.topic.isPack && w.level == CefrLevel.a1)
+        .length;
+    expect(find.text('All · $a1'), findsOneWidget);
 
     await tester.tap(navItem('Profile'));
     await settle(tester);

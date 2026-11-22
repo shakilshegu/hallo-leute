@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
+import '../../shared/widgets/level_bar.dart';
+import '../onboarding/onboarding_data.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../home/widgets/home_cards.dart';
@@ -14,7 +16,10 @@ import 'word_row.dart';
 ///   for its plural, example and history.
 /// * **Categories**: career packs ("For your job") and every topic.
 class WordsTab extends StatefulWidget {
-  const WordsTab({super.key, this.sessionSize = 10});
+  const WordsTab({super.key, this.sessionSize = 10, this.profile});
+
+  /// Learner profile, for the level picker (hidden without one).
+  final OnboardingData? profile;
 
   /// Words per "learn new words" session on a topic page.
   final int sessionSize;
@@ -61,7 +66,7 @@ class _WordsTabState extends State<WordsTab> {
   @override
   Widget build(BuildContext context) {
     final progress = ProgressScope.of(context);
-    final learnedCount = progress.totalLearned;
+    final learnedCount = progress.learnedAtLevel;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -71,6 +76,10 @@ class _WordsTabState extends State<WordsTab> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Words', style: AppText.display(28, color: AppColors.cream)),
+              if (widget.profile case final profile?) ...[
+                const SizedBox(height: 14),
+                LevelBar(profile: profile),
+              ],
               const SizedBox(height: 14),
               _ScopeSwitch(
                 labels: const ['All words', 'Categories'],
@@ -100,9 +109,12 @@ class _WordsTabState extends State<WordsTab> {
 
   Widget _allWords(LearningProgress progress, int learnedCount) {
     final source = switch (_filter) {
-      _Filter.all => vocabulary,
-      _Filter.learned => progress.learnedWords,
-      _Filter.toLearn => vocabulary.where((w) => !progress.isLearned(w)),
+      _Filter.all => progress.wordsFor(null),
+      _Filter.learned => progress.learnedWords.where(
+        (w) => w.level == progress.studyLevel,
+      ),
+      _Filter.toLearn =>
+        progress.wordsFor(null).where((w) => !progress.isLearned(w)),
     };
     final words = source.where((w) => w.matches(_query)).toList();
     final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -131,7 +143,7 @@ class _WordsTabState extends State<WordsTab> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             children: [
               _TopicChip(
-                label: 'All · ${vocabulary.length}',
+                label: 'All · ${progress.levelTotal}',
                 selected: _filter == _Filter.all,
                 onTap: () => _setFilter(_Filter.all),
               ),
@@ -141,7 +153,7 @@ class _WordsTabState extends State<WordsTab> {
                 onTap: () => _setFilter(_Filter.learned),
               ),
               _TopicChip(
-                label: 'To learn · ${vocabulary.length - learnedCount}',
+                label: 'To learn · ${progress.levelTotal - learnedCount}',
                 selected: _filter == _Filter.toLearn,
                 onTap: () => _setFilter(_Filter.toLearn),
               ),
@@ -219,6 +231,7 @@ class _Categories extends StatelessWidget {
                     child: _CategoryTile(
                       topic: t,
                       learned: progress.learnedIn(t),
+                      total: progress.topicTotal(t),
                       onTap: () => onOpen(t),
                     ),
                   ),
@@ -235,8 +248,12 @@ class _CategoryTile extends StatelessWidget {
   const _CategoryTile({
     required this.topic,
     required this.learned,
+    required this.total,
     required this.onTap,
   });
+
+  /// Words in the topic at the study level.
+  final int total;
 
   final Topic topic;
   final int learned;
@@ -244,7 +261,6 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = topic.wordCount;
     return Pressable(
       onTap: onTap,
       semanticLabel: '${topic.english}, ${topic.german}. $learned of $total',

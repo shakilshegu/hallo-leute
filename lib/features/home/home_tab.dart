@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/progress.dart';
 import '../../data/vocabulary.dart';
+import '../../shared/widgets/level_bar.dart';
 import '../../shared/widgets/reveal.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
@@ -54,7 +55,11 @@ class HomeTab extends StatelessWidget {
                 onAvatarTap: onOpenProfile,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            _padded(LevelBar(profile: profile)),
+            const SizedBox(height: 16),
+            _padded(LevelUpCard(profile: profile)),
+            const SizedBox(height: 8),
             _padded(
               TodayCard(
                 learned: progress.learnedToday,
@@ -138,6 +143,7 @@ class HomeTab extends StatelessWidget {
                   return TopicCard(
                     topic: t,
                     learned: progress.learnedIn(t),
+                    total: progress.topicTotal(t),
                     onTap: () => onOpenTopic(t),
                   );
                 },
