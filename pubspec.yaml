@@ -1,7 +1,7 @@
 name: hallo_leute
 description: "Hallo Leute – German vocabulary made simple for nurses and IT professionals moving to Germany."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.13.1
