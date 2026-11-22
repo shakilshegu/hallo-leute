@@ -28,3 +28,16 @@ How it works:
 To change the list, edit `curated.json`, `BLOCKLIST` or the topic rules in
 `build_vocab.py`, then run the script again and commit the new `words.json`.
 See `assets/vocabulary/ATTRIBUTION.md` for licenses.
+
+## Levels (A1–B2)
+
+Every word gets a CEFR level from `levels.py` (our own assignment: hand-picked
+basics and the most frequent words are A1, then frequency bands, with
+everyday survival topics one level lower). A German reviewer corrects levels
+in the "Correct level" column of `docs/word_review.csv`; put those in
+`levels.json` and run:
+
+```bash
+python3 tool/vocab/levels.py --apply     # rewrite levels in words.json
+python3 tool/vocab/test_levels.py        # tests
+```

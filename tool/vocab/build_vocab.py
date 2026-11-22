@@ -26,6 +26,9 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import levels  # noqa: E402  (CEFR levels, see levels.py)
+
 ROOT = Path(__file__).resolve().parents[2]
 CACHE = Path(__file__).resolve().parent / ".cache"
 OUT = ROOT / "assets" / "vocabulary" / "words.json"
@@ -494,6 +497,8 @@ def main():
         },
         "words": words,
     }
+    level_counts = levels.apply(payload, levels.load_overrides())
+    print(f"Levels: {dict(level_counts)}")
     OUT.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
                    encoding="utf-8")
     with_ex = sum(1 for w in words if w["example"])
